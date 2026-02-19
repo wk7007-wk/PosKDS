@@ -100,29 +100,56 @@ object AppUpdater {
             val prefs = context.getSharedPreferences("poskds_prefs", Context.MODE_PRIVATE)
             val token = prefs.getString("github_token", "") ?: ""
 
-            val conn = URL(apkUrl).openConnection() as HttpURLConnection
-            conn.connectTimeout = 30000
-            conn.readTimeout = 60000
-            conn.setRequestProperty("Accept", "application/octet-stream")
-            if (token.isNotEmpty()) {
-                conn.setRequestProperty("Authorization", "token $token")
-            }
-            conn.instanceFollowRedirects = true
+            // 리다이렉트 수동 처리 (GitHub API → S3 pre-signed URL)
+            var downloadUrl = apkUrl
+            var maxRedirects = 5
+            var finalConn: HttpURLConnection? = null
 
-            if (conn.responseCode != 200) {
-                Log.w(TAG, "다운로드 실패 (HTTP ${conn.responseCode})")
-                if (!silent) showToast(context, "다운로드 실패 (HTTP ${conn.responseCode})")
-                conn.disconnect()
-                lastCheckedVersion = "" // 재시도 허용
+            while (maxRedirects-- > 0) {
+                val conn = URL(downloadUrl).openConnection() as HttpURLConnection
+                conn.connectTimeout = 30000
+                conn.readTimeout = 60000
+                conn.instanceFollowRedirects = false
+                conn.setRequestProperty("Accept", "application/octet-stream")
+                // GitHub API에만 토큰 전송
+                if (downloadUrl.contains("api.github.com") && token.isNotEmpty()) {
+                    conn.setRequestProperty("Authorization", "token $token")
+                }
+
+                val code = conn.responseCode
+                if (code == 301 || code == 302 || code == 307) {
+                    val location = conn.getHeaderField("Location")
+                    conn.disconnect()
+                    if (location.isNullOrEmpty()) break
+                    downloadUrl = location
+                    continue
+                }
+
+                if (code != 200) {
+                    Log.w(TAG, "다운로드 실패 (HTTP $code)")
+                    if (!silent) showToast(context, "다운로드 실패 (HTTP $code)")
+                    conn.disconnect()
+                    lastCheckedVersion = ""
+                    return
+                }
+
+                finalConn = conn
+                break
+            }
+
+            if (finalConn == null) {
+                Log.w(TAG, "리다이렉트 실패")
+                if (!silent) showToast(context, "다운로드 실패 (리다이렉트)")
+                lastCheckedVersion = ""
                 return
             }
 
-            conn.inputStream.use { input ->
+            finalConn.inputStream.use { input ->
                 file.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
-            conn.disconnect()
+            finalConn.disconnect()
 
             Log.d(TAG, "APK 다운로드 완료: ${file.length()} bytes")
             showToast(context, "다운로드 완료, 설치 중...")
