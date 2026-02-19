@@ -117,6 +117,15 @@
                     android:textSize="14sp" />
 
                 <TextView
+                    android:id="@+id/btnRestrict"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="제한해제"
+                    android:textColor="#E67E22"
+                    android:textSize="13sp"
+                    android:padding="6dp" />
+
+                <TextView
                     android:id="@+id/btnAccess"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

@@ -101,6 +101,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // 제한 해제 → 앱 정보 페이지 (제한된 설정 허용)
+        findViewById<TextView>(R.id.btnRestrict).setOnClickListener {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = android.net.Uri.parse("package:$packageName")
+            }
+            startActivity(intent)
+        }
+
         // 접근성 설정 버튼
         findViewById<TextView>(R.id.btnAccess).setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
