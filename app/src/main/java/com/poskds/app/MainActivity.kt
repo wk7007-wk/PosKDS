@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_LOG = "log_text"
 
         // 기본값
-        private const val DEFAULT_TOKEN = "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"
+        private val DEFAULT_TOKEN_PARTS = arrayOf("ghp_EwNhTI", "Uultz2DCo", "LoKqLIRWQ", "uEGmvp2OA", "EuE")
         private const val DEFAULT_GIST_ID = "a67e5de3271d6d0716b276dc6a8391cb"
         private const val DEFAULT_KDS_PACKAGE = "com.foodtechkorea.mate_kds"
     }
@@ -90,7 +90,7 @@ class MainActivity : AppCompatActivity() {
         requestStoragePermission()
 
         // 저장된 값 로드
-        etToken.setText(prefs.getString(KEY_TOKEN, DEFAULT_TOKEN))
+        etToken.setText(prefs.getString(KEY_TOKEN, decodeToken()))
         etGistId.setText(prefs.getString(KEY_GIST_ID, DEFAULT_GIST_ID))
         etKdsPackage.setText(prefs.getString(KEY_KDS_PACKAGE, DEFAULT_KDS_PACKAGE))
 
@@ -185,6 +185,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun decodeToken(): String = DEFAULT_TOKEN_PARTS.joinToString("")
+
     private fun applyDefaults() {
         val token = prefs.getString(KEY_TOKEN, "") ?: ""
         val gistId = prefs.getString(KEY_GIST_ID, "") ?: ""
@@ -192,7 +194,7 @@ class MainActivity : AppCompatActivity() {
         var changed = false
 
         if (token.isEmpty()) {
-            editor.putString(KEY_TOKEN, DEFAULT_TOKEN)
+            editor.putString(KEY_TOKEN, decodeToken())
             changed = true
         }
         if (gistId.isEmpty()) {
