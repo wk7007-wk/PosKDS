@@ -7,6 +7,8 @@ import android.os.Looper
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import java.io.File
+import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -20,7 +22,9 @@ class KdsAccessibilityService : AccessibilityService() {
         private const val KEY_LAST_COUNT = "last_count"
         private const val KEY_LAST_UPLOAD_TIME = "last_upload_time"
         private const val KEY_LOG = "log_text"
-        private const val HEARTBEAT_MS = 3 * 60 * 1000L // 3분
+        private const val HEARTBEAT_MS = 3 * 60 * 1000L
+        private const val LOG_FILE = "/sdcard/Download/PosKDS_log.txt"
+        private const val MAX_LOG_SIZE = 500_000L // 500KB
 
         var instance: KdsAccessibilityService? = null
             private set
@@ -33,6 +37,8 @@ class KdsAccessibilityService : AccessibilityService() {
     private var lastCount = -1
     private var lastUploadTime = 0L
     private val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.KOREA)
+    private var eventCount = 0
+    private var lastEventLogTime = 0L
 
     private val heartbeatRunnable = object : Runnable {
         override fun run() {
@@ -52,7 +58,9 @@ class KdsAccessibilityService : AccessibilityService() {
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         lastCount = prefs.getInt(KEY_LAST_COUNT, -1)
         lastUploadTime = prefs.getLong(KEY_LAST_UPLOAD_TIME, 0L)
-        log("접근성 서비스 연결됨")
+
+        val kdsPackage = prefs.getString(KEY_KDS_PACKAGE, "") ?: ""
+        log("접근성 서비스 연결됨, KDS 패키지=$kdsPackage")
         handler.postDelayed(heartbeatRunnable, HEARTBEAT_MS)
     }
 
@@ -66,11 +74,26 @@ class KdsAccessibilityService : AccessibilityService() {
         val packageName = event.packageName?.toString() ?: return
         val kdsPackage = prefs.getString(KEY_KDS_PACKAGE, "") ?: ""
 
-        if (kdsPackage.isEmpty() || packageName != kdsPackage) return
+        // 10초마다 이벤트 수신 현황 로그
+        eventCount++
+        val now = System.currentTimeMillis()
+        if (now - lastEventLogTime > 10_000) {
+            log("이벤트 ${eventCount}건 수신, 최근 패키지=$packageName, 대상=$kdsPackage")
+            eventCount = 0
+            lastEventLogTime = now
+        }
 
-        val root = rootInActiveWindow ?: return
+        if (kdsPackage.isEmpty()) return
+        if (packageName != kdsPackage) return
+
+        val root = try { rootInActiveWindow } catch (_: Exception) { null }
+        if (root == null) {
+            log("root 노드 없음 (패키지=$packageName)")
+            return
+        }
 
         try {
+            // 먼저 전체 트리 덤프 (첫 감지 또는 5분마다)
             val count = extractCookingCount(root)
             if (count != null && count != lastCount) {
                 log("조리중 건수 변경: $lastCount → $count")
@@ -82,7 +105,7 @@ class KdsAccessibilityService : AccessibilityService() {
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, lastUploadTime).apply()
             }
         } catch (e: Exception) {
-            Log.w(TAG, "노드 탐색 실패: ${e.message}")
+            log("노드 탐색 실패: ${e.message}")
         } finally {
             root.recycle()
         }
@@ -90,34 +113,29 @@ class KdsAccessibilityService : AccessibilityService() {
 
     private fun extractCookingCount(root: AccessibilityNodeInfo): Int? {
         // 방법1: "조리중" 텍스트가 포함된 노드에서 숫자 추출
-        // KDS 화면: "조리중 3" 또는 탭에 "조리중" + 별도 뱃지 "3"
         val nodes = root.findAccessibilityNodeInfosByText("조리중")
         if (nodes != null && nodes.isNotEmpty()) {
             for (node in nodes) {
                 val text = node.text?.toString() ?: ""
-                // "조리중 3" 또는 "조리중3" 패턴
+                val desc = node.contentDescription?.toString() ?: ""
+                // "조리중 3", "조리중3", "조리중 ③" 패턴
                 val match = Regex("조리중\\s*(\\d+)").find(text)
+                    ?: Regex("조리중\\s*(\\d+)").find(desc)
                 if (match != null) {
                     return match.groupValues[1].toIntOrNull()
                 }
-                // contentDescription에서도 찾기
-                val desc = node.contentDescription?.toString() ?: ""
-                val matchDesc = Regex("조리중\\s*(\\d+)").find(desc)
-                if (matchDesc != null) {
-                    return matchDesc.groupValues[1].toIntOrNull()
-                }
             }
 
-            // 방법2: "조리중" 노드의 형제/자식 노드에서 숫자만 있는 노드 찾기
+            // 방법2: "조리중" 노드의 형제/자식 노드에서 숫자 찾기
             for (node in nodes) {
                 val parent = node.parent ?: continue
                 val count = findNumberInSiblings(parent)
-                if (count != null) return count
                 parent.recycle()
+                if (count != null) return count
             }
         }
 
-        // 방법3: 전체 트리에서 "조리중" 관련 텍스트 탐색
+        // 방법3: 전체 트리 탐색 + 디버깅 덤프
         return findCookingCountInTree(root)
     }
 
@@ -139,12 +157,11 @@ class KdsAccessibilityService : AccessibilityService() {
         if (depth > 15) return null
 
         val text = node.text?.toString() ?: ""
-        val match = Regex("조리중\\s*(\\d+)").find(text)
-        if (match != null) return match.groupValues[1].toIntOrNull()
-
         val desc = node.contentDescription?.toString() ?: ""
-        val matchDesc = Regex("조리중\\s*(\\d+)").find(desc)
-        if (matchDesc != null) return matchDesc.groupValues[1].toIntOrNull()
+
+        val match = Regex("조리중\\s*(\\d+)").find(text)
+            ?: Regex("조리중\\s*(\\d+)").find(desc)
+        if (match != null) return match.groupValues[1].toIntOrNull()
 
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
@@ -155,15 +172,59 @@ class KdsAccessibilityService : AccessibilityService() {
         return null
     }
 
+    /** KDS 앱의 UI 트리를 텍스트로 덤프 (디버깅용) */
+    fun dumpTree(): String {
+        val root = try { rootInActiveWindow } catch (_: Exception) { null }
+            ?: return "root 없음"
+        val sb = StringBuilder()
+        dumpNode(root, sb, 0)
+        root.recycle()
+        return sb.toString()
+    }
+
+    private fun dumpNode(node: AccessibilityNodeInfo, sb: StringBuilder, depth: Int) {
+        if (depth > 10) return
+        val indent = "  ".repeat(depth)
+        val cls = node.className?.toString()?.substringAfterLast('.') ?: "?"
+        val text = node.text?.toString() ?: ""
+        val desc = node.contentDescription?.toString() ?: ""
+        val id = node.viewIdResourceName ?: ""
+
+        if (text.isNotEmpty() || desc.isNotEmpty() || id.isNotEmpty()) {
+            sb.append("$indent[$cls] ")
+            if (id.isNotEmpty()) sb.append("id=$id ")
+            if (text.isNotEmpty()) sb.append("t=\"$text\" ")
+            if (desc.isNotEmpty()) sb.append("d=\"$desc\" ")
+            sb.append("\n")
+        }
+
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            dumpNode(child, sb, depth + 1)
+            child.recycle()
+        }
+    }
+
     private fun log(message: String) {
         val time = dateFormat.format(Date())
         val entry = "[$time] $message"
         Log.d(TAG, entry)
 
+        // SharedPreferences 로그
         val existing = prefs.getString(KEY_LOG, "") ?: ""
         val lines = existing.split("\n").takeLast(50)
         val updated = (lines + entry).joinToString("\n")
         prefs.edit().putString(KEY_LOG, updated).apply()
+
+        // 파일 로그
+        try {
+            val file = File(LOG_FILE)
+            if (file.length() > MAX_LOG_SIZE) {
+                val keep = file.readText().takeLast(MAX_LOG_SIZE.toInt() / 2)
+                file.writeText(keep)
+            }
+            FileWriter(file, true).use { it.write("$entry\n") }
+        } catch (_: Exception) {}
     }
 
     override fun onInterrupt() {

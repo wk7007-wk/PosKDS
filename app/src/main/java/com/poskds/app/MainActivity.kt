@@ -119,6 +119,26 @@ class MainActivity : AppCompatActivity() {
             showAppPicker()
         }
 
+        // UI 트리 덤프 버튼 (디버깅)
+        findViewById<TextView>(R.id.btnDump).setOnClickListener {
+            val svc = KdsAccessibilityService.instance
+            if (svc == null) {
+                Toast.makeText(this, "접근성 서비스 비활성", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val dump = svc.dumpTree()
+            // 파일 + Gist에 덤프 저장
+            try {
+                val f = java.io.File("/sdcard/Download/PosKDS_dump.txt")
+                f.writeText(dump)
+                Toast.makeText(this, "덤프 저장됨 (${dump.lines().size}줄)", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "덤프 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+            // 로그에도 기록
+            tvLog.text = if (dump.isNotEmpty()) dump else "트리 비어있음"
+        }
+
         // 저장 버튼
         findViewById<TextView>(R.id.btnSave).setOnClickListener {
             val token = etToken.text.toString().trim()

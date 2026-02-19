@@ -3,6 +3,7 @@ package com.poskds.app.service
 import android.content.SharedPreferences
 import android.util.Log
 import org.json.JSONObject
+import java.io.File
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -13,11 +14,12 @@ import java.util.Locale
 object GistUploader {
 
     private const val TAG = "GistUploader"
-    private const val PREFS_NAME = "poskds_prefs"
     private const val KEY_TOKEN = "github_token"
     private const val KEY_GIST_ID = "gist_id"
     private const val KEY_LOG = "log_text"
-    private const val FILE_NAME = "kds_status.json"
+    private const val STATUS_FILE = "kds_status.json"
+    private const val LOG_FILE = "kds_log.txt"
+    private const val LOCAL_LOG = "/sdcard/Download/PosKDS_log.txt"
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA)
     private val logTimeFormat = SimpleDateFormat("HH:mm:ss", Locale.KOREA)
@@ -34,16 +36,31 @@ object GistUploader {
         kotlin.concurrent.thread {
             try {
                 val now = dateFormat.format(Date())
-                val content = JSONObject().apply {
+                val statusContent = JSONObject().apply {
                     put("count", count)
                     put("time", now)
                     put("source", "kds")
                 }.toString()
 
+                // 로그 내용 (최근 100줄)
+                val logContent = try {
+                    val f = File(LOCAL_LOG)
+                    if (f.exists()) {
+                        f.readLines().takeLast(100).joinToString("\n")
+                    } else {
+                        prefs.getString(KEY_LOG, "로그 없음") ?: "로그 없음"
+                    }
+                } catch (_: Exception) {
+                    prefs.getString(KEY_LOG, "로그 없음") ?: "로그 없음"
+                }
+
                 val body = JSONObject().apply {
                     put("files", JSONObject().apply {
-                        put(FILE_NAME, JSONObject().apply {
-                            put("content", content)
+                        put(STATUS_FILE, JSONObject().apply {
+                            put("content", statusContent)
+                        })
+                        put(LOG_FILE, JSONObject().apply {
+                            put("content", logContent)
                         })
                     })
                 }.toString()
