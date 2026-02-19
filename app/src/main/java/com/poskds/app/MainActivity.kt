@@ -23,6 +23,11 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_LAST_COUNT = "last_count"
         private const val KEY_LAST_UPLOAD_TIME = "last_upload_time"
         private const val KEY_LOG = "log_text"
+
+        // 기본값 (첫 설치 시 자동 적용)
+        private const val DEFAULT_TOKEN = "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"
+        private const val DEFAULT_GIST_ID = "a67e5de3271d6d0716b276dc6a8391cb"
+        private const val DEFAULT_KDS_PACKAGE = "com.foodtechkorea.mate_order"
     }
 
     private lateinit var prefs: SharedPreferences
@@ -64,16 +69,38 @@ class MainActivity : AppCompatActivity() {
         etGistId = findViewById(R.id.etGistId)
         etKdsPackage = findViewById(R.id.etKdsPackage)
 
+        // 첫 실행 시 기본값 자동 저장
+        if (!prefs.contains(KEY_TOKEN)) {
+            prefs.edit()
+                .putString(KEY_TOKEN, DEFAULT_TOKEN)
+                .putString(KEY_GIST_ID, DEFAULT_GIST_ID)
+                .putString(KEY_KDS_PACKAGE, DEFAULT_KDS_PACKAGE)
+                .apply()
+        }
+
         // 저장된 값 로드
-        etToken.setText(prefs.getString(KEY_TOKEN, ""))
-        etGistId.setText(prefs.getString(KEY_GIST_ID, ""))
-        etKdsPackage.setText(prefs.getString(KEY_KDS_PACKAGE, "com.foodtechkorea.mate_order"))
+        etToken.setText(prefs.getString(KEY_TOKEN, DEFAULT_TOKEN))
+        etGistId.setText(prefs.getString(KEY_GIST_ID, DEFAULT_GIST_ID))
+        etKdsPackage.setText(prefs.getString(KEY_KDS_PACKAGE, DEFAULT_KDS_PACKAGE))
 
         // 버전 표시 + 업데이트
         val versionName = packageManager.getPackageInfo(packageName, 0).versionName
         findViewById<TextView>(R.id.tvVersion).text = "v$versionName"
         findViewById<TextView>(R.id.btnUpdate).setOnClickListener {
             AppUpdater.checkAndUpdate(this, versionName)
+        }
+
+        // 설정 접기/펼치기
+        val layoutSettings = findViewById<android.widget.LinearLayout>(R.id.layoutSettings)
+        val btnToggle = findViewById<TextView>(R.id.btnToggleSettings)
+        btnToggle.setOnClickListener {
+            if (layoutSettings.visibility == android.view.View.GONE) {
+                layoutSettings.visibility = android.view.View.VISIBLE
+                btnToggle.text = "설정 ▼"
+            } else {
+                layoutSettings.visibility = android.view.View.GONE
+                btnToggle.text = "설정 ▶"
+            }
         }
 
         // 접근성 설정 버튼
