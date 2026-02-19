@@ -49,6 +49,12 @@ class KdsAccessibilityService : AccessibilityService() {
                 lastUploadTime = now
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, now).apply()
             }
+            // 자동 업데이트 체크 (3분마다)
+            try {
+                val ctx = applicationContext
+                val versionName = ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: ""
+                AppUpdater.checkSilent(ctx, versionName)
+            } catch (_: Exception) {}
             handler.postDelayed(this, HEARTBEAT_MS)
         }
     }

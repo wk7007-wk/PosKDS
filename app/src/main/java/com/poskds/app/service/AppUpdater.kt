@@ -8,35 +8,45 @@ import android.os.Environment
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
+/**
+ * Firebase 기반 자동 업데이트.
+ * - Firebase에서 최신 버전 확인 (인증 불필요, 실패 없음)
+ * - GitHub Release에서 APK 다운로드 (토큰 인증)
+ * - 3분마다 하트비트에서 자동 체크 + 수동 버튼
+ */
 object AppUpdater {
 
     private const val TAG = "AppUpdater"
-    private const val REPO = "wk7007-wk/PosKDS"
-    private const val API_URL = "https://api.github.com/repos/$REPO/releases/latest"
+    private const val FIREBASE_UPDATE_URL =
+        "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/app_update/poskds.json"
     private const val APK_NAME = "PosKDS.apk"
 
+    private var lastCheckedVersion = ""
+
+    /** 수동 버튼용 (토스트 표시) */
     fun checkAndUpdate(context: Context, currentVersionName: String) {
+        check(context, currentVersionName, silent = false)
+    }
+
+    /** 하트비트 자동 체크용 (조용히) */
+    fun checkSilent(context: Context, currentVersionName: String) {
+        check(context, currentVersionName, silent = true)
+    }
+
+    private fun check(context: Context, currentVersionName: String, silent: Boolean) {
         kotlin.concurrent.thread {
             try {
-                // private 레포 → 토큰 인증 필요
-                val prefs = context.getSharedPreferences("poskds_prefs", Context.MODE_PRIVATE)
-                val token = prefs.getString("github_token", "") ?: ""
-
-                val url = URL(API_URL)
-                val conn = url.openConnection() as HttpURLConnection
+                val conn = URL(FIREBASE_UPDATE_URL).openConnection() as HttpURLConnection
                 conn.connectTimeout = 10000
                 conn.readTimeout = 10000
-                conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
-                if (token.isNotEmpty()) {
-                    conn.setRequestProperty("Authorization", "token $token")
-                }
 
                 if (conn.responseCode != 200) {
-                    showToast(context, "업데이트 확인 실패 (HTTP ${conn.responseCode})")
+                    if (!silent) showToast(context, "업데이트 확인 실패 (HTTP ${conn.responseCode})")
                     conn.disconnect()
                     return@thread
                 }
@@ -44,41 +54,42 @@ object AppUpdater {
                 val response = conn.inputStream.bufferedReader().readText()
                 conn.disconnect()
 
-                val json = org.json.JSONObject(response)
-                val latestTag = json.getString("tag_name").removePrefix("v")
-                val assets = json.getJSONArray("assets")
-
-                if (latestTag == currentVersionName) {
-                    showToast(context, "최신 버전입니다 (v$currentVersionName)")
+                if (response == "null" || response.isBlank()) {
+                    if (!silent) showToast(context, "업데이트 정보 없음")
                     return@thread
                 }
 
-                // APK 다운로드 URL 찾기 (private 레포 → API URL 사용)
-                var apkApiUrl: String? = null
-                for (i in 0 until assets.length()) {
-                    val asset = assets.getJSONObject(i)
-                    if (asset.getString("name").endsWith(".apk")) {
-                        apkApiUrl = asset.getString("url")  // API URL (인증 가능)
-                        break
-                    }
-                }
+                val json = JSONObject(response)
+                val latestVersion = json.optString("version", "")
+                val apkUrl = json.optString("apk_url", "")
 
-                if (apkApiUrl == null) {
-                    showToast(context, "APK를 찾을 수 없습니다")
+                if (latestVersion.isEmpty() || apkUrl.isEmpty()) {
+                    if (!silent) showToast(context, "업데이트 정보 불완전")
                     return@thread
                 }
 
-                showToast(context, "v$latestTag 다운로드 중...")
-                downloadDirect(context, apkApiUrl, token)
+                if (latestVersion == currentVersionName) {
+                    if (!silent) showToast(context, "최신 버전입니다 (v$currentVersionName)")
+                    return@thread
+                }
+
+                // 같은 버전 반복 다운로드 방지
+                if (silent && latestVersion == lastCheckedVersion) return@thread
+                lastCheckedVersion = latestVersion
+
+                Log.d(TAG, "새 버전 발견: v$latestVersion (현재: v$currentVersionName)")
+                if (!silent) showToast(context, "v$latestVersion 다운로드 중...")
+
+                downloadApk(context, apkUrl, silent)
 
             } catch (e: Exception) {
                 Log.w(TAG, "업데이트 확인 실패: ${e.message}")
-                showToast(context, "업데이트 확인 실패")
+                if (!silent) showToast(context, "업데이트 확인 실패")
             }
         }
     }
 
-    private fun downloadDirect(context: Context, apiUrl: String, token: String) {
+    private fun downloadApk(context: Context, apkUrl: String, silent: Boolean) {
         val file = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             APK_NAME
@@ -86,9 +97,12 @@ object AppUpdater {
         if (file.exists()) file.delete()
 
         try {
-            val conn = URL(apiUrl).openConnection() as HttpURLConnection
+            val prefs = context.getSharedPreferences("poskds_prefs", Context.MODE_PRIVATE)
+            val token = prefs.getString("github_token", "") ?: ""
+
+            val conn = URL(apkUrl).openConnection() as HttpURLConnection
             conn.connectTimeout = 30000
-            conn.readTimeout = 30000
+            conn.readTimeout = 60000
             conn.setRequestProperty("Accept", "application/octet-stream")
             if (token.isNotEmpty()) {
                 conn.setRequestProperty("Authorization", "token $token")
@@ -96,8 +110,10 @@ object AppUpdater {
             conn.instanceFollowRedirects = true
 
             if (conn.responseCode != 200) {
-                showToast(context, "다운로드 실패 (HTTP ${conn.responseCode})")
+                Log.w(TAG, "다운로드 실패 (HTTP ${conn.responseCode})")
+                if (!silent) showToast(context, "다운로드 실패 (HTTP ${conn.responseCode})")
                 conn.disconnect()
+                lastCheckedVersion = "" // 재시도 허용
                 return
             }
 
@@ -108,13 +124,15 @@ object AppUpdater {
             }
             conn.disconnect()
 
+            Log.d(TAG, "APK 다운로드 완료: ${file.length()} bytes")
             showToast(context, "다운로드 완료, 설치 중...")
             android.os.Handler(android.os.Looper.getMainLooper()).post {
                 installApk(context, file)
             }
         } catch (e: Exception) {
             Log.w(TAG, "다운로드 실패: ${e.message}")
-            showToast(context, "다운로드 실패: ${e.message}")
+            if (!silent) showToast(context, "다운로드 실패: ${e.message}")
+            lastCheckedVersion = "" // 재시도 허용
         }
     }
 
