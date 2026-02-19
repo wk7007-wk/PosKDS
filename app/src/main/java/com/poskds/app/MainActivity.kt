@@ -7,6 +7,8 @@ import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Build
+import android.os.Environment
 import android.provider.Settings
 import android.view.View
 import android.widget.EditText
@@ -75,6 +77,9 @@ class MainActivity : AppCompatActivity() {
 
         // 기본값 적용 (빈 값이면 기본값으로 채움)
         applyDefaults()
+
+        // 파일 접근 권한 요청 (로그 파일용)
+        requestStoragePermission()
 
         // 저장된 값 로드
         etToken.setText(prefs.getString(KEY_TOKEN, DEFAULT_TOKEN))
@@ -153,6 +158,17 @@ class MainActivity : AppCompatActivity() {
 
             Toast.makeText(this, "저장됨", Toast.LENGTH_SHORT).show()
             refreshUI()
+        }
+    }
+
+    private fun requestStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                    data = android.net.Uri.parse("package:$packageName")
+                }
+                startActivity(intent)
+            }
         }
     }
 
