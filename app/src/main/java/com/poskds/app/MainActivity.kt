@@ -132,16 +132,8 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             val dump = svc.dumpTree()
-            // 파일 + Gist에 덤프 저장
-            try {
-                val f = java.io.File("/sdcard/Download/PosKDS_dump.txt")
-                f.writeText(dump)
-                Toast.makeText(this, "덤프 저장됨 (${dump.lines().size}줄)", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(this, "덤프 실패: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-            // 로그에도 기록
             tvLog.text = if (dump.isNotEmpty()) dump else "트리 비어있음"
+            Toast.makeText(this, "덤프 완료 (${dump.lines().size}줄)", Toast.LENGTH_SHORT).show()
         }
 
         // 저장 버튼

@@ -23,8 +23,8 @@ class KdsAccessibilityService : AccessibilityService() {
         private const val KEY_LAST_UPLOAD_TIME = "last_upload_time"
         private const val KEY_LOG = "log_text"
         private const val HEARTBEAT_MS = 3 * 60 * 1000L
-        private const val LOG_FILE = "/sdcard/Download/PosKDS_log.txt"
         private const val MAX_LOG_SIZE = 500_000L // 500KB
+        private var logFile: String = "/sdcard/Download/PosKDS_log.txt"
 
         var instance: KdsAccessibilityService? = null
             private set
@@ -55,6 +55,11 @@ class KdsAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         instance = this
+        // 로그 경로: /sdcard/Download/ 실패 시 앱 자체 디렉토리
+        val extDir = getExternalFilesDir(null)
+        if (extDir != null) {
+            logFile = "${extDir.absolutePath}/PosKDS_log.txt"
+        }
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         lastCount = prefs.getInt(KEY_LAST_COUNT, -1)
         lastUploadTime = prefs.getLong(KEY_LAST_UPLOAD_TIME, 0L)
@@ -218,7 +223,7 @@ class KdsAccessibilityService : AccessibilityService() {
 
         // 파일 로그
         try {
-            val file = File(LOG_FILE)
+            val file = File(logFile)
             if (file.length() > MAX_LOG_SIZE) {
                 val keep = file.readText().takeLast(MAX_LOG_SIZE.toInt() / 2)
                 file.writeText(keep)
