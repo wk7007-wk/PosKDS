@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         // 기본값
         private const val DEFAULT_TOKEN = "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"
         private const val DEFAULT_GIST_ID = "a67e5de3271d6d0716b276dc6a8391cb"
-        private const val DEFAULT_KDS_PACKAGE = "com.foodtechkorea.mate_order"
+        private const val DEFAULT_KDS_PACKAGE = "com.foodtechkorea.mate_kds"
     }
 
     private lateinit var prefs: SharedPreferences
@@ -170,7 +170,8 @@ class MainActivity : AppCompatActivity() {
             editor.putString(KEY_GIST_ID, DEFAULT_GIST_ID)
             changed = true
         }
-        if ((prefs.getString(KEY_KDS_PACKAGE, "") ?: "").isEmpty()) {
+        val kds = prefs.getString(KEY_KDS_PACKAGE, "") ?: ""
+        if (kds.isEmpty() || kds == packageName || !kds.contains(".")) {
             editor.putString(KEY_KDS_PACKAGE, DEFAULT_KDS_PACKAGE)
             changed = true
         }
