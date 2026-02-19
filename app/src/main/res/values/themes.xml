@@ -7,4 +7,11 @@
         <item name="android:windowBackground">@drawable/bg_main</item>
         <item name="android:statusBarColor">#1A1A30</item>
     </style>
+
+    <style name="DarkDialogTheme" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="android:background">#242444</item>
+        <item name="android:textColor">#E0E0EC</item>
+        <item name="android:textColorPrimary">#E0E0EC</item>
+        <item name="colorAccent">#2AC1BC</item>
+    </style>
 </resources>

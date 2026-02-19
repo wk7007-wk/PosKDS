@@ -1,12 +1,16 @@
 package com.poskds.app
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.view.View
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -24,7 +28,7 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_LAST_UPLOAD_TIME = "last_upload_time"
         private const val KEY_LOG = "log_text"
 
-        // 기본값 (첫 설치 시 자동 적용)
+        // 기본값
         private const val DEFAULT_TOKEN = "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"
         private const val DEFAULT_GIST_ID = "a67e5de3271d6d0716b276dc6a8391cb"
         private const val DEFAULT_KDS_PACKAGE = "com.foodtechkorea.mate_order"
@@ -69,14 +73,8 @@ class MainActivity : AppCompatActivity() {
         etGistId = findViewById(R.id.etGistId)
         etKdsPackage = findViewById(R.id.etKdsPackage)
 
-        // 첫 실행 시 기본값 자동 저장
-        if (!prefs.contains(KEY_TOKEN)) {
-            prefs.edit()
-                .putString(KEY_TOKEN, DEFAULT_TOKEN)
-                .putString(KEY_GIST_ID, DEFAULT_GIST_ID)
-                .putString(KEY_KDS_PACKAGE, DEFAULT_KDS_PACKAGE)
-                .apply()
-        }
+        // 기본값 적용 (빈 값이면 기본값으로 채움)
+        applyDefaults()
 
         // 저장된 값 로드
         etToken.setText(prefs.getString(KEY_TOKEN, DEFAULT_TOKEN))
@@ -91,14 +89,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 설정 접기/펼치기
-        val layoutSettings = findViewById<android.widget.LinearLayout>(R.id.layoutSettings)
+        val layoutSettings = findViewById<LinearLayout>(R.id.layoutSettings)
         val btnToggle = findViewById<TextView>(R.id.btnToggleSettings)
         btnToggle.setOnClickListener {
-            if (layoutSettings.visibility == android.view.View.GONE) {
-                layoutSettings.visibility = android.view.View.VISIBLE
+            if (layoutSettings.visibility == View.GONE) {
+                layoutSettings.visibility = View.VISIBLE
                 btnToggle.text = "설정 ▼"
             } else {
-                layoutSettings.visibility = android.view.View.GONE
+                layoutSettings.visibility = View.GONE
                 btnToggle.text = "설정 ▶"
             }
         }
@@ -106,6 +104,11 @@ class MainActivity : AppCompatActivity() {
         // 접근성 설정 버튼
         findViewById<TextView>(R.id.btnAccess).setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
+        // KDS 앱 선택 버튼 → 설치된 앱 목록에서 선택
+        findViewById<TextView>(R.id.btnPickKds).setOnClickListener {
+            showAppPicker()
         }
 
         // 저장 버튼
@@ -123,6 +126,49 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "저장됨", Toast.LENGTH_SHORT).show()
             refreshUI()
         }
+    }
+
+    private fun applyDefaults() {
+        val token = prefs.getString(KEY_TOKEN, "") ?: ""
+        val gistId = prefs.getString(KEY_GIST_ID, "") ?: ""
+        val editor = prefs.edit()
+        var changed = false
+
+        if (token.isEmpty()) {
+            editor.putString(KEY_TOKEN, DEFAULT_TOKEN)
+            changed = true
+        }
+        if (gistId.isEmpty()) {
+            editor.putString(KEY_GIST_ID, DEFAULT_GIST_ID)
+            changed = true
+        }
+        if ((prefs.getString(KEY_KDS_PACKAGE, "") ?: "").isEmpty()) {
+            editor.putString(KEY_KDS_PACKAGE, DEFAULT_KDS_PACKAGE)
+            changed = true
+        }
+        if (changed) editor.apply()
+    }
+
+    private fun showAppPicker() {
+        val pm = packageManager
+        val apps = pm.getInstalledApplications(0)
+            .filter { it.flags and ApplicationInfo.FLAG_SYSTEM == 0 }
+            .sortedBy { pm.getApplicationLabel(it).toString() }
+
+        val names = apps.map { "${pm.getApplicationLabel(it)}  (${it.packageName})" }.toTypedArray()
+
+        AlertDialog.Builder(this, R.style.DarkDialogTheme)
+            .setTitle("KDS 앱 선택")
+            .setItems(names) { _, which ->
+                val selected = apps[which].packageName
+                etKdsPackage.setText(selected)
+                // 바로 저장
+                prefs.edit().putString(KEY_KDS_PACKAGE, selected).apply()
+                Toast.makeText(this, "KDS: ${pm.getApplicationLabel(apps[which])}", Toast.LENGTH_SHORT).show()
+                refreshUI()
+            }
+            .setNegativeButton("취소", null)
+            .show()
     }
 
     override fun onResume() {
@@ -151,7 +197,15 @@ class MainActivity : AppCompatActivity() {
         val kdsPackage = prefs.getString(KEY_KDS_PACKAGE, "") ?: ""
         val kdsOk = kdsPackage.isNotEmpty()
         tvKdsDot.setTextColor(if (kdsOk) 0xFF2ECC71.toInt() else 0xFF707088.toInt())
-        tvKdsPackage.text = if (kdsOk) "  KDS: $kdsPackage" else "  KDS: 미설정"
+        if (kdsOk) {
+            val label = try {
+                val ai = packageManager.getApplicationInfo(kdsPackage, 0)
+                packageManager.getApplicationLabel(ai).toString()
+            } catch (_: Exception) { kdsPackage }
+            tvKdsPackage.text = "  KDS: $label"
+        } else {
+            tvKdsPackage.text = "  KDS: 미설정"
+        }
 
         // 건수
         val count = prefs.getInt(KEY_LAST_COUNT, -1)

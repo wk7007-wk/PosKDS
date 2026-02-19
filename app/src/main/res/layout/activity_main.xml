@@ -263,12 +263,29 @@
                 android:layout_marginBottom="8dp" />
 
             <!-- KDS 패키지명 -->
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="KDS 앱 패키지명"
-                android:textColor="#9090A8"
-                android:textSize="12sp" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="KDS 앱 패키지명"
+                    android:textColor="#9090A8"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/btnPickKds"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="앱 목록에서 선택"
+                    android:textColor="#2AC1BC"
+                    android:textSize="13sp"
+                    android:padding="4dp" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/etKdsPackage"
