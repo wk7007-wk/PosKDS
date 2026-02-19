@@ -3,6 +3,8 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+def buildTime = new Date().format("MMdd.HHmm")
+
 android {
     namespace 'com.poskds.app'
     compileSdk 33
@@ -11,8 +13,8 @@ android {
         applicationId "com.poskds.app"
         minSdk 26
         targetSdk 33
-        versionCode 1
-        versionName "1.0"
+        versionCode ((int)(System.currentTimeMillis() / 60000))
+        versionName "$buildTime"
     }
 
     signingConfigs {
