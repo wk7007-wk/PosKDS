@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PosKDS</string>
+    <string name="accessibility_description">MATE KDS 주방 화면에서 조리중 건수를 읽어 Gist에 업로드합니다.</string>
 </resources>

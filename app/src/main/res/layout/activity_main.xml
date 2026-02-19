@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_main"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- 타이틀 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PosKDS"
+            android:textColor="#E0E0EC"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginTop="10dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:id="@+id/tvVersion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="v1.0"
+                android:textColor="#9090A8"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/btnUpdate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="  업데이트 확인"
+                android:textColor="#2AC1BC"
+                android:textSize="13sp"
+                android:padding="4dp" />
+
+        </LinearLayout>
+
+        <!-- 건수 카드 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="24dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="조리중"
+                android:textColor="#9090A8"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tvCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--"
+                android:textColor="#FFFFFF"
+                android:textSize="64sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvLastSync"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="대기중..."
+                android:textColor="#707088"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+
+        <!-- 상태 카드 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <!-- 접근성 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvAccessDot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="●"
+                    android:textColor="#E74C3C"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="  접근성 서비스"
+                    android:textColor="#E0E0EC"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/btnAccess"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="설정"
+                    android:textColor="#2AC1BC"
+                    android:textSize="14sp"
+                    android:padding="8dp" />
+
+            </LinearLayout>
+
+            <!-- Gist -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:id="@+id/tvGistDot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="●"
+                    android:textColor="#E74C3C"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="  Gist 업로드"
+                    android:textColor="#E0E0EC"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvGistStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="미설정"
+                    android:textColor="#707088"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <!-- KDS 패키지 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:id="@+id/tvKdsDot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="●"
+                    android:textColor="#707088"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvKdsPackage"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="  KDS: 미설정"
+                    android:textColor="#E0E0EC"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- 설정 카드 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="설정"
+                android:textColor="#E0E0EC"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <!-- GitHub Token -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="GitHub Token"
+                android:textColor="#9090A8"
+                android:textSize="12sp" />
+
+            <EditText
+                android:id="@+id/etToken"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:background="#2A2A45"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:hint="ghp_..."
+                android:textColorHint="#707088"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:singleLine="true"
+                android:inputType="textPassword"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Gist ID -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Gist ID"
+                android:textColor="#9090A8"
+                android:textSize="12sp" />
+
+            <EditText
+                android:id="@+id/etGistId"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:background="#2A2A45"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:hint="a67e5de3..."
+                android:textColorHint="#707088"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:singleLine="true"
+                android:layout_marginBottom="8dp" />
+
+            <!-- KDS 패키지명 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="KDS 앱 패키지명"
+                android:textColor="#9090A8"
+                android:textSize="12sp" />
+
+            <EditText
+                android:id="@+id/etKdsPackage"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:background="#2A2A45"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:hint="com.foodtechkorea.mate_order"
+                android:textColorHint="#707088"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:singleLine="true"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/btnSave"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:background="#2ECC71"
+                android:text="저장"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <!-- 로그 카드 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="로그"
+                android:textColor="#E0E0EC"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvLog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="로그 없음"
+                android:textColor="#707088"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:maxLines="20" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

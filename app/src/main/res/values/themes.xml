@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.PosKDS" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimary">#2AC1BC</item>
+        <item name="colorPrimaryDark">#121225</item>
+        <item name="colorAccent">#2ECC71</item>
+        <item name="android:windowBackground">@drawable/bg_main</item>
+        <item name="android:statusBarColor">#1A1A30</item>
+    </style>
+</resources>
