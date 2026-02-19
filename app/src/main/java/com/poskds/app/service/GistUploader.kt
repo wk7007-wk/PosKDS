@@ -19,7 +19,6 @@ object GistUploader {
     private const val KEY_LOG = "log_text"
     private const val STATUS_FILE = "kds_status.json"
     private const val LOG_FILE = "kds_log.txt"
-    private const val LOCAL_LOG = "/sdcard/Download/PosKDS_log.txt"
     private const val FIREBASE_URL = "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/kds_status.json"
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA)
@@ -63,9 +62,9 @@ object GistUploader {
                     Log.w(TAG, "Firebase 에러: ${e.message}")
                 }
 
-                // 로그 내용 (최근 100줄)
+                // 로그 내용 (최근 100줄) — 접근성 서비스의 실제 로그 경로 사용
                 val logContent = try {
-                    val f = File(LOCAL_LOG)
+                    val f = File(KdsAccessibilityService.logFile)
                     if (f.exists()) {
                         f.readLines().takeLast(100).joinToString("\n")
                     } else {

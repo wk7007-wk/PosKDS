@@ -24,7 +24,8 @@ class KdsAccessibilityService : AccessibilityService() {
         private const val KEY_LOG = "log_text"
         private const val HEARTBEAT_MS = 3 * 60 * 1000L
         private const val MAX_LOG_SIZE = 500_000L // 500KB
-        private var logFile: String = "/sdcard/Download/PosKDS_log.txt"
+        var logFile: String = "/sdcard/Download/PosKDS_log.txt"
+            private set
 
         var instance: KdsAccessibilityService? = null
             private set
@@ -184,7 +185,14 @@ class KdsAccessibilityService : AccessibilityService() {
         val sb = StringBuilder()
         dumpNode(root, sb, 0)
         root.recycle()
-        return sb.toString()
+        val result = sb.toString()
+        // 덤프 결과를 로그에 저장
+        log("=== UI 트리 덤프 (${result.lines().size}줄) ===\n$result\n=== 덤프 끝 ===")
+        // 즉시 Gist 업로드 (원격에서 확인 가능)
+        if (::prefs.isInitialized) {
+            GistUploader.upload(prefs, lastCount)
+        }
+        return result
     }
 
     private fun dumpNode(node: AccessibilityNodeInfo, sb: StringBuilder, depth: Int) {
