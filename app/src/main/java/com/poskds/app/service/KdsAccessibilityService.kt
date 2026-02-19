@@ -56,7 +56,7 @@ class KdsAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         instance = this
-        // 로그 경로: /sdcard/Download/ 실패 시 앱 자체 디렉토리
+        // 로그 경로: 앱 자체 디렉토리
         val extDir = getExternalFilesDir(null)
         if (extDir != null) {
             logFile = "${extDir.absolutePath}/PosKDS_log.txt"
@@ -68,6 +68,9 @@ class KdsAccessibilityService : AccessibilityService() {
         val kdsPackage = prefs.getString(KEY_KDS_PACKAGE, "") ?: ""
         log("접근성 서비스 연결됨, KDS 패키지=$kdsPackage")
         handler.postDelayed(heartbeatRunnable, HEARTBEAT_MS)
+
+        // 포그라운드 서비스 시작 (프로세스 유지)
+        KeepAliveService.start(this)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {

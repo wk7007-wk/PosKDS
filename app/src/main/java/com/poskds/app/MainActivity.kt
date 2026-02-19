@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Build
 import android.os.Environment
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.View
 import android.widget.EditText
@@ -18,6 +19,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.poskds.app.service.AppUpdater
 import com.poskds.app.service.KdsAccessibilityService
+import com.poskds.app.service.KeepAliveService
 
 class MainActivity : AppCompatActivity() {
 
@@ -77,6 +79,12 @@ class MainActivity : AppCompatActivity() {
 
         // 기본값 적용 (빈 값이면 기본값으로 채움)
         applyDefaults()
+
+        // 배터리 최적화 제외 요청 (서비스 유지)
+        requestBatteryOptimizationExemption()
+
+        // 포그라운드 서비스 시작
+        KeepAliveService.start(this)
 
         // 파일 접근 권한 요청 (로그 파일용)
         requestStoragePermission()
@@ -150,6 +158,19 @@ class MainActivity : AppCompatActivity() {
 
             Toast.makeText(this, "저장됨", Toast.LENGTH_SHORT).show()
             refreshUI()
+        }
+    }
+
+    @android.annotation.SuppressLint("BatteryLife")
+    private fun requestBatteryOptimizationExemption() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = getSystemService(PowerManager::class.java)
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = android.net.Uri.parse("package:$packageName")
+                }
+                startActivity(intent)
+            }
         }
     }
 
