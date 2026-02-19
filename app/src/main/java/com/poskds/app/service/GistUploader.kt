@@ -20,6 +20,7 @@ object GistUploader {
     private const val STATUS_FILE = "kds_status.json"
     private const val LOG_FILE = "kds_log.txt"
     private const val LOCAL_LOG = "/sdcard/Download/PosKDS_log.txt"
+    private const val FIREBASE_URL = "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/kds_status.json"
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA)
     private val logTimeFormat = SimpleDateFormat("HH:mm:ss", Locale.KOREA)
@@ -41,6 +42,26 @@ object GistUploader {
                     put("time", now)
                     put("source", "kds")
                 }.toString()
+
+                // Firebase 실시간 업로드 (우선)
+                try {
+                    val fbConn = URL(FIREBASE_URL).openConnection() as HttpURLConnection
+                    fbConn.requestMethod = "PUT"
+                    fbConn.connectTimeout = 5000
+                    fbConn.readTimeout = 5000
+                    fbConn.setRequestProperty("Content-Type", "application/json")
+                    fbConn.doOutput = true
+                    OutputStreamWriter(fbConn.outputStream).use { it.write(statusContent) }
+                    val fbCode = fbConn.responseCode
+                    fbConn.disconnect()
+                    if (fbCode in 200..299) {
+                        Log.d(TAG, "Firebase 업로드 성공 (건수=$count)")
+                    } else {
+                        Log.w(TAG, "Firebase 업로드 실패 (HTTP $fbCode)")
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Firebase 에러: ${e.message}")
+                }
 
                 // 로그 내용 (최근 100줄)
                 val logContent = try {
