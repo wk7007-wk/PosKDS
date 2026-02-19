@@ -136,40 +136,6 @@
 
             </LinearLayout>
 
-            <!-- Gist -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="8dp">
-
-                <TextView
-                    android:id="@+id/tvGistDot"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="●"
-                    android:textColor="#E74C3C"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="  Gist 업로드"
-                    android:textColor="#E0E0EC"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tvGistStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="미설정"
-                    android:textColor="#707088"
-                    android:textSize="12sp" />
-
-            </LinearLayout>
-
             <!-- KDS 패키지 -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -225,51 +191,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone">
-
-            <!-- GitHub Token -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="GitHub Token"
-                android:textColor="#9090A8"
-                android:textSize="12sp" />
-
-            <EditText
-                android:id="@+id/etToken"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:background="#2A2A45"
-                android:textColor="#FFFFFF"
-                android:textSize="13sp"
-                android:hint="ghp_..."
-                android:textColorHint="#707088"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:singleLine="true"
-                android:inputType="textPassword"
-                android:layout_marginBottom="8dp" />
-
-            <!-- Gist ID -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Gist ID"
-                android:textColor="#9090A8"
-                android:textSize="12sp" />
-
-            <EditText
-                android:id="@+id/etGistId"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:background="#2A2A45"
-                android:textColor="#FFFFFF"
-                android:textSize="13sp"
-                android:hint="a67e5de3..."
-                android:textColorHint="#707088"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:singleLine="true"
-                android:layout_marginBottom="8dp" />
 
             <!-- KDS 패키지명 -->
             <LinearLayout

@@ -46,7 +46,7 @@ class KdsAccessibilityService : AccessibilityService() {
             val now = System.currentTimeMillis()
             if (now - lastUploadTime >= HEARTBEAT_MS && lastCount >= 0) {
                 log("하트비트 업로드 (건수=$lastCount)")
-                GistUploader.upload(prefs, lastCount)
+                FirebaseUploader.upload(prefs, lastCount)
                 lastUploadTime = now
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, now).apply()
             }
@@ -109,7 +109,7 @@ class KdsAccessibilityService : AccessibilityService() {
                 lastCount = count
                 prefs.edit().putInt(KEY_LAST_COUNT, count).apply()
 
-                GistUploader.upload(prefs, count)
+                FirebaseUploader.upload(prefs, count)
                 lastUploadTime = System.currentTimeMillis()
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, lastUploadTime).apply()
             }
@@ -193,7 +193,7 @@ class KdsAccessibilityService : AccessibilityService() {
         log("=== UI 트리 덤프 (${result.lines().size}줄) ===\n$result\n=== 덤프 끝 ===")
         // 즉시 Gist 업로드 (원격에서 확인 가능)
         if (::prefs.isInitialized) {
-            GistUploader.upload(prefs, lastCount)
+            FirebaseUploader.upload(prefs, lastCount)
         }
         return result
     }
