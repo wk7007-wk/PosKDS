@@ -30,6 +30,9 @@ class KdsAccessibilityService : AccessibilityService() {
         var instance: KdsAccessibilityService? = null
             private set
 
+        @Volatile
+        var dumpRequested = false
+
         fun isAvailable(): Boolean = instance != null
     }
 
@@ -102,7 +105,16 @@ class KdsAccessibilityService : AccessibilityService() {
         }
 
         try {
-            // 먼저 전체 트리 덤프 (첫 감지 또는 5분마다)
+            // 덤프 예약 처리: KDS가 포그라운드일 때 실행
+            if (dumpRequested) {
+                dumpRequested = false
+                val sb = StringBuilder()
+                dumpNode(root, sb, 0)
+                val result = sb.toString()
+                log("=== KDS UI 트리 덤프 (${result.lines().size}줄) ===\n$result\n=== 덤프 끝 ===")
+                FirebaseUploader.upload(prefs, lastCount)
+            }
+
             val count = extractCookingCount(root)
             if (count != null && count != lastCount) {
                 log("조리중 건수 변경: $lastCount → $count")

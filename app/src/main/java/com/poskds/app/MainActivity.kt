@@ -112,16 +112,14 @@ class MainActivity : AppCompatActivity() {
             showAppPicker()
         }
 
-        // UI 트리 덤프 버튼
+        // UI 트리 덤프 버튼 (예약 방식: KDS 화면 전환 시 덤프)
         findViewById<TextView>(R.id.btnDump).setOnClickListener {
-            val svc = KdsAccessibilityService.instance
-            if (svc == null) {
+            if (!KdsAccessibilityService.isAvailable()) {
                 Toast.makeText(this, "접근성 서비스 비활성", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val dump = svc.dumpTree()
-            tvLog.text = if (dump.isNotEmpty()) dump else "트리 비어있음"
-            Toast.makeText(this, "덤프 완료 (${dump.lines().size}줄)", Toast.LENGTH_SHORT).show()
+            KdsAccessibilityService.dumpRequested = true
+            Toast.makeText(this, "KDS 화면 전환 시 덤프됩니다", Toast.LENGTH_SHORT).show()
         }
 
         // 저장 버튼
