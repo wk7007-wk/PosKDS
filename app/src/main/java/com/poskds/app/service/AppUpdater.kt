@@ -90,10 +90,10 @@ object AppUpdater {
     }
 
     private fun downloadApk(context: Context, apkUrl: String, silent: Boolean) {
-        val file = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            APK_NAME
-        )
+        // 앱 자체 디렉토리 사용 (권한 불필요)
+        val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+            ?: context.filesDir
+        val file = File(dir, APK_NAME)
         if (file.exists()) file.delete()
 
         try {
