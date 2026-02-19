@@ -4,36 +4,34 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import org.json.JSONObject
 import java.io.File
+import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-/**
- * Firebase 기반 자동 업데이트.
- * - Firebase에서 최신 버전 확인 (인증 불필요, 실패 없음)
- * - GitHub Release에서 APK 다운로드 (토큰 인증)
- * - 3분마다 하트비트에서 자동 체크 + 수동 버튼
- */
 object AppUpdater {
 
     private const val TAG = "AppUpdater"
     private const val FIREBASE_UPDATE_URL =
         "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/app_update/poskds.json"
+    private const val FIREBASE_LOG_URL =
+        "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/kds_status/update_log.json"
     private const val APK_NAME = "PosKDS.apk"
 
     private var lastCheckedVersion = ""
+    private val dateFormat = SimpleDateFormat("MM-dd HH:mm:ss", Locale.KOREA)
 
-    /** 수동 버튼용 (토스트 표시) */
     fun checkAndUpdate(context: Context, currentVersionName: String) {
         check(context, currentVersionName, silent = false)
     }
 
-    /** 하트비트 자동 체크용 (조용히) */
     fun checkSilent(context: Context, currentVersionName: String) {
         check(context, currentVersionName, silent = true)
     }
@@ -73,34 +71,30 @@ object AppUpdater {
                     return@thread
                 }
 
-                // 같은 버전 반복 다운로드 방지
                 if (silent && latestVersion == lastCheckedVersion) return@thread
                 lastCheckedVersion = latestVersion
 
-                Log.d(TAG, "새 버전 발견: v$latestVersion (현재: v$currentVersionName)")
+                logRemote("새 버전 발견: v$latestVersion (현재: v$currentVersionName)")
                 if (!silent) showToast(context, "v$latestVersion 다운로드 중...")
 
                 downloadApk(context, apkUrl, silent)
 
             } catch (e: Exception) {
-                Log.w(TAG, "업데이트 확인 실패: ${e.message}")
+                logRemote("업데이트 확인 실패: ${e.javaClass.simpleName}: ${e.message}")
                 if (!silent) showToast(context, "업데이트 확인 실패")
             }
         }
     }
 
     private fun downloadApk(context: Context, apkUrl: String, silent: Boolean) {
-        // 앱 자체 디렉토리 사용 (권한 불필요)
-        val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-            ?: context.filesDir
-        val file = File(dir, APK_NAME)
+        // 내부 저장소 우선 (절대 권한 문제 없음)
+        val file = File(context.filesDir, APK_NAME)
         if (file.exists()) file.delete()
 
         try {
-            val prefs = context.getSharedPreferences("poskds_prefs", Context.MODE_PRIVATE)
-            val token = prefs.getString("github_token", "") ?: ""
+            logRemote("다운로드 시작: $apkUrl → ${file.absolutePath}")
 
-            // 리다이렉트 수동 처리 (GitHub API → S3 pre-signed URL)
+            // 리다이렉트 수동 처리
             var downloadUrl = apkUrl
             var maxRedirects = 5
             var finalConn: HttpURLConnection? = null
@@ -110,23 +104,23 @@ object AppUpdater {
                 conn.connectTimeout = 30000
                 conn.readTimeout = 60000
                 conn.instanceFollowRedirects = false
-                conn.setRequestProperty("Accept", "application/octet-stream")
-                // GitHub API에만 토큰 전송
-                if (downloadUrl.contains("api.github.com") && token.isNotEmpty()) {
-                    conn.setRequestProperty("Authorization", "token $token")
-                }
 
                 val code = conn.responseCode
+                logRemote("HTTP $code ← $downloadUrl")
+
                 if (code == 301 || code == 302 || code == 307) {
                     val location = conn.getHeaderField("Location")
                     conn.disconnect()
-                    if (location.isNullOrEmpty()) break
+                    if (location.isNullOrEmpty()) {
+                        logRemote("리다이렉트 Location 헤더 없음")
+                        break
+                    }
                     downloadUrl = location
                     continue
                 }
 
                 if (code != 200) {
-                    Log.w(TAG, "다운로드 실패 (HTTP $code)")
+                    logRemote("다운로드 실패: HTTP $code")
                     if (!silent) showToast(context, "다운로드 실패 (HTTP $code)")
                     conn.disconnect()
                     lastCheckedVersion = ""
@@ -138,7 +132,7 @@ object AppUpdater {
             }
 
             if (finalConn == null) {
-                Log.w(TAG, "리다이렉트 실패")
+                logRemote("리다이렉트 실패 (최대 횟수 초과)")
                 if (!silent) showToast(context, "다운로드 실패 (리다이렉트)")
                 lastCheckedVersion = ""
                 return
@@ -151,30 +145,69 @@ object AppUpdater {
             }
             finalConn.disconnect()
 
-            Log.d(TAG, "APK 다운로드 완료: ${file.length()} bytes")
+            val size = file.length()
+            logRemote("다운로드 완료: ${size} bytes → ${file.absolutePath}")
+
+            if (size < 100_000) {
+                logRemote("파일 너무 작음 ($size bytes), 설치 취소")
+                if (!silent) showToast(context, "다운로드 실패 (파일 손상)")
+                file.delete()
+                lastCheckedVersion = ""
+                return
+            }
+
             showToast(context, "다운로드 완료, 설치 중...")
             android.os.Handler(android.os.Looper.getMainLooper()).post {
                 installApk(context, file)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "다운로드 실패: ${e.message}")
+            val msg = "${e.javaClass.simpleName}: ${e.message}"
+            logRemote("다운로드 예외: $msg")
             if (!silent) showToast(context, "다운로드 실패: ${e.message}")
-            lastCheckedVersion = "" // 재시도 허용
+            lastCheckedVersion = ""
         }
     }
 
     private fun installApk(context: Context, file: File) {
-        val uri = if (Build.VERSION.SDK_INT >= 24) {
-            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        } else {
-            Uri.fromFile(file)
-        }
+        try {
+            val uri = if (Build.VERSION.SDK_INT >= 24) {
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            } else {
+                Uri.fromFile(file)
+            }
 
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/vnd.android.package-archive")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+            context.startActivity(intent)
+            logRemote("설치 인텐트 실행 완료")
+        } catch (e: Exception) {
+            logRemote("설치 실패: ${e.javaClass.simpleName}: ${e.message}")
+            showToast(context, "설치 실패: ${e.message}")
         }
-        context.startActivity(intent)
+    }
+
+    /** Firebase에 에러 로그 즉시 업로드 (원격 디버깅용) */
+    private fun logRemote(message: String) {
+        val time = dateFormat.format(Date())
+        val entry = "[$time] $message"
+        Log.d(TAG, entry)
+
+        kotlin.concurrent.thread {
+            try {
+                val json = "\"$entry\""
+                val conn = URL(FIREBASE_LOG_URL).openConnection() as HttpURLConnection
+                conn.requestMethod = "PUT"
+                conn.connectTimeout = 5000
+                conn.readTimeout = 5000
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.doOutput = true
+                OutputStreamWriter(conn.outputStream).use { it.write(json) }
+                conn.responseCode
+                conn.disconnect()
+            } catch (_: Exception) {}
+        }
     }
 
     private fun showToast(context: Context, msg: String) {
