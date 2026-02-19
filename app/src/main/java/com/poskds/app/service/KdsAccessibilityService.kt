@@ -77,7 +77,7 @@ class KdsAccessibilityService : AccessibilityService() {
         // 10초마다 이벤트 수신 현황 로그
         eventCount++
         val now = System.currentTimeMillis()
-        if (now - lastEventLogTime > 10_000) {
+        if (now - lastEventLogTime > 60_000) {
             log("이벤트 ${eventCount}건 수신, 최근 패키지=$packageName, 대상=$kdsPackage")
             eventCount = 0
             lastEventLogTime = now
