@@ -43,6 +43,7 @@ class KdsAccessibilityService : AccessibilityService() {
     private lateinit var prefs: SharedPreferences
     private val handler = Handler(Looper.getMainLooper())
     private var lastCount = -1
+    private var lastOrders = listOf<Int>()
     private var lastUploadTime = 0L
     private val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.KOREA)
     private var eventCount = 0
@@ -68,8 +69,8 @@ class KdsAccessibilityService : AccessibilityService() {
 
             val now = System.currentTimeMillis()
             if (now - lastUploadTime >= HEARTBEAT_MS && lastCount >= 0) {
-                log("하트비트 업로드 (건수=$lastCount)")
-                FirebaseUploader.upload(prefs, lastCount)
+                log("하트비트 업로드 (건수=$lastCount, 주문=$lastOrders)")
+                FirebaseUploader.upload(prefs, lastCount, lastOrders)
                 lastUploadTime = now
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, now).apply()
             }
@@ -133,20 +134,28 @@ class KdsAccessibilityService : AccessibilityService() {
         }
 
         try {
-            // 건수 추출을 먼저 실행 (덤프보다 우선)
+            // 건수 + 주문번호 추출
             val count = extractCookingCount(root)
-            if (count != null && count != lastCount) {
-                val prevCount = lastCount
-                log("조리중 건수 변경: $prevCount → $count")
-                lastCount = count
-                prefs.edit().putInt(KEY_LAST_COUNT, count).apply()
+            val orders = extractOrderNumbers(root)
+            val countChanged = count != null && count != lastCount
+            val ordersChanged = orders != lastOrders
 
-                FirebaseUploader.upload(prefs, count)
+            if (countChanged || ordersChanged) {
+                if (countChanged) {
+                    val prevCount = lastCount
+                    log("조리중 건수 변경: $prevCount → $count")
+                    lastCount = count!!
+                    prefs.edit().putInt(KEY_LAST_COUNT, count).apply()
+                    addHistory(count)
+                }
+                if (ordersChanged) {
+                    log("주문번호 변경: $lastOrders → $orders")
+                    lastOrders = orders
+                }
+
+                FirebaseUploader.upload(prefs, lastCount, lastOrders)
                 lastUploadTime = System.currentTimeMillis()
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, lastUploadTime).apply()
-
-                // 건수 이력 기록
-                addHistory(count)
             }
 
             // 덤프 예약 처리: 건수 추출 후 실행 (lastCount 최신 보장)
@@ -253,6 +262,29 @@ class KdsAccessibilityService : AccessibilityService() {
             if (result != null) return result
         }
         return null
+    }
+
+    /** KDS UI 트리에서 주문번호 추출 (#0010 → 10) */
+    private fun extractOrderNumbers(root: AccessibilityNodeInfo): List<Int> {
+        val numbers = mutableListOf<Int>()
+        collectOrderNumbers(root, numbers, 0)
+        return numbers.distinct().sorted()
+    }
+
+    private fun collectOrderNumbers(node: AccessibilityNodeInfo, result: MutableList<Int>, depth: Int) {
+        if (depth > 15) return
+        val desc = node.contentDescription?.toString() ?: ""
+        // "#0010" 패턴 — 앞 0 제거하여 순수 숫자 추출
+        val match = Regex("^#(\\d+)$").find(desc.trim())
+        if (match != null) {
+            val num = match.groupValues[1].toIntOrNull()
+            if (num != null && num > 0) result.add(num)
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            collectOrderNumbers(child, result, depth + 1)
+            child.recycle()
+        }
     }
 
     /** KDS 앱의 UI 트리를 텍스트로 덤프 (디버깅용) */

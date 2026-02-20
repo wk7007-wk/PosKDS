@@ -362,7 +362,7 @@ function updMonitor(){
   document.getElementById('mCv').textContent=co2===true?'ON':co2===false?'OFF':'-';
   document.getElementById('mCd').className='dot '+(co2===true?'dg':co2===false?'dr':'dd');
   document.getElementById('mLast').textContent='마지막: '+(aS.last_ad_action??'--');
-  updCkQueue(c);updGauges(c);updDelayPred();chkAlert(c);
+  updCkQueue();updGauges(c);updDelayPred();chkAlert(c);
 }
 
 // === 동기화 상태 ===
@@ -678,20 +678,22 @@ document.addEventListener('touchend',()=>{
   else{_pInd.style.height='0';}_pulling=false;_pY=0;
 });
 
-// === 조리모드 ===
-const CK_D=['영','하나','둘','삼','넷','다섯','육','칠','팔','아홉'];
-function ckNum(n){return String(n).split('').map(d=>CK_D[parseInt(d)]).join('');}
-let ckOn=false,ckQ=[],ckPrev=null; // ckQ: {t,ma,fa,da}
+// === 조리모드 (주문번호 기반) ===
+let ckOn=false,ckQ=[]; // ckQ: {num, t, onKds, ma, fa, da}
 
 function togCookMode(){ckOn=!ckOn;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');if(!ckOn){ckQ=[];updCkUI();}saveCk();}
 
-function updCkQueue(c){
-  if(!ckOn||c==null)return;
-  if(ckPrev==null){ckPrev=c;return;}
-  const d=c-ckPrev;
-  // 건수 감소 = 조리완료 → 포장 타이머 시작
-  if(d<0)for(let i=0;i<-d;i++)ckQ.push({t:Date.now(),ma:false,fa:false,da:false});
-  ckPrev=c;
+function updCkQueue(){
+  if(!ckOn)return;
+  const orders=kS.orders||[];
+  // 새 주문번호 등장 → 타이머 시작
+  orders.forEach(n=>{
+    if(!ckQ.find(o=>o.num===n)){
+      ckQ.push({num:n,t:Date.now(),onKds:true,ma:false,fa:false,da:false});
+    }
+  });
+  // KDS에서 사라진 주문 표시 (제거하지 않음, onKds만 false)
+  ckQ.forEach(o=>{o.onKds=orders.includes(o.num);});
 }
 
 function chkCkAlerts(){
@@ -702,13 +704,15 @@ function chkCkAlerts(){
   const now=Date.now();
   // 시간초과 후 5분 지나면 자동 제거
   ckQ=ckQ.filter(o=>(now-o.t)/60000<tgt+5);
-  ckQ.forEach((o,i)=>{
+  ckQ.forEach(o=>{
     const rem=tgt-(now-o.t)/60000;
-    const nm=ckNum(i+1);
     if(isApp){
-      if(rem<=mid+fin&&!o.ma){o.ma=true;try{NativeBridge.speakCook(nm+'번 조리');}catch(e){}}
-      if(rem<=fin&&!o.fa){o.fa=true;try{NativeBridge.speakCook(nm+'번 포장');}catch(e){}}
-      if(rem<=0&&!o.da){o.da=true;try{NativeBridge.speakCook(nm+'번 시간초과');}catch(e){}}
+      // 조리: KDS에 아직 있는 건만
+      if(rem<=mid&&!o.ma){o.ma=true;if(o.onKds){try{NativeBridge.speakCook(o.num+'번 조리');}catch(e){}}}
+      // 포장: 모든 건
+      if(rem<=fin&&!o.fa){o.fa=true;try{NativeBridge.speakCook(o.num+'번 포장');}catch(e){}}
+      // 시간초과: 모든 건
+      if(rem<=0&&!o.da){o.da=true;try{NativeBridge.speakCook(o.num+'번 시간초과');}catch(e){}}
     }
   });
   updCkUI();
@@ -722,16 +726,16 @@ function updCkUI(){
   const fin=parseInt(document.getElementById('ck_finish').value)||3;
   const now=Date.now();
   let h='';
-  ckQ.forEach((o,i)=>{
+  ckQ.forEach(o=>{
     const el2=Math.floor((now-o.t)/60000);
     const rem=Math.max(0,tgt-el2);
-    const nm=ckNum(i+1);
     let st,cl;
     if(rem<=0){st='시간초과';cl='#FFFFFF';}
     else if(rem<=fin){st='포장';cl='#E74C3C';}
-    else if(rem<=mid+fin){st='조리';cl='#E67E22';}
-    else{st='완료';cl='#2ECC71';}
-    h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:#E0E0EC;font-weight:600">${nm}</span><span style="color:#707088">${el2}분경과 ${rem}분남음</span><span style="color:${cl};font-weight:600">${st}</span></div>`;
+    else if(rem<=mid){st='조리';cl='#E67E22';}
+    else{st='대기';cl='#2ECC71';}
+    const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완료</span>';
+    h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:#E0E0EC;font-weight:600">#${o.num}${kds}</span><span style="color:#707088">${el2}분 ${rem}분남음</span><span style="color:${cl};font-weight:600">${st}</span></div>`;
   });
   el.innerHTML=h;
 }
