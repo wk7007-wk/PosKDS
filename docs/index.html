@@ -298,7 +298,8 @@ function sse(path,cb){
 }
 function updC(ok){
   document.getElementById('cD').className='dot '+(ok?'dg':'dr');
-  const t=document.getElementById('cT');t.textContent=ok?'실시간':'끊김';t.style.color=ok?'#2ECC71':'#E74C3C';
+  const t=document.getElementById('cT');t.textContent=ok?'실시간':'폴링';t.style.color=ok?'#2ECC71':'#E67E22';
+  if(ok)_sseOk=true;else _sseOk=false;
 }
 
 // === Data Handlers ===
@@ -755,7 +756,25 @@ sse('/posdelay/ad_state.json',hASt);
 sse('/posdelay/status.json',hStatus);
 sse('/kds_history.json',hHist);
 fetch(FB+'/kds_log.json').then(r=>r.json()).then(d=>{document.getElementById('logC').textContent=typeof d==='string'?d:JSON.stringify(d,null,2);}).catch(()=>{});
-setInterval(()=>{updSyncStatus();updMonitor();},30000);
+// 10초 폴링 (SSE 백업)
+let _sseOk=false;
+function pollAll(){
+  if(_sseOk)return; // SSE 정상이면 폴링 안 함
+  Promise.all([
+    fetch(FB+'/kds_status.json').then(r=>r.json()),
+    fetch(FB+'/posdelay/ad_state.json').then(r=>r.json()),
+    fetch(FB+'/posdelay/status.json').then(r=>r.json()),
+    fetch(FB+'/posdelay/ad_settings.json').then(r=>r.json()),
+  ]).then(([k,a,st,s])=>{
+    if(k)Object.assign(kS,k);
+    if(a){const prev=_prevAdAction;Object.assign(aS,a);const act=aS.last_ad_action||'';if(isApp&&act&&act!==prev&&prev!==''){try{NativeBridge.speak(act.replace(/^\d{2}:\d{2}\s*/,''));}catch(e){}}  _prevAdAction=act;}
+    if(st)Object.assign(stS,st);
+    if(s&&typeof s==='object'){Object.assign(S,s);sseLoaded=true;try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}}
+    updSetUI();updSyncStatus();updMonitor();
+  }).catch(()=>{});
+}
+setInterval(pollAll,10000);
+setTimeout(pollAll,2000); // 2초 후 첫 폴링
 setInterval(()=>{
   const ls=stS.mate_sync??stS.pc_sync??0;
   if(ls>0){const ago=Math.floor((Date.now()-ls)/1000);const rem=Math.max(0,90-ago%90);document.getElementById('mRefresh').textContent='수집 '+rem+'초';}
