@@ -115,11 +115,11 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <!-- ═══ 1.3 스케줄 ═══ -->
 <div class="card" style="padding:8px 12px">
   <div class="row" style="justify-content:space-between">
-    <div class="row" style="gap:4px"><div class="tog" id="tog_schedule_enabled2" onclick="togS('schedule_enabled')"></div><span class="dot dr" id="schDot2"></span><span class="sl">스케줄</span></div>
-    <div class="row" style="gap:3px">
-      <input type="time" id="set_ad_on_time2" style="width:62px;font-size:11px" onchange="saveS('ad_on_time',this.value)">
-      <span style="color:#707088;font-size:11px">~</span>
-      <input type="time" id="set_ad_off_time2" style="width:62px;font-size:11px" onchange="saveS('ad_off_time',this.value)">
+    <div class="row" style="gap:4px"><div class="tog" id="tog_schedule_enabled2" onclick="togS('schedule_enabled')"></div><span class="dot dr" id="schDot2"></span></div>
+    <div class="row" style="gap:3px;flex:1;justify-content:flex-end">
+      <input type="time" id="set_ad_on_time2" style="width:80px;font-size:13px;padding:4px 6px" onchange="saveS('ad_on_time',this.value)">
+      <span style="color:#707088;font-size:13px">~</span>
+      <input type="time" id="set_ad_off_time2" style="width:80px;font-size:13px;padding:4px 6px" onchange="saveS('ad_off_time',this.value)">
     </div>
   </div>
 </div>
