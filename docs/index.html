@@ -6,55 +6,45 @@
 <title>PosDelay Dashboard</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(180deg,#1A1A30,#121225);color:#E0E0EC;min-height:100vh;padding:12px;font-size:13px;}
-.card{background:linear-gradient(180deg,#242444,#1A1A35);border:1px solid #2E2E52;border-radius:12px;padding:14px;margin-bottom:10px;}
-.card-title{font-size:13px;color:#9090A8;margin-bottom:6px;font-weight:600;}
-.big-num{font-size:56px;font-weight:bold;color:#FFF;text-align:center;line-height:1;}
-.sub{font-size:11px;color:#707088;text-align:center;margin-top:2px;}
-.row{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(180deg,#1A1A30,#121225);color:#E0E0EC;min-height:100vh;padding:10px;font-size:13px;}
+.card{background:linear-gradient(180deg,#242444,#1A1A35);border:1px solid #2E2E52;border-radius:12px;padding:12px;margin-bottom:8px;}
+.row{display:flex;align-items:center;gap:6px;}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
 .dg{background:#2ECC71;}.do{background:#E67E22;}.dr{background:#E74C3C;}.dd{background:#707088;}
-.lb{color:#9090A8;font-size:12px;flex:1;}
-.vl{color:#FFF;font-size:12px;font-weight:600;}
-.vb{color:#2AC1BC;}.vc{color:#FFD700;}
 .gauge{display:flex;gap:1px;height:26px;margin-bottom:2px;}
-.gc{flex:1;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;color:#FFF;border-radius:2px;opacity:.7;}
+.gc{flex:1;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;color:#FFF;border-radius:2px;opacity:.7;cursor:pointer;}
 .gc.act{opacity:1;box-shadow:inset 0 0 0 2px #FFF;}
-.sr{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2A2A45;}
-.sr:last-child{border-bottom:none;}
-.sl{font-size:12px;color:#9090A8;}
-.sv{display:flex;align-items:center;gap:6px;}
 .btn{padding:3px 10px;border-radius:5px;border:none;font-size:12px;font-weight:600;cursor:pointer;color:#FFF;touch-action:manipulation;}
 .bs{padding:2px 6px;font-size:11px;}
 .bg{background:#2ECC71;}.bred{background:#E74C3C;}.bor{background:#E67E22;}.bn{background:#2A2A45;color:#E0E0EC;}.bb{background:#2AC1BC;}.bcp{background:#FFD700;color:#1A1A30;}
-input[type=number]{width:50px;background:#2A2A45;border:1px solid #2E2E52;color:#FFF;padding:3px 6px;border-radius:4px;text-align:center;font-size:13px;font-weight:bold;}
+.sr{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2A2A45;}
+.sr:last-child{border-bottom:none;}
+.sl{font-size:12px;color:#9090A8;}
+.sv{display:flex;align-items:center;gap:4px;}
+input[type=number]{width:48px;background:#2A2A45;border:1px solid #2E2E52;color:#FFF;padding:3px 4px;border-radius:4px;text-align:center;font-size:13px;font-weight:bold;}
 input[type=time]{background:#2A2A45;border:1px solid #2E2E52;color:#FFF;padding:3px 6px;border-radius:4px;font-size:12px;}
-.tog{width:40px;height:22px;border-radius:11px;background:#E74C3C;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
-.tog.on{background:#2ECC71;}
-.tog::after{content:'';width:18px;height:18px;border-radius:50%;background:#FFF;position:absolute;top:2px;left:2px;transition:left .2s;}
-.tog.on::after{left:20px;}
-.logbox{background:#1A1A30;border:1px solid #2A2A45;border-radius:6px;padding:6px;max-height:180px;overflow-y:auto;font-family:monospace;font-size:10px;color:#707088;white-space:pre-wrap;word-break:break-all;}
-canvas{width:100%;height:100px;display:block;margin-top:6px;}
-.alert{padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;margin-bottom:10px;display:none;}
-.alert.warn{background:#E74C3C33;border:1px solid #E74C3C;color:#E74C3C;display:block;}
-.alert.ok{background:#2ECC7133;border:1px solid #2ECC71;color:#2ECC71;display:block;}
+.tog{width:38px;height:20px;border-radius:10px;background:#E74C3C;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.tog.on{background:#2ECC71;}.tog::after{content:'';width:16px;height:16px;border-radius:50%;background:#FFF;position:absolute;top:2px;left:2px;transition:left .2s;}.tog.on::after{left:20px;}
 .ch{cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
 .cb{display:none;}.cb.open{display:block;}
+.logbox{background:#1A1A30;border:1px solid #2A2A45;border-radius:6px;padding:6px;max-height:180px;overflow-y:auto;font-family:monospace;font-size:10px;color:#707088;white-space:pre-wrap;word-break:break-all;}
+canvas{width:100%;height:100px;display:block;margin-top:6px;}
 .tabs{display:flex;gap:3px;margin-bottom:6px;}
-.tab{padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;background:#2A2A45;color:#9090A8;}
-.tab.active{background:#2AC1BC;color:#FFF;}
-.conn{font-size:10px;text-align:right;margin-bottom:6px;}
-.pred{display:flex;justify-content:space-around;text-align:center;margin-top:6px;}
-.pred .pl{font-size:10px;color:#707088;}.pred .pv{font-size:16px;font-weight:bold;color:#FFF;}
-.sec{font-size:12px;font-weight:600;padding:6px 0;border-bottom:1px solid #2A2A45;margin-top:8px;}
+.tab{padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;background:#2A2A45;color:#9090A8;}.tab.active{background:#2AC1BC;color:#FFF;}
+.sec{font-size:12px;font-weight:600;padding:5px 0;border-bottom:1px solid #2A2A45;margin-top:6px;}
 .nbtn{width:100%;padding:8px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;color:#FFF;margin-top:6px;touch-action:manipulation;}
-/* Windows popup overlay */
+.alert{padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;margin-bottom:8px;display:none;}
+.alert.warn{background:#E74C3C33;border:1px solid #E74C3C;color:#E74C3C;display:block;}
+.alert.ok{background:#2ECC7133;border:1px solid #2ECC71;color:#2ECC71;display:block;}
+.conn{font-size:10px;text-align:right;margin-bottom:4px;}
+.sync-row{display:flex;gap:4px;font-size:10px;flex-wrap:wrap;}
+.sync-item{display:flex;align-items:center;gap:2px;}
+.tbtn{padding:2px 8px;border-radius:4px;border:1px solid #2E2E52;font-size:10px;font-weight:600;cursor:pointer;background:#2A2A45;color:#E0E0EC;touch-action:manipulation;}
+.tbtn.on{border-color:#2ECC71;color:#2ECC71;}
+.tbtn.off{border-color:#E74C3C;color:#E74C3C;}
 .popup-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;}
 .popup-box{background:#242444;border:2px solid #E74C3C;border-radius:16px;padding:24px;max-width:400px;width:90%;text-align:center;animation:popIn .3s;}
 @keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
-.popup-title{font-size:18px;font-weight:bold;color:#E74C3C;margin-bottom:8px;}
-.popup-body{font-size:14px;color:#E0E0EC;margin-bottom:16px;}
-.popup-close{padding:8px 24px;border-radius:8px;border:none;background:#2ECC71;color:#FFF;font-size:14px;font-weight:600;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -62,84 +52,125 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <div class="conn"><span class="dot dd" id="cD"></span> <span id="cT" style="color:#707088">...</span></div>
 <div class="alert" id="alertB"></div>
 
-<!-- KDS -->
-<div class="card" style="text-align:center">
-  <div class="card-title">KDS 조리중</div>
-  <div class="big-num" id="kC">--</div>
-  <div class="sub" id="kT">...</div>
-  <div class="pred" id="predA" style="display:none">
-    <div><div class="pl">조리 속도</div><div class="pv" id="pS">-</div></div>
-    <div><div class="pl">예상 정상화</div><div class="pv" id="pN">-</div></div>
+<!-- ═══ 1. 모니터링 (최상단, 항상 보임) ═══ -->
+<div class="card">
+  <!-- 건수 + 상태 -->
+  <div class="row" style="justify-content:space-between;margin-bottom:6px">
+    <div class="row" style="gap:8px">
+      <span style="color:#9090A8;font-size:12px">처리중</span>
+      <span id="mCount" style="font-size:30px;font-weight:bold;color:#FFF">--</span>
+      <span style="color:#9090A8;font-size:12px">건</span>
+    </div>
+    <span id="mStatus" style="font-size:14px;font-weight:600;color:#2ECC71">정상</span>
+  </div>
+
+  <!-- 배민/쿠팡 한줄 요약 -->
+  <div class="row" style="justify-content:space-between;padding:4px 0;border-top:1px solid #2A2A45;border-bottom:1px solid #2A2A45">
+    <div class="row" style="gap:4px">
+      <span style="color:#2AC1BC;font-size:12px;font-weight:600">배민</span>
+      <span class="dot dd" id="mBd"></span>
+      <span id="mBv" style="font-size:12px;font-weight:600;color:#2AC1BC">-</span>
+      <span id="mBth" style="font-size:10px;color:#707088">(-/-)</span>
+    </div>
+    <div class="row" style="gap:4px">
+      <span style="color:#FFD700;font-size:12px;font-weight:600">쿠팡</span>
+      <span class="dot dd" id="mCd"></span>
+      <span id="mCv" style="font-size:12px;font-weight:600;color:#FFD700">-</span>
+      <span id="mCth" style="font-size:10px;color:#707088">(-/-)</span>
+    </div>
+  </div>
+
+  <!-- KDS/MATE/PC 동기화 -->
+  <div style="padding:4px 0;border-bottom:1px solid #2A2A45">
+    <div class="sync-row">
+      <div class="sync-item"><span class="dot dd" id="sKd"></span><span id="sKt" style="color:#707088">KDS --</span></div>
+      <span style="color:#2A2A45">|</span>
+      <div class="sync-item"><span class="dot dd" id="sMd"></span><span id="sMt" style="color:#707088">MATE --</span></div>
+      <span style="color:#2A2A45">|</span>
+      <div class="sync-item"><span class="dot dd" id="sPd"></span><span id="sPt" style="color:#707088">PC --</span></div>
+    </div>
+    <!-- K가동/M가동/PC가동 토글 -->
+    <div class="row" style="gap:4px;margin-top:4px">
+      <button class="tbtn on" id="tK" onclick="togSource('kds')">K가동</button>
+      <button class="tbtn off" id="tM" onclick="togSource('mate')">M정지</button>
+      <button class="tbtn on" id="tP" onclick="togSource('pc')">PC가동</button>
+      <span style="flex:1"></span>
+      <span id="mRefresh" style="font-size:10px;color:#707088">수집 --</span>
+    </div>
+  </div>
+
+  <!-- 지연 예측 -->
+  <div id="delayPred" style="padding:4px 0;border-bottom:1px solid #2A2A45;display:none">
+    <div class="row" style="justify-content:space-between">
+      <span style="font-size:11px;color:#9090A8">조리속도</span>
+      <span id="dpSpeed" style="font-size:11px;color:#FFF;font-weight:600">-</span>
+    </div>
+    <div class="row" style="justify-content:space-between">
+      <span style="font-size:11px;color:#2AC1BC">배민 예상지연</span>
+      <span id="dpBaemin" style="font-size:11px;font-weight:600">-</span>
+    </div>
+    <div class="row" style="justify-content:space-between">
+      <span style="font-size:11px;color:#FFD700">쿠팡 예상지연</span>
+      <span id="dpCoupang" style="font-size:11px;font-weight:600">-</span>
+    </div>
+  </div>
+
+  <!-- 마지막 실행 + 정정 -->
+  <div class="row" style="justify-content:space-between;padding-top:4px">
+    <span id="mLast" style="font-size:10px;color:#707088;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">마지막: --</span>
+    <div class="row" style="gap:3px" id="nativeMonBtns" style="display:none">
+      <button class="btn bs bb" onclick="nb('executeAd','BAEMIN_CHECK',0)">배민</button>
+      <button class="btn bs bcp" onclick="nb('executeAd','COUPANG_CHECK',0)">쿠팡</button>
+      <button class="btn bs bn" onclick="nb('refreshAndCorrect')">정정</button>
+    </div>
   </div>
 </div>
 
-<!-- Gauges -->
+<!-- ═══ 2. 게이지 (0~10) ═══ -->
 <div class="card">
-  <div style="margin-bottom:8px">
-    <div class="row"><span class="lb" style="color:#FFD700">쿠팡</span><span id="cSt" style="font-size:11px"></span></div>
+  <div style="margin-bottom:6px">
+    <div class="row" style="justify-content:space-between;margin-bottom:2px">
+      <span style="color:#FFD700;font-size:12px;font-weight:600">쿠팡</span>
+      <span id="cSt" style="font-size:11px"></span>
+    </div>
     <div class="gauge" id="cG"></div>
   </div>
   <div>
-    <div class="row"><span class="lb" style="color:#2AC1BC">배민</span><span id="bSt" style="font-size:11px"></span></div>
+    <div class="row" style="justify-content:space-between;margin-bottom:2px">
+      <span style="color:#2AC1BC;font-size:12px;font-weight:600">배민</span>
+      <span id="bSt" style="font-size:11px"></span>
+    </div>
     <div class="gauge" id="bG"></div>
   </div>
 </div>
 
-<!-- Ad State -->
+<!-- ═══ 3. 광고 설정 (접기) ═══ -->
 <div class="card">
-  <div class="card-title">광고 상태</div>
-  <div class="row"><span class="lb">배민 입찰가</span><span class="dot dd" id="bBd"></span><span class="vl vb" id="bBv">-</span></div>
-  <div class="row"><span class="lb">쿠팡 광고</span><span class="dot dd" id="cOd"></span><span class="vl vc" id="cOv">-</span></div>
-  <div class="row"><span class="lb">최근 실행</span><span class="vl" id="lAa" style="font-size:11px">-</span></div>
-  <div id="nativeAdBtns" style="display:none;margin-top:8px;">
-    <div class="row" style="gap:4px">
-      <button class="btn bb" onclick="nb('executeAd','BAEMIN_CHECK',0)" style="flex:1">배민 확인</button>
-      <button class="btn bcp" onclick="nb('executeAd','COUPANG_CHECK',0)" style="flex:1">쿠팡 확인</button>
-      <button class="btn bn" onclick="nb('refreshAndCorrect')" style="flex:1">정정</button>
-    </div>
-    <div class="row" style="gap:4px;margin-top:4px">
-      <button class="btn bb" onclick="nb('showLoginDialog','baemin')" style="flex:1">배민 로그인</button>
-      <button class="btn bcp" onclick="nb('showLoginDialog','coupang')" style="flex:1">쿠팡 로그인</button>
-    </div>
+  <div class="ch" onclick="togSec('adB')">
+    <span style="font-size:13px;font-weight:600;color:#9090A8">광고 설정</span>
+    <span id="adA" style="color:#9090A8">&#9654;</span>
   </div>
-</div>
+  <div class="cb" id="adB">
+    <!-- 스케줄 -->
+    <div class="sr">
+      <div class="row" style="gap:4px"><span class="dot dr" id="schDot"></span><span class="sl">스케줄</span></div>
+      <div class="row" style="gap:4px">
+        <div class="tog" id="tog_schedule_enabled" onclick="togS('schedule_enabled')"></div>
+        <input type="time" id="set_ad_on_time" style="width:70px" onchange="saveS('ad_on_time',this.value)">
+        <span style="color:#707088">~</span>
+        <input type="time" id="set_ad_off_time" style="width:70px" onchange="saveS('ad_off_time',this.value)">
+      </div>
+    </div>
 
-<!-- Delay Alert Config -->
-<div class="card">
-  <div class="card-title">지연 알림</div>
-  <div class="sub" style="text-align:left;margin-bottom:6px;color:#9090A8;">임계값 초과 시 알림 (팝업 + 브라우저 알림)</div>
-  <div class="sr">
-    <span class="sl">지연 시간</span>
-    <div class="sv">
-      <button class="btn bs bn" onclick="adjS('delay_minutes',-5)">-5</button>
-      <input type="number" id="set_delay_minutes" min="5" max="60" step="5" onchange="saveS('delay_minutes',this.value)">
-      <button class="btn bs bn" onclick="adjS('delay_minutes',5)">+5</button>
-      <span style="color:#707088;font-size:11px">분</span>
-    </div>
-  </div>
-</div>
-
-<!-- Settings -->
-<div class="card">
-  <div class="ch" onclick="togSec('sB')">
-    <span class="card-title" style="margin:0">설정 (양방향)</span>
-    <span id="sA" style="color:#9090A8">&#9654;</span>
-  </div>
-  <div class="cb" id="sB">
     <div class="sec" style="color:#FFD700">쿠팡 임계값</div>
-    <div class="sr"><span class="sl">끄기</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_off_threshold',-1)">-</button><input type="number" id="set_coupang_off_threshold" onchange="saveS('coupang_off_threshold',this.value)"><button class="btn bs bn" onclick="adjS('coupang_off_threshold',1)">+</button></div></div>
     <div class="sr"><span class="sl">켜기</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_on_threshold',-1)">-</button><input type="number" id="set_coupang_on_threshold" onchange="saveS('coupang_on_threshold',this.value)"><button class="btn bs bn" onclick="adjS('coupang_on_threshold',1)">+</button></div></div>
+    <div class="sr"><span class="sl">끄기</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_off_threshold',-1)">-</button><input type="number" id="set_coupang_off_threshold" onchange="saveS('coupang_off_threshold',this.value)"><button class="btn bs bn" onclick="adjS('coupang_off_threshold',1)">+</button></div></div>
 
-    <div class="sec" style="color:#2AC1BC">배민 임계값</div>
-    <div class="sr"><span class="sl">최소(끄기)</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_off_threshold',-1)">-</button><input type="number" id="set_baemin_off_threshold" onchange="saveS('baemin_off_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_off_threshold',1)">+</button></div></div>
-    <div class="sr"><span class="sl">중간상한</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_mid_upper_threshold',-1)">-</button><input type="number" id="set_baemin_mid_upper_threshold" onchange="saveS('baemin_mid_upper_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_mid_upper_threshold',1)">+</button></div></div>
-    <div class="sr"><span class="sl">중간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_mid_threshold',-1)">-</button><input type="number" id="set_baemin_mid_threshold" onchange="saveS('baemin_mid_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_mid_threshold',1)">+</button></div></div>
-    <div class="sr"><span class="sl">최대(켜기)</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_on_threshold',-1)">-</button><input type="number" id="set_baemin_on_threshold" onchange="saveS('baemin_on_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_on_threshold',1)">+</button></div></div>
-
-    <div class="sec">금액</div>
-    <div class="sr"><span class="sl">배민 최대</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_amount',-50)">-50</button><input type="number" id="set_baemin_amount" step="50" onchange="saveS('baemin_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_amount',50)">+50</button></div></div>
-    <div class="sr"><span class="sl">배민 중간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_mid_amount',-50)">-50</button><input type="number" id="set_baemin_mid_amount" step="50" onchange="saveS('baemin_mid_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_mid_amount',50)">+50</button></div></div>
-    <div class="sr"><span class="sl">배민 최소</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_reduced_amount',-50)">-50</button><input type="number" id="set_baemin_reduced_amount" step="50" onchange="saveS('baemin_reduced_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_reduced_amount',50)">+50</button></div></div>
+    <div class="sec" style="color:#2AC1BC">배민 임계값 + 금액</div>
+    <div class="sr"><span class="sl">최대(켜기)</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_on_threshold',-1)">-</button><input type="number" id="set_baemin_on_threshold" onchange="saveS('baemin_on_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_on_threshold',1)">+</button><span style="color:#2A2A45">│</span><button class="btn bs bn" onclick="adjS('baemin_amount',-50)">-</button><input type="number" id="set_baemin_amount" style="width:55px" onchange="saveS('baemin_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_amount',50)">+</button></div></div>
+    <div class="sr"><span class="sl">중간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_mid_threshold',-1)">-</button><input type="number" id="set_baemin_mid_threshold" onchange="saveS('baemin_mid_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_mid_threshold',1)">+</button><span style="color:#2A2A45">│</span><button class="btn bs bn" onclick="adjS('baemin_mid_amount',-50)">-</button><input type="number" id="set_baemin_mid_amount" style="width:55px" onchange="saveS('baemin_mid_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_mid_amount',50)">+</button></div></div>
+    <div class="sr"><span class="sl">중간↑</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_mid_upper_threshold',-1)">-</button><input type="number" id="set_baemin_mid_upper_threshold" onchange="saveS('baemin_mid_upper_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_mid_upper_threshold',1)">+</button></div></div>
+    <div class="sr"><span class="sl">최소(끄기)</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_off_threshold',-1)">-</button><input type="number" id="set_baemin_off_threshold" onchange="saveS('baemin_off_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_off_threshold',1)">+</button><span style="color:#2A2A45">│</span><button class="btn bs bn" onclick="adjS('baemin_reduced_amount',-50)">-</button><input type="number" id="set_baemin_reduced_amount" style="width:55px" onchange="saveS('baemin_reduced_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_reduced_amount',50)">+</button></div></div>
 
     <div class="sec">토글</div>
     <div class="sr"><span class="sl">광고 마스터</span><div class="tog" id="tog_ad_enabled" onclick="togS('ad_enabled')"></div></div>
@@ -147,38 +178,46 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
     <div class="sr"><span class="sl">쿠팡 자동</span><div class="tog" id="tog_coupang_auto_enabled" onclick="togS('coupang_auto_enabled')"></div></div>
     <div class="sr"><span class="sl">배민 자동</span><div class="tog" id="tog_baemin_auto_enabled" onclick="togS('baemin_auto_enabled')"></div></div>
 
-    <div class="sec">스케줄</div>
-    <div class="sr"><span class="sl">스케줄</span><div class="tog" id="tog_schedule_enabled" onclick="togS('schedule_enabled')"></div></div>
-    <div class="sr"><span class="sl">OFF</span><input type="time" id="set_ad_off_time" onchange="saveS('ad_off_time',this.value)"></div>
-    <div class="sr"><span class="sl">ON</span><input type="time" id="set_ad_on_time" onchange="saveS('ad_on_time',this.value)"></div>
+    <button class="nbtn bg" onclick="pushSettings()">설정 저장 (앱에 반영)</button>
+  </div>
+</div>
+
+<!-- ═══ 4. 지연 설정 (접기) ═══ -->
+<div class="card">
+  <div class="ch" onclick="togSec('dlB')">
+    <span style="font-size:13px;font-weight:600;color:#9090A8">지연 설정</span>
+    <span id="dlA" style="color:#9090A8">&#9654;</span>
+  </div>
+  <div class="cb" id="dlB">
+    <div style="font-size:10px;color:#707088;padding:4px 0">지연 = max(0, 건수 × 완료간격 + 고정조리 - 목표)</div>
+
+    <div class="sec" style="color:#2AC1BC">배민</div>
+    <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_target_time',-1)">-</button><input type="number" id="set_baemin_target_time" min="15" max="30" onchange="saveS('baemin_target_time',this.value)"><button class="btn bs bn" onclick="adjS('baemin_target_time',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl">고정조리</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_fixed_cook_time',-1)">-</button><input type="number" id="set_baemin_fixed_cook_time" min="0" max="20" onchange="saveS('baemin_fixed_cook_time',this.value)"><button class="btn bs bn" onclick="adjS('baemin_fixed_cook_time',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl">임계값</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_delay_threshold',-1)">-</button><input type="number" id="set_baemin_delay_threshold" min="1" max="10" onchange="saveS('baemin_delay_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_delay_threshold',1)">+</button><span style="color:#707088;font-size:10px">건</span></div></div>
+
+    <div class="sec" style="color:#FFD700">쿠팡</div>
+    <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_target_time',-1)">-</button><input type="number" id="set_coupang_target_time" min="15" max="30" onchange="saveS('coupang_target_time',this.value)"><button class="btn bs bn" onclick="adjS('coupang_target_time',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl">고정조리</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_fixed_cook_time',-1)">-</button><input type="number" id="set_coupang_fixed_cook_time" min="0" max="20" onchange="saveS('coupang_fixed_cook_time',this.value)"><button class="btn bs bn" onclick="adjS('coupang_fixed_cook_time',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl">임계값</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_delay_threshold',-1)">-</button><input type="number" id="set_coupang_delay_threshold" min="1" max="10" onchange="saveS('coupang_delay_threshold',this.value)"><button class="btn bs bn" onclick="adjS('coupang_delay_threshold',1)">+</button><span style="color:#707088;font-size:10px">건</span></div></div>
 
     <button class="nbtn bg" onclick="pushSettings()">설정 저장 (앱에 반영)</button>
   </div>
 </div>
 
-<!-- Permissions (native only) -->
-<div class="card" id="permCard" style="display:none">
-  <div class="card-title">권한 / 앱 설정</div>
-  <div class="row" id="permDelay"><span class="dot dd"></span><span class="lb">지연 접근성</span><button class="btn bs bb" onclick="nb('openAccessibilitySettings')">설정</button></div>
-  <div class="row" id="permKds"><span class="dot dd"></span><span class="lb">KDS 접근성</span><button class="btn bs bb" onclick="nb('openAccessibilitySettings')">설정</button></div>
-  <div class="row" id="permNotif"><span class="dot dd"></span><span class="lb">알림 리스너</span><button class="btn bs bb" onclick="nb('openNotificationSettings')">설정</button></div>
-  <div class="row"><span class="lb">앱 버전</span><span class="vl" id="appVer">-</span></div>
-  <button class="nbtn bn" onclick="nb('openAppSettings')">앱 정보 (제한해제)</button>
-</div>
-
-<!-- Chart -->
+<!-- ═══ 5. 건수 변동 차트 (접기) ═══ -->
 <div class="card">
   <div class="ch" onclick="togSec('chB')">
-    <span class="card-title" style="margin:0">건수 변동 (최근 2시간)</span>
+    <span style="font-size:13px;font-weight:600;color:#9090A8">건수 변동 (2시간)</span>
     <span id="chA" style="color:#9090A8">&#9654;</span>
   </div>
   <div class="cb" id="chB"><canvas id="hChart"></canvas></div>
 </div>
 
-<!-- Logs -->
+<!-- ═══ 6. 로그 (접기) ═══ -->
 <div class="card">
   <div class="ch" onclick="togSec('lgB')">
-    <span class="card-title" style="margin:0">로그</span>
+    <span style="font-size:13px;font-weight:600;color:#9090A8">로그</span>
     <span id="lgA" style="color:#9090A8">&#9654;</span>
   </div>
   <div class="cb" id="lgB">
@@ -191,14 +230,32 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   </div>
 </div>
 
-<div style="text-align:center;color:#707088;font-size:10px;padding:16px 0;">PosDelay Dashboard v2.0</div>
+<!-- ═══ 7. 권한/앱 (앱에서만) ═══ -->
+<div class="card" id="permCard" style="display:none">
+  <div style="font-size:13px;font-weight:600;color:#9090A8;margin-bottom:6px">권한 / 앱 설정</div>
+  <div class="sr"><div class="row"><span class="dot dd" id="pdD"></span><span class="sl" style="margin-left:4px">지연 접근성</span></div><button class="btn bs bb" onclick="nb('openAccessibilitySettings')">설정</button></div>
+  <div class="sr"><div class="row"><span class="dot dd" id="pkD"></span><span class="sl" style="margin-left:4px">KDS 접근성</span></div><button class="btn bs bb" onclick="nb('openAccessibilitySettings')">설정</button></div>
+  <div class="sr"><div class="row"><span class="dot dd" id="pnD"></span><span class="sl" style="margin-left:4px">알림 리스너</span></div><button class="btn bs bb" onclick="nb('openNotificationSettings')">설정</button></div>
+  <div class="sr">
+    <span class="sl">앱 버전</span><span id="appVer" style="color:#FFF;font-size:12px">-</span>
+  </div>
+  <div class="row" style="gap:4px;margin-top:6px">
+    <button class="btn bb" onclick="nb('showLoginDialog','baemin')" style="flex:1">배민 로그인</button>
+    <button class="btn bcp" onclick="nb('showLoginDialog','coupang')" style="flex:1">쿠팡 로그인</button>
+  </div>
+  <button class="nbtn bn" onclick="nb('openAppSettings')">앱 정보 (제한해제)</button>
+</div>
+
+<div style="text-align:center;color:#707088;font-size:10px;padding:12px 0;">PosDelay Dashboard v3.0</div>
 
 <script>
 const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app';
-let S={},aS={},kS={},hD=[],cLt='kds',aTS=0,aLC=0;
-let popupShown=false; // Windows popup shown flag
+let S={},aS={},kS={},stS={},hD=[],cLt='kds';
+let popupShown=false,aTS=0,aLC=0;
+let avgInterval=3.0; // 분/건 (클램핑 2~4)
 const isApp=typeof NativeBridge!=='undefined';
 
+// === Native Bridge ===
 function nb(fn,...args){
   if(!isApp)return;
   try{
@@ -208,60 +265,22 @@ function nb(fn,...args){
     else if(fn==='openAccessibilitySettings')NativeBridge.openAccessibilitySettings();
     else if(fn==='openNotificationSettings')NativeBridge.openNotificationSettings();
     else if(fn==='openAppSettings')NativeBridge.openAppSettings();
-  }catch(e){console.log(e);}
+    else if(fn==='trackUsage')NativeBridge.trackUsage(args[0]);
+  }catch(e){}
 }
 
 if(isApp){
-  document.getElementById('nativeAdBtns').style.display='block';
   document.getElementById('permCard').style.display='block';
   try{document.getElementById('appVer').textContent='v'+NativeBridge.getAppVersion();}catch(e){}
-  setInterval(()=>{
-    try{
-      const p=JSON.parse(NativeBridge.getPermissions());
-      updPerm('permDelay',p.delay);updPerm('permKds',p.kds);updPerm('permNotif',p.notification);
-    }catch(e){}
-  },3000);
+  setInterval(()=>{try{
+    const p=JSON.parse(NativeBridge.getPermissions());
+    document.getElementById('pdD').className='dot '+(p.delay?'dg':'dr');
+    document.getElementById('pkD').className='dot '+(p.kds?'dg':'dr');
+    document.getElementById('pnD').className='dot '+(p.notification?'dg':'dr');
+  }catch(e){}},3000);
 }
 
-function updPerm(id,ok){const el=document.getElementById(id);if(!el)return;el.querySelector('.dot').className='dot '+(ok?'dg':'dr');}
-
-// === Windows Desktop Popup ===
-function showDelayPopup(count, minutes, prediction) {
-  if(popupShown) return;
-  popupShown = true;
-  const timeStr = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-  const overlay = document.createElement('div');
-  overlay.className = 'popup-overlay';
-  overlay.innerHTML = `<div class="popup-box">
-    <div class="popup-title">&#9888; 주문 지연 알림</div>
-    <div class="popup-body">
-      <div style="font-size:36px;font-weight:bold;color:#FFF;margin:8px 0;">${count}건</div>
-      <div style="color:#E74C3C;font-size:16px;margin-bottom:8px;">${timeStr} 이후 주문건 부터 지연 ${minutes}분</div>
-      ${prediction ? `<div style="color:#E67E22;font-size:13px;">예상 정상화: ${prediction}</div>` : ''}
-    </div>
-    <button class="popup-close" onclick="closePopup(this)">확인</button>
-  </div>`;
-  document.body.appendChild(overlay);
-
-  // Audio alert (beep)
-  try {
-    const ac = new (window.AudioContext||window.webkitAudioContext)();
-    const osc = ac.createOscillator();
-    osc.type = 'square';
-    osc.frequency.value = 800;
-    osc.connect(ac.destination);
-    osc.start();
-    setTimeout(()=>osc.stop(), 300);
-  } catch(e){}
-}
-
-function closePopup(btn) {
-  const overlay = btn.closest('.popup-overlay');
-  if(overlay) overlay.remove();
-  setTimeout(()=>{ popupShown = false; }, 60000); // 1분간 재표시 방지
-}
-
-// SSE
+// === SSE ===
 function sse(path,cb){
   const es=new EventSource(FB+path);
   es.onopen=()=>updC(true);
@@ -274,131 +293,251 @@ function updC(ok){
   const t=document.getElementById('cT');t.textContent=ok?'실시간':'끊김';t.style.color=ok?'#2ECC71':'#E74C3C';
 }
 
+// === Data Handlers ===
 function hKds(m){
   if(!m.data||m.data==='null')return;
   if(m.path==='/')Object.assign(kS,m.data);else kS[m.path.slice(1)]=m.data;
-  document.getElementById('kC').textContent=kS.count!=null?kS.count:'--';
-  document.getElementById('kT').textContent=kS.time?tAgo(kS.time):'...';
-  updGauges(kS.count);chkAlert(kS.count);updPred(kS.count);
+  updMonitor();
 }
 function hSet(m){
   if(!m.data||m.data==='null')return;
   if(m.path==='/')Object.assign(S,m.data);else S[m.path.slice(1)]=m.data;
-  updSetUI();updGauges(kS.count);
+  updSetUI();updMonitor();
 }
 function hASt(m){
   if(!m.data||m.data==='null')return;
   if(m.path==='/')Object.assign(aS,m.data);else aS[m.path.slice(1)]=m.data;
-  updAdUI();
+  updMonitor();
+}
+function hStatus(m){
+  if(!m.data||m.data==='null')return;
+  if(m.path==='/')Object.assign(stS,m.data);else stS[m.path.slice(1)]=m.data;
+  updSyncStatus();
 }
 function hHist(m){
   if(!m.data||m.data==='null')return;
   if(m.path==='/'&&m.data.entries)hD=m.data.entries;
-  drawChart();updPred(kS.count);
+  calcAvgInterval();drawChart();updDelayPred();
 }
 
+// === 모니터링 업데이트 ===
+function updMonitor(){
+  const c=kS.count;
+  document.getElementById('mCount').textContent=c!=null?c:'--';
+
+  // 상태 텍스트
+  const st=document.getElementById('mStatus');
+  if(c!=null){
+    const co=S.coupang_off_threshold||5,bo=S.baemin_off_threshold||8;
+    const bdt=S.baemin_delay_threshold||5,cdt=S.coupang_delay_threshold||5;
+    const maxTh=Math.max(co,bo,bdt,cdt);
+    if(c>=maxTh){st.textContent='지연 필요';st.style.color='#E74C3C';}
+    else if(c>=Math.min(co,bo,bdt,cdt)){st.textContent='주의';st.style.color='#E67E22';}
+    else{st.textContent='정상';st.style.color='#2ECC71';}
+  }
+
+  // 배민 한줄
+  const b=aS.baemin_current_bid;
+  document.getElementById('mBv').textContent=b!=null&&b>0?b+'원':'-';
+  document.getElementById('mBd').className='dot '+(b>0?(b>=(S.baemin_amount||200)?'dg':b>=(S.baemin_mid_amount||100)?'do':'dr'):'dd');
+  document.getElementById('mBth').textContent='('+((S.baemin_on_threshold||3)+'/'+(S.baemin_off_threshold||8))+')';
+
+  // 쿠팡 한줄
+  const co2=aS.coupang_current_on;
+  document.getElementById('mCv').textContent=co2===true?'ON':co2===false?'OFF':'-';
+  document.getElementById('mCd').className='dot '+(co2===true?'dg':co2===false?'dr':'dd');
+  document.getElementById('mCth').textContent='('+((S.coupang_on_threshold||3)+'/'+(S.coupang_off_threshold||5))+')';
+
+  // 마지막 실행
+  document.getElementById('mLast').textContent='마지막: '+(aS.last_ad_action||'--');
+
+  // 게이지
+  updGauges(c);
+  // 지연 예측
+  updDelayPred();
+  // 알림 체크
+  chkAlert(c);
+}
+
+// === 동기화 상태 ===
+function updSyncStatus(){
+  const now=Date.now();
+  updSyncItem('sKd','sKt','KDS',stS.kds_sync);
+  updSyncItem('sMd','sMt','MATE',stS.mate_sync);
+  updSyncItem('sPd','sPt','PC',stS.pc_sync);
+
+  // K/M/PC 가동 토글 상태
+  const tK=document.getElementById('tK'),tM=document.getElementById('tM'),tP=document.getElementById('tP');
+  const kp=stS.kds_paused,mp=stS.mate_paused,pp=stS.pc_paused;
+  tK.className='tbtn '+(kp?'off':'on');tK.textContent=kp?'K정지':'K가동';
+  tM.className='tbtn '+(mp?'off':'on');tM.textContent=mp?'M정지':'M가동';
+  tP.className='tbtn '+(pp?'off':'on');tP.textContent=pp?'PC정지':'PC가동';
+}
+
+function updSyncItem(dotId,txtId,label,ts){
+  const d=document.getElementById(dotId),t=document.getElementById(txtId);
+  if(!ts||ts===0){d.className='dot dd';t.textContent=label+' --';t.style.color='#707088';return;}
+  const ago=Math.floor((Date.now()-ts)/1000);
+  const agoStr=ago<60?ago+'초':ago<3600?Math.floor(ago/60)+'분':Math.floor(ago/3600)+'시간';
+  const tm=new Date(ts);
+  const tmStr=tm.getHours()+':'+String(tm.getMinutes()).padStart(2,'0')+':'+String(tm.getSeconds()).padStart(2,'0');
+  t.textContent=label+' '+tmStr+' ('+agoStr+')';
+  if(ago<180){d.className='dot dg';t.style.color='#2ECC71';}
+  else if(ago<600){d.className='dot do';t.style.color='#E67E22';}
+  else{d.className='dot dr';t.style.color='#E74C3C';}
+}
+
+function togSource(src){
+  // 앱에서만 동작 (NativeBridge 필요)
+  // 웹에서는 Firebase로 toggle 요청
+  // TODO: 양방향 구현 시 추가
+  if(isApp){nb('trackUsage','toggle_'+src);}
+}
+
+// === 게이지 (0~10) ===
 function updGauges(c){
   if(c==null)return;
   const co=S.coupang_off_threshold||5,cn=S.coupang_on_threshold||3;
   const bo=S.baemin_off_threshold||8,bu=S.baemin_mid_upper_threshold||7,bm=S.baemin_mid_threshold||5,bn2=S.baemin_on_threshold||3;
   let h='';
-  for(let i=0;i<=15;i++){let cl=i>=co?'#E74C3C':i<=cn?'#2ECC71':'#E67E22';h+=`<div class="gc${i===c?' act':''}" style="background:${cl}">${i}</div>`;}
+  for(let i=0;i<=10;i++){
+    let cl=i>=co?'#E74C3C':i<=cn?'#2ECC71':'#E67E22';
+    h+=`<div class="gc${i===c?' act':''}" style="background:${cl}" onclick="nb('trackUsage','gauge_tap')">${i}</div>`;
+  }
   document.getElementById('cG').innerHTML=h;
   document.getElementById('cSt').innerHTML=c>=co?'<span style="color:#E74C3C">OFF</span>':c<=cn?'<span style="color:#2ECC71">ON</span>':'<span style="color:#E67E22">유지</span>';
+
   h='';
-  for(let i=0;i<=15;i++){let cl=i>=bo?'#E74C3C':(i>=bm&&i<=bu)?'#E67E22':i<=bn2?'#2ECC71':'#2A2A45';h+=`<div class="gc${i===c?' act':''}" style="background:${cl}">${i}</div>`;}
+  for(let i=0;i<=10;i++){
+    let cl=i>=bo?'#E74C3C':(i>=bm&&i<=bu)?'#E67E22':i<=bn2?'#2ECC71':'#2A2A45';
+    h+=`<div class="gc${i===c?' act':''}" style="background:${cl}">${i}</div>`;
+  }
   document.getElementById('bG').innerHTML=h;
-  document.getElementById('bSt').innerHTML=c>=bo?`<span style="color:#E74C3C">최소 ${S.baemin_reduced_amount||50}원</span>`:(c>=bm&&c<=bu)?`<span style="color:#E67E22">중간 ${S.baemin_mid_amount||100}원</span>`:c<=bn2?`<span style="color:#2ECC71">최대 ${S.baemin_amount||200}원</span>`:'<span style="color:#9090A8">유지</span>';
+  const ba=S.baemin_amount||200,bma=S.baemin_mid_amount||100,bra=S.baemin_reduced_amount||50;
+  document.getElementById('bSt').innerHTML=c>=bo?`<span style="color:#E74C3C">최소 ${bra}원</span>`:(c>=bm&&c<=bu)?`<span style="color:#E67E22">중간 ${bma}원</span>`:c<=bn2?`<span style="color:#2ECC71">최대 ${ba}원</span>`:'<span style="color:#9090A8">유지</span>';
 }
-function updAdUI(){
-  const b=aS.baemin_current_bid,co2=aS.coupang_current_on;
-  document.getElementById('bBv').textContent=b!=null?b+'원':'-';
-  document.getElementById('bBd').className='dot '+(b>0?'dg':'dd');
-  document.getElementById('cOv').textContent=co2===true?'ON':co2===false?'OFF':'-';
-  document.getElementById('cOd').className='dot '+(co2===true?'dg':co2===false?'dr':'dd');
-  document.getElementById('lAa').textContent=aS.last_ad_action||'-';
+
+// === 조리 속도 계산 (클램핑 2~4분) ===
+function calcAvgInterval(){
+  if(!hD||hD.length<3)return;
+  const ct=[];
+  for(let i=1;i<hD.length;i++){
+    if(hD[i].count<hD[i-1].count){
+      const d=(hD[i].time-hD[i-1].time)/60000;
+      // 클램핑 2~4분
+      ct.push(Math.max(2,Math.min(4,d)));
+    }
+  }
+  if(ct.length>=2){
+    const r=ct.slice(-10);
+    avgInterval=r.reduce((a,b)=>a+b,0)/r.length;
+  }
 }
+
+// === 지연 예측 ===
+function updDelayPred(){
+  const c=kS.count;
+  const dp=document.getElementById('delayPred');
+  if(c==null||c<1){dp.style.display='none';return;}
+  dp.style.display='block';
+
+  // 속도
+  document.getElementById('dpSpeed').textContent=avgInterval.toFixed(1)+'분/건';
+
+  // 배민 지연
+  const btt=S.baemin_target_time||20,bfc=S.baemin_fixed_cook_time||15;
+  const bDelay=Math.max(0,Math.round(c*avgInterval+bfc-btt));
+  const bEl=document.getElementById('dpBaemin');
+  if(bDelay>0){bEl.textContent=bDelay+'분';bEl.style.color='#E74C3C';}
+  else{bEl.textContent='0분';bEl.style.color='#2ECC71';}
+
+  // 쿠팡 지연
+  const ctt=S.coupang_target_time||20,cfc=S.coupang_fixed_cook_time||15;
+  const cDelay=Math.max(0,Math.round(c*avgInterval+cfc-ctt));
+  const cEl=document.getElementById('dpCoupang');
+  if(cDelay>0){cEl.textContent=cDelay+'분';cEl.style.color='#E74C3C';}
+  else{cEl.textContent='0분';cEl.style.color='#2ECC71';}
+}
+
+// === 설정 UI ===
 function updSetUI(){
-  ['coupang_off_threshold','coupang_on_threshold','baemin_off_threshold','baemin_mid_upper_threshold','baemin_mid_threshold','baemin_on_threshold','baemin_amount','baemin_mid_amount','baemin_reduced_amount'].forEach(f=>{
-    const e=document.getElementById('set_'+f);if(e&&S[f]!=null)e.value=S[f];
-  });
-  if(S.delay_minutes){const e=document.getElementById('set_delay_minutes');if(e)e.value=S.delay_minutes;}
+  const fields=['coupang_off_threshold','coupang_on_threshold','baemin_off_threshold','baemin_mid_upper_threshold','baemin_mid_threshold','baemin_on_threshold','baemin_amount','baemin_mid_amount','baemin_reduced_amount','baemin_target_time','baemin_fixed_cook_time','baemin_delay_threshold','coupang_target_time','coupang_fixed_cook_time','coupang_delay_threshold'];
+  fields.forEach(f=>{const e=document.getElementById('set_'+f);if(e&&S[f]!=null)e.value=S[f];});
   if(S.ad_off_time)document.getElementById('set_ad_off_time').value=S.ad_off_time;
   if(S.ad_on_time)document.getElementById('set_ad_on_time').value=S.ad_on_time;
   ['ad_enabled','order_auto_off_enabled','coupang_auto_enabled','baemin_auto_enabled','schedule_enabled'].forEach(f=>{
     const e=document.getElementById('tog_'+f);if(e)e.className='tog'+(S[f]?' on':'');
   });
+  // 스케줄 dot
+  const sd=document.getElementById('schDot');if(sd)sd.className='dot '+(S.schedule_enabled?'dg':'dr');
 }
 
 function adjS(k,d){const e=document.getElementById('set_'+k);if(!e)return;e.value=parseInt(e.value||0)+d;S[k]=parseInt(e.value);}
 function saveS(k,v){S[k]=isNaN(v)?v:parseInt(v);}
-function togS(k){S[k]=!S[k];const e=document.getElementById('tog_'+k);if(e)e.className='tog'+(S[k]?' on':'');}
+function togS(k){S[k]=!S[k];const e=document.getElementById('tog_'+k);if(e)e.className='tog'+(S[k]?' on':'');if(k==='schedule_enabled'){const sd=document.getElementById('schDot');if(sd)sd.className='dot '+(S[k]?'dg':'dr');}}
 function pushSettings(){
   S._version=Date.now();S._updated_by='web';S._updated_at=new Date().toLocaleString('ko-KR');
   fetch(FB+'/posdelay/ad_settings.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)})
   .then(r=>{toast(r.ok?'설정 저장 완료':'저장 실패: '+r.status);}).catch(e=>toast('에러: '+e.message));
 }
 
-// Alert + Windows Popup
+// === 알림 + 팝업 ===
 function chkAlert(c){
   if(c==null)return;
-  const th=S.coupang_off_threshold||5,bn=document.getElementById('alertB');
-  const dm=S.delay_minutes||10;
+  const bdt=S.baemin_delay_threshold||5,cdt=S.coupang_delay_threshold||5;
+  const th=Math.min(bdt,cdt);
+  const btt=S.baemin_target_time||20,bfc=S.baemin_fixed_cook_time||15;
+  const ctt=S.coupang_target_time||20,cfc=S.coupang_fixed_cook_time||15;
+  const bn=document.getElementById('alertB');
+
   if(c>=th){
     if(aTS===0||aLC<th)aTS=Date.now();
     aLC=c;
     const el=Math.floor((Date.now()-aTS)/60000);
-    const pt=getPT(c,th);
-    bn.className='alert warn';
     const timeStr=new Date(aTS).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
-    bn.innerHTML=`&#9888; ${timeStr} 이후 주문건 지연 ${dm}분 (${c}건, ${el}분 경과)${pt}`;
 
-    // Browser Notification (모바일/데스크탑)
-    if(el>0&&'Notification'in window&&Notification.permission==='granted'&&el%5===0){
-      new Notification('주문 지연',{body:`${timeStr} 이후 지연 ${dm}분 (${c}건)${pt}`,tag:'pd-alert'});
-    }
-    // Windows Desktop Popup (큰 팝업)
-    if(el>=1){
-      const predText=pt.replace(' | 예상 ','');
-      showDelayPopup(c, dm, predText);
+    // 플랫폼별 지연 계산
+    let msgs=[];
+    const bDelay=Math.max(0,Math.round(c*avgInterval+bfc-btt));
+    const cDelay=Math.max(0,Math.round(c*avgInterval+cfc-ctt));
+    if(c>=bdt&&bDelay>0)msgs.push('배민 '+bDelay+'분');
+    if(c>=cdt&&cDelay>0)msgs.push('쿠팡 '+cDelay+'분');
+
+    if(msgs.length>0){
+      bn.className='alert warn';
+      bn.innerHTML=`&#9888; ${timeStr} 이후 주문건 지연 ${msgs.join(', ')} (${c}건, ${el}분 경과)`;
+
+      if(el>0&&'Notification'in window&&Notification.permission==='granted'&&el%5===0){
+        new Notification('주문 지연',{body:`${timeStr} 이후 지연 ${msgs.join(', ')} (${c}건)`,tag:'pd-alert'});
+      }
+      if(el>=1&&!popupShown){showDelayPopup(c,msgs.join(', '),timeStr);}
     }
   }else{
-    if(aTS>0&&aLC>=th){bn.className='alert ok';bn.textContent=`정상 (${c}건)`;setTimeout(()=>{bn.className='alert';},10000);}
+    if(aTS>0&&aLC>=th){bn.className='alert ok';bn.textContent=`정상 복귀 (${c}건)`;setTimeout(()=>{bn.className='alert';},10000);}
     aTS=0;aLC=c;popupShown=false;
   }
 }
 
-function updPred(c){
-  const a=document.getElementById('predA');
-  if(!hD||hD.length<3){a.style.display='none';return;}
-  const ct=[];
-  for(let i=1;i<hD.length;i++){if(hD[i].count<hD[i-1].count){const d=hD[i].time-hD[i-1].time;if(d>=30000&&d<=1800000)ct.push(d/60000);}}
-  if(ct.length<2){a.style.display='none';return;}
-  const r=ct.slice(-10),avg=r.reduce((a2,b)=>a2+b,0)/r.length,fast=Math.min(...r);
-  const th2=S.coupang_off_threshold||5,ex=Math.max(0,(c||0)-th2);
-  a.style.display='flex';
-  document.getElementById('pS').textContent=fast.toFixed(1)+'~'+avg.toFixed(1)+'분/건';
-  if(ex>0){document.getElementById('pN').textContent='약 '+Math.ceil(fast*ex)+'~'+Math.ceil(avg*ex)+'분';document.getElementById('pN').style.color='#E74C3C';}
-  else{document.getElementById('pN').textContent='정상';document.getElementById('pN').style.color='#2ECC71';}
-}
-function getPT(c,th){
-  if(!hD||hD.length<3)return '';
-  const ct=[];for(let i=1;i<hD.length;i++){if(hD[i].count<hD[i-1].count){const d=hD[i].time-hD[i-1].time;if(d>=30000&&d<=1800000)ct.push(d/60000);}}
-  if(ct.length<2)return '';
-  const r=ct.slice(-10),avg=r.reduce((a,b)=>a+b,0)/r.length,fast=Math.min(...r),ex=Math.max(0,c-th);
-  return ex>0?` | 예상 ${Math.ceil(fast*ex)}~${Math.ceil(avg*ex)}분`:'';
+function showDelayPopup(count,delayText,timeStr){
+  popupShown=true;
+  const ov=document.createElement('div');
+  ov.className='popup-overlay';
+  ov.innerHTML=`<div class="popup-box"><div style="font-size:18px;font-weight:bold;color:#E74C3C;margin-bottom:8px">&#9888; 주문 지연</div><div style="font-size:36px;font-weight:bold;color:#FFF;margin:8px 0">${count}건</div><div style="color:#E74C3C;font-size:14px;margin-bottom:12px">${timeStr} 이후 지연 ${delayText}</div><button style="padding:8px 24px;border-radius:8px;border:none;background:#2ECC71;color:#FFF;font-size:14px;font-weight:600;cursor:pointer" onclick="this.closest('.popup-overlay').remove();setTimeout(()=>{popupShown=false},60000)">확인</button></div>`;
+  document.body.appendChild(ov);
+  try{const ac=new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator();o.type='square';o.frequency.value=800;o.connect(ac.destination);o.start();setTimeout(()=>o.stop(),300);}catch(e){}
 }
 
+// === 차트 ===
 function drawChart(){
   const cv=document.getElementById('hChart');if(!cv||!hD||hD.length<2)return;
   const ctx=cv.getContext('2d');
   const now=Date.now(),t2h=now-7200000,data=hD.filter(e=>e.time>=t2h);if(data.length<2)return;
   const W=cv.width=cv.offsetWidth*2,H=cv.height=200;ctx.clearRect(0,0,W,H);
-  const p={t:16,r:8,b:24,l:30},cw=W-p.l-p.r,ch2=H-p.t-p.b;
+  const p={t:16,r:8,b:24,l:30},cw=W-p.l-p.r,ch=H-p.t-p.b;
   const mT=data[0].time,xT=data[data.length-1].time,mC=Math.max(...data.map(d=>d.count),5);
-  const x=t=>p.l+((t-mT)/(xT-mT||1))*cw,y=c2=>p.t+ch2-(c2/mC)*ch2;
+  const x=t=>p.l+((t-mT)/(xT-mT||1))*cw,y=c2=>p.t+ch-(c2/mC)*ch;
   ctx.strokeStyle='#2A2A45';ctx.lineWidth=1;
-  for(let i=0;i<=4;i++){const gy=p.t+(ch2/4)*i;ctx.beginPath();ctx.moveTo(p.l,gy);ctx.lineTo(W-p.r,gy);ctx.stroke();ctx.fillStyle='#707088';ctx.font='16px sans-serif';ctx.textAlign='right';ctx.fillText(Math.round(mC-(mC/4)*i),p.l-4,gy+4);}
+  for(let i=0;i<=4;i++){const gy=p.t+(ch/4)*i;ctx.beginPath();ctx.moveTo(p.l,gy);ctx.lineTo(W-p.r,gy);ctx.stroke();ctx.fillStyle='#707088';ctx.font='16px sans-serif';ctx.textAlign='right';ctx.fillText(Math.round(mC-(mC/4)*i),p.l-4,gy+4);}
   ctx.textAlign='center';const ts=(xT-mT)/3;
   for(let i=0;i<=3;i++){const t=mT+ts*i,d=new Date(t);ctx.fillText(d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'),x(t),H-4);}
   const co3=S.coupang_off_threshold||5;ctx.strokeStyle='#E74C3C44';ctx.lineWidth=2;ctx.setLineDash([6,3]);ctx.beginPath();ctx.moveTo(p.l,y(co3));ctx.lineTo(W-p.r,y(co3));ctx.stroke();ctx.setLineDash([]);
@@ -407,6 +546,7 @@ function drawChart(){
   data.forEach(d=>{ctx.fillStyle=d.count>=co3?'#E74C3C':'#2ECC71';ctx.beginPath();ctx.arc(x(d.time),y(d.count),3,0,Math.PI*2);ctx.fill();});
 }
 
+// === 로그 ===
 function sLt(tab,el){
   cLt=tab;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');
   const lc=document.getElementById('logC');lc.textContent='로딩...';
@@ -419,17 +559,26 @@ function sLt(tab,el){
   }).catch(()=>{lc.textContent='로드 실패';});
 }
 
-function tAgo(t){try{const d=new Date(t.replace(' ','T')),s=Math.floor((Date.now()-d.getTime())/1000);return s<60?s+'초 전':s<3600?Math.floor(s/60)+'분 전':Math.floor(s/3600)+'시간 전';}catch(e){return t;}}
+// === 유틸 ===
 function togSec(id){const e=document.getElementById(id),o=e.classList.toggle('open');const a=document.getElementById(id.replace('B','A'));if(a)a.innerHTML=o?'&#9660;':'&#9654;';if(id==='chB'&&o)setTimeout(drawChart,100);}
 function toast(m){const d=document.createElement('div');d.style.cssText='position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#2ECC71;color:#FFF;padding:8px 16px;border-radius:8px;font-size:13px;z-index:9999;';d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),3000);}
 
+// === 초기화 ===
 if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
 sse('/kds_status.json',hKds);
 sse('/posdelay/ad_settings.json',hSet);
 sse('/posdelay/ad_state.json',hASt);
+sse('/posdelay/status.json',hStatus);
 sse('/kds_history.json',hHist);
 fetch(FB+'/kds_log.json').then(r=>r.json()).then(d=>{document.getElementById('logC').textContent=typeof d==='string'?d:JSON.stringify(d,null,2);}).catch(()=>{});
-setInterval(()=>chkAlert(kS.count),30000);
+
+// 동기화 상태 주기적 갱신 (시간 경과 표시)
+setInterval(()=>{updSyncStatus();chkAlert(kS.count);},30000);
+// 수집 카운트다운 (90초 사이클)
+setInterval(()=>{
+  const ls=stS.mate_sync||stS.pc_sync||0;
+  if(ls>0){const ago=Math.floor((Date.now()-ls)/1000);const rem=Math.max(0,90-ago%90);document.getElementById('mRefresh').textContent='수집 '+rem+'초';}
+},1000);
 window.addEventListener('resize',drawChart);
 </script>
 </body>
