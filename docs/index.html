@@ -520,35 +520,36 @@ function chkAlert(c){
   const bn=document.getElementById('alertB');
   const now=Date.now();
 
-  // 플랫폼별 지연 계산
+  // 플랫폼별 지연 계산 + 지연 건수
   let msgs=[];
   const bDelay=Math.max(0,Math.round(c*avgInterval+bfc-btt));
   const cDelay=Math.max(0,Math.round(c*avgInterval+cfc-ctt));
-  if(c>=bdt&&bDelay>0)msgs.push('배민 '+bDelay+'분');
-  if(c>=cdt&&cDelay>0)msgs.push('쿠팡 '+cDelay+'분');
+  const bBrk=avgInterval>0?Math.floor((btt-bfc)/avgInterval):0;
+  const cBrk=avgInterval>0?Math.floor((ctt-cfc)/avgInterval):0;
+  if(c>=bdt&&bDelay>0)msgs.push('배민 '+bDelay+'분 '+Math.max(0,c-bBrk)+'건');
+  if(c>=cdt&&cDelay>0)msgs.push('쿠팡 '+cDelay+'분 '+Math.max(0,c-cBrk)+'건');
 
   if(msgs.length>0){
     // 지연 상태
+    const timeStr=aTS>0?new Date(aTS).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):new Date(now).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     bn.className='alert warn';
-    bn.innerHTML=`&#9888; 지연 ${msgs.join(', ')} (${c}건)`;
+    bn.innerHTML=`&#9888; ${timeStr} 지연 ${msgs.join(', ')}`;
 
     if(alertMode!=='delayed'){
-      // 최초 진입 → 즉시 알림
       alertMode='delayed';aTS=now;lastAlertTime=now;
-      sendNotif('주문 지연',`지연 ${msgs.join(', ')} (${c}건)`);
+      const ts=new Date(now).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+      sendNotif('주문 지연',`${ts} 지연 ${msgs.join(', ')}`);
     }else if(now-lastAlertTime>=ALERT_REPEAT){
-      // 3분마다 반복
       lastAlertTime=now;
       const el=Math.floor((now-aTS)/60000);
-      sendNotif('주문 지연 지속',`지연 ${msgs.join(', ')} (${c}건, ${el}분 경과)`);
+      sendNotif('주문 지연 지속',`${timeStr} 지연 ${msgs.join(', ')} (${el}분 경과)`);
     }
   }else{
-    // 정상 상태
     if(alertMode==='delayed'){
-      // 정상 복귀 1회 알림
       alertMode='normal';
-      bn.className='alert ok';bn.textContent=`정상 복귀 (${c}건)`;
-      sendNotif('정상 복귀',`${c}건 - 지연 해소`);
+      const el=Math.floor((now-aTS)/60000);
+      bn.className='alert ok';bn.textContent=`정상 복귀 (${el}분만에)`;
+      sendNotif('정상 복귀',`정상 복귀 (${el}분만에)`);
       setTimeout(()=>{bn.className='alert';},10000);
     }
     aTS=0;
