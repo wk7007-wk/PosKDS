@@ -109,7 +109,7 @@ object AppUpdater {
 
             val obj = if (data is JSONObject) data else JSONObject(data.toString())
             val version = obj.optString("version", "")
-            val apkUrl = obj.optString("apk_url", "")
+            val apkUrl = obj.optString("url", obj.optString("apk_url", ""))
 
             if (version.isEmpty() || apkUrl.isEmpty()) return
             if (version == currentVersionName) return
@@ -154,7 +154,7 @@ object AppUpdater {
 
                 val json = JSONObject(response)
                 val latestVersion = json.optString("version", "")
-                val apkUrl = json.optString("apk_url", "")
+                val apkUrl = json.optString("url", json.optString("apk_url", ""))
 
                 if (latestVersion.isEmpty() || apkUrl.isEmpty()) {
                     if (!silent) showToast(context, "업데이트 정보 불완전")
