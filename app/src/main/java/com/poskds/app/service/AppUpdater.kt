@@ -7,7 +7,7 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
-import org.json.JSONObject
+import org.json.JSONArray
 import java.io.File
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
@@ -19,8 +19,7 @@ import java.util.Locale
 object AppUpdater {
 
     private const val TAG = "AppUpdater"
-    private const val FIREBASE_UPDATE_URL =
-        "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/app_update/poskds.json"
+    private const val GITHUB_API = "https://api.github.com/repos/wk7007-wk/PosKDS/releases/latest"
     private const val FIREBASE_LOG_URL =
         "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/kds_status/update_log.json"
     private const val APK_NAME = "PosKDS.apk"
@@ -39,9 +38,10 @@ object AppUpdater {
     private fun check(context: Context, currentVersionName: String, silent: Boolean) {
         kotlin.concurrent.thread {
             try {
-                val conn = URL(FIREBASE_UPDATE_URL).openConnection() as HttpURLConnection
+                val conn = URL(GITHUB_API).openConnection() as HttpURLConnection
                 conn.connectTimeout = 10000
                 conn.readTimeout = 10000
+                conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
 
                 if (conn.responseCode != 200) {
                     if (!silent) showToast(context, "업데이트 확인 실패 (HTTP ${conn.responseCode})")
@@ -52,17 +52,12 @@ object AppUpdater {
                 val response = conn.inputStream.bufferedReader().readText()
                 conn.disconnect()
 
-                if (response == "null" || response.isBlank()) {
-                    if (!silent) showToast(context, "업데이트 정보 없음")
-                    return@thread
-                }
+                val json = org.json.JSONObject(response)
+                val tagName = json.optString("tag_name", "")  // e.g. "v0220.0613"
+                val latestVersion = tagName.removePrefix("v")  // "0220.0613"
 
-                val json = JSONObject(response)
-                val latestVersion = json.optString("version", "")
-                val apkUrl = json.optString("apk_url", "")
-
-                if (latestVersion.isEmpty() || apkUrl.isEmpty()) {
-                    if (!silent) showToast(context, "업데이트 정보 불완전")
+                if (latestVersion.isEmpty()) {
+                    if (!silent) showToast(context, "릴리즈 정보 없음")
                     return@thread
                 }
 
@@ -71,30 +66,44 @@ object AppUpdater {
                     return@thread
                 }
 
+                // APK URL 찾기
+                val assets = json.optJSONArray("assets") ?: JSONArray()
+                var apkUrl = ""
+                for (i in 0 until assets.length()) {
+                    val asset = assets.getJSONObject(i)
+                    if (asset.getString("name").endsWith(".apk")) {
+                        apkUrl = asset.getString("browser_download_url")
+                        break
+                    }
+                }
+
+                if (apkUrl.isEmpty()) {
+                    if (!silent) showToast(context, "APK 없는 릴리즈")
+                    return@thread
+                }
+
                 if (silent && latestVersion == lastCheckedVersion) return@thread
                 lastCheckedVersion = latestVersion
 
                 logRemote("새 버전 발견: v$latestVersion (현재: v$currentVersionName)")
-                if (!silent) showToast(context, "v$latestVersion 다운로드 중...")
+                showToast(context, "v$latestVersion 다운로드 중...")
 
                 downloadApk(context, apkUrl, silent)
 
             } catch (e: Exception) {
                 logRemote("업데이트 확인 실패: ${e.javaClass.simpleName}: ${e.message}")
-                if (!silent) showToast(context, "업데이트 확인 실패")
+                if (!silent) showToast(context, "업데이트 확인 실패: ${e.message}")
             }
         }
     }
 
     private fun downloadApk(context: Context, apkUrl: String, silent: Boolean) {
-        // 내부 저장소 우선 (절대 권한 문제 없음)
         val file = File(context.filesDir, APK_NAME)
         if (file.exists()) file.delete()
 
         try {
-            logRemote("다운로드 시작: $apkUrl → ${file.absolutePath}")
+            logRemote("다운로드 시작: $apkUrl")
 
-            // 리다이렉트 수동 처리
             var downloadUrl = apkUrl
             var maxRedirects = 5
             var finalConn: HttpURLConnection? = null
@@ -106,15 +115,11 @@ object AppUpdater {
                 conn.instanceFollowRedirects = false
 
                 val code = conn.responseCode
-                logRemote("HTTP $code ← $downloadUrl")
 
                 if (code == 301 || code == 302 || code == 307) {
                     val location = conn.getHeaderField("Location")
                     conn.disconnect()
-                    if (location.isNullOrEmpty()) {
-                        logRemote("리다이렉트 Location 헤더 없음")
-                        break
-                    }
+                    if (location.isNullOrEmpty()) break
                     downloadUrl = location
                     continue
                 }
@@ -132,8 +137,8 @@ object AppUpdater {
             }
 
             if (finalConn == null) {
-                logRemote("리다이렉트 실패 (최대 횟수 초과)")
-                if (!silent) showToast(context, "다운로드 실패 (리다이렉트)")
+                logRemote("리다이렉트 실패")
+                if (!silent) showToast(context, "다운로드 실패")
                 lastCheckedVersion = ""
                 return
             }
@@ -146,10 +151,10 @@ object AppUpdater {
             finalConn.disconnect()
 
             val size = file.length()
-            logRemote("다운로드 완료: ${size} bytes → ${file.absolutePath}")
+            logRemote("다운로드 완료: ${size} bytes")
 
             if (size < 100_000) {
-                logRemote("파일 너무 작음 ($size bytes), 설치 취소")
+                logRemote("파일 너무 작음 ($size bytes)")
                 if (!silent) showToast(context, "다운로드 실패 (파일 손상)")
                 file.delete()
                 lastCheckedVersion = ""
@@ -161,8 +166,7 @@ object AppUpdater {
                 installApk(context, file)
             }
         } catch (e: Exception) {
-            val msg = "${e.javaClass.simpleName}: ${e.message}"
-            logRemote("다운로드 예외: $msg")
+            logRemote("다운로드 예외: ${e.javaClass.simpleName}: ${e.message}")
             if (!silent) showToast(context, "다운로드 실패: ${e.message}")
             lastCheckedVersion = ""
         }
@@ -188,7 +192,6 @@ object AppUpdater {
         }
     }
 
-    /** Firebase에 에러 로그 즉시 업로드 (원격 디버깅용) */
     private fun logRemote(message: String) {
         val time = dateFormat.format(Date())
         val entry = "[$time] $message"
@@ -196,7 +199,7 @@ object AppUpdater {
 
         kotlin.concurrent.thread {
             try {
-                val json = "\"$entry\""
+                val json = "\"${entry.replace("\"", "\\\"")}\""
                 val conn = URL(FIREBASE_LOG_URL).openConnection() as HttpURLConnection
                 conn.requestMethod = "PUT"
                 conn.connectTimeout = 5000

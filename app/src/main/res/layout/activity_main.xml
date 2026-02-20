@@ -40,10 +40,15 @@
                 android:id="@+id/btnUpdate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="  업데이트 확인"
-                android:textColor="#2AC1BC"
+                android:text="  업데이트"
+                android:textColor="#1A1A30"
+                android:background="#2AC1BC"
                 android:textSize="13sp"
-                android:padding="4dp" />
+                android:textStyle="bold"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
 
         </LinearLayout>
 
