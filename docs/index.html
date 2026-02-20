@@ -627,7 +627,8 @@ document.addEventListener('touchend',()=>{
 });
 
 // === 조리모드 ===
-const CK_NUM=['하나','둘','삼','넷','다섯','육','칠','팔','아홉','영'];
+const CK_D=['영','하나','둘','삼','넷','다섯','육','칠','팔','아홉'];
+function ckNum(n){return String(n).split('').map(d=>CK_D[parseInt(d)]).join('');}
 let ckOn=false,ckQ=[],ckPrev=null; // ckQ: {t,ma,fa,da}
 
 function togCookMode(){ckOn=!ckOn;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');if(!ckOn){ckQ=[];updCkUI();}saveCk();}
@@ -649,7 +650,7 @@ function chkCkAlerts(){
   const now=Date.now();
   ckQ.forEach((o,i)=>{
     const rem=tgt-(now-o.t)/60000;
-    const nm=CK_NUM[i]||String(i+1);
+    const nm=ckNum(i+1);
     if(rem<=mid+fin&&!o.ma){o.ma=true;try{NativeBridge.speak(nm+'번 중간작업');}catch(e){}}
     if(rem<=fin&&!o.fa){o.fa=true;try{NativeBridge.speak(nm+'번 뒷작업');}catch(e){}}
     if(rem<=0&&!o.da){o.da=true;try{NativeBridge.speak(nm+'번 조리완료');}catch(e){}}
@@ -668,7 +669,7 @@ function updCkUI(){
   ckQ.forEach((o,i)=>{
     const el2=Math.floor((now-o.t)/60000);
     const rem=Math.max(0,tgt-el2);
-    const nm=CK_NUM[i]||String(i+1);
+    const nm=ckNum(i+1);
     let st,cl;
     if(rem<=0){st='조리완료';cl='#FFFFFF';}
     else if(rem<=fin){st='뒷작업';cl='#E74C3C';}
