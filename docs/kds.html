@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PosKDS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(180deg,#1A1A30,#121225);color:#E0E0EC;min-height:100vh;padding:10px;font-size:13px;}
+.card{background:linear-gradient(180deg,#242444,#1A1A35);border:1px solid #2E2E52;border-radius:12px;padding:12px;margin-bottom:8px;}
+.row{display:flex;align-items:center;gap:6px;}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.dg{background:#2ECC71;}.dr{background:#E74C3C;}.dd{background:#707088;}
+.btn{padding:4px 12px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;color:#FFF;touch-action:manipulation;}
+.bb{background:#2AC1BC;}.bg{background:#2ECC71;}.bred{background:#E74C3C;}.bn{background:#2A2A45;color:#E0E0EC;}
+.sr{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2A2A45;}
+.sr:last-child{border-bottom:none;}
+.ch{cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:2px 0;}
+.cb{display:none;}.cb.open{display:block;}
+.logbox{background:#1A1A30;border:1px solid #2A2A45;border-radius:6px;padding:6px;max-height:250px;overflow-y:auto;font-family:monospace;font-size:10px;color:#707088;white-space:pre-wrap;word-break:break-all;}
+canvas{width:100%;height:100px;display:block;margin-top:6px;}
+.tabs{display:flex;gap:3px;margin-bottom:6px;}
+.tab{padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;background:#2A2A45;color:#9090A8;}.tab.active{background:#2AC1BC;color:#FFF;}
+.conn{font-size:10px;text-align:right;margin-bottom:4px;}
+.app-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2A2A45;}
+.app-row:last-child{border-bottom:none;}
+.picker-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:flex-end;}
+.picker-box{background:#242444;border-radius:12px 12px 0 0;padding:16px;max-height:70vh;overflow-y:auto;width:100%;}
+.picker-item{padding:10px 8px;border-bottom:1px solid #2A2A45;cursor:pointer;font-size:13px;}
+.picker-item:active{background:#2A2A45;}
+.picker-item .pkg{font-size:10px;color:#707088;}
+</style>
+</head>
+<body>
+
+<div class="conn"><span class="dot dd" id="cD"></span> <span id="cT" style="color:#707088">연결중...</span></div>
+
+<!-- 1. 건수 -->
+<div class="card" style="text-align:center;padding:20px">
+  <div style="color:#9090A8;font-size:14px">조리중</div>
+  <div id="count" style="font-size:64px;font-weight:bold;color:#FFF;line-height:1.1">--</div>
+  <div id="syncTime" style="color:#707088;font-size:11px;margin-top:4px">대기중...</div>
+</div>
+
+<!-- 2. 앱 설정 (앱 모드) -->
+<div class="card" id="appCard" style="display:none">
+  <div class="app-row">
+    <div class="row"><span class="dot dr" id="accDot"></span><span style="margin-left:4px">접근성 서비스</span></div>
+    <div class="row" style="gap:4px">
+      <button class="btn bn" onclick="Android.openAppSettings()" style="font-size:11px">제한해제</button>
+      <button class="btn bb" onclick="Android.openAccessibilitySettings()">설정</button>
+    </div>
+  </div>
+  <div class="app-row">
+    <div class="row"><span class="dot dd" id="kdsDot"></span><span id="kdsLabel" style="margin-left:4px">KDS: --</span></div>
+    <button class="btn bb" onclick="showPicker()">변경</button>
+  </div>
+  <div class="app-row">
+    <div class="row" style="gap:8px">
+      <span id="appVer" style="color:#9090A8;font-size:12px">v--</span>
+      <button class="btn bg" onclick="Android.checkUpdate()" style="font-size:11px">업데이트</button>
+    </div>
+    <button class="btn bn" onclick="Android.requestDump()" style="font-size:11px">덤프요청</button>
+  </div>
+</div>
+
+<!-- 3. 건수 차트 -->
+<div class="card">
+  <div class="ch" onclick="togSec('chB')">
+    <span style="font-size:13px;font-weight:600;color:#9090A8">건수 변동 (2시간)</span>
+    <span id="chA" style="color:#9090A8">&#9654;</span>
+  </div>
+  <div class="cb" id="chB"><canvas id="hChart"></canvas></div>
+</div>
+
+<!-- 4. 로그 -->
+<div class="card">
+  <div class="ch" onclick="togSec('lgB')">
+    <span style="font-size:13px;font-weight:600;color:#9090A8">로그</span>
+    <span id="lgA" style="color:#9090A8">&#9654;</span>
+  </div>
+  <div class="cb" id="lgB">
+    <div class="tabs">
+      <div class="tab active" onclick="sLt('kds',this)">KDS</div>
+      <div class="tab" onclick="sLt('dump',this)">Dump</div>
+    </div>
+    <div class="logbox" id="logC">연결중...</div>
+  </div>
+</div>
+
+<div style="text-align:center;color:#707088;font-size:10px;padding:12px 0">PosKDS WebView</div>
+
+<!-- 앱 선택 팝업 -->
+<div class="picker-overlay" id="pickerOverlay" onclick="hidePicker()">
+  <div class="picker-box" onclick="event.stopPropagation()">
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px">KDS 앱 선택</div>
+    <div id="pickerList"></div>
+  </div>
+</div>
+
+<script>
+const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app';
+const isApp=typeof Android!=='undefined';
+let kS={},hD=[],logTab='kds';
+
+// === SSE ===
+function sse(path,cb){
+  const es=new EventSource(FB+path);
+  es.onopen=()=>updC(true);
+  es.onerror=()=>{updC(false);setTimeout(()=>{es.close();sse(path,cb);},10000);};
+  es.addEventListener('put',e=>{try{cb(JSON.parse(e.data));}catch(ex){}});
+  es.addEventListener('patch',e=>{try{cb(JSON.parse(e.data));}catch(ex){}});
+}
+function updC(ok){
+  document.getElementById('cD').className='dot '+(ok?'dg':'dr');
+  const t=document.getElementById('cT');t.textContent=ok?'실시간':'끊김';t.style.color=ok?'#2ECC71':'#E74C3C';
+}
+
+// === 건수 ===
+function hKds(m){
+  if(!m.data||m.data==='null')return;
+  if(m.path==='/')Object.assign(kS,m.data);else kS[m.path.slice(1)]=m.data;
+  updCount();
+}
+function updCount(){
+  const c=kS.count;
+  document.getElementById('count').textContent=c!=null?c:'--';
+  if(kS.time){
+    const t=kS.time;
+    const ago=Math.floor((Date.now()-new Date(t).getTime())/1000);
+    const agoStr=ago<60?ago+'초 전':ago<3600?Math.floor(ago/60)+'분 전':Math.floor(ago/3600)+'시간 전';
+    document.getElementById('syncTime').textContent=t.substring(11)+' ('+agoStr+')';
+  }
+}
+
+// === 이력 ===
+function hHist(m){
+  if(!m.data||m.data==='null')return;
+  if(m.path==='/'&&m.data.entries)hD=m.data.entries;
+  drawChart();
+}
+
+// === 로그 SSE ===
+function hLog(m){
+  if(!m.data||m.data==='null')return;
+  if(logTab==='kds'){
+    const lc=document.getElementById('logC');
+    lc.textContent=typeof m.data==='string'?m.data:JSON.stringify(m.data,null,2);
+    lc.scrollTop=lc.scrollHeight;
+  }
+}
+
+// === 로그 탭 ===
+function sLt(tab,el){
+  logTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const lc=document.getElementById('logC');lc.textContent='로딩...';
+  const urls={kds:FB+'/kds_log.json',dump:FB+'/kds_dump.json'};
+  fetch(urls[tab]).then(r=>r.json()).then(d=>{
+    if(tab==='kds')lc.textContent=typeof d==='string'?d:JSON.stringify(d,null,2);
+    else if(tab==='dump')lc.textContent=d&&d.tree?'['+d.time+'] '+d.lines+'줄\n'+d.tree:'덤프 없음';
+    lc.scrollTop=lc.scrollHeight;
+  }).catch(()=>{lc.textContent='로드 실패';});
+}
+
+// === 차트 ===
+function drawChart(){
+  const cv=document.getElementById('hChart');if(!cv||!hD||hD.length<2)return;
+  const ctx=cv.getContext('2d');
+  const now=Date.now(),t2h=now-7200000,data=hD.filter(e=>e.time>=t2h);if(data.length<2)return;
+  const W=cv.width=cv.offsetWidth*2,H=cv.height=200;ctx.clearRect(0,0,W,H);
+  const p={t:16,r:8,b:24,l:30},cw=W-p.l-p.r,ch=H-p.t-p.b;
+  const mT=data[0].time,xT=data[data.length-1].time,mC=Math.max(...data.map(d=>d.count),5);
+  const x=t=>p.l+((t-mT)/(xT-mT||1))*cw,y=c2=>p.t+ch-(c2/mC)*ch;
+  ctx.strokeStyle='#2A2A45';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const gy=p.t+(ch/4)*i;ctx.beginPath();ctx.moveTo(p.l,gy);ctx.lineTo(W-p.r,gy);ctx.stroke();ctx.fillStyle='#707088';ctx.font='16px sans-serif';ctx.textAlign='right';ctx.fillText(Math.round(mC-(mC/4)*i),p.l-4,gy+4);}
+  ctx.textAlign='center';const ts=(xT-mT)/3;
+  for(let i=0;i<=3;i++){const t=mT+ts*i,d=new Date(t);ctx.fillText(d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'),x(t),H-4);}
+  ctx.strokeStyle='#2AC1BC';ctx.lineWidth=2;ctx.beginPath();
+  data.forEach((d,i)=>{const px=x(d.time),py=y(d.count);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);});ctx.stroke();
+  data.forEach(d=>{ctx.fillStyle='#2ECC71';ctx.beginPath();ctx.arc(x(d.time),y(d.count),3,0,Math.PI*2);ctx.fill();});
+}
+
+// === 유틸 ===
+function togSec(id){const e=document.getElementById(id),o=e.classList.toggle('open');const a=document.getElementById(id.replace('B','A'));if(a)a.innerHTML=o?'&#9660;':'&#9654;';if(id==='chB'&&o)setTimeout(drawChart,100);}
+
+// === 앱 모드 ===
+if(isApp){
+  document.getElementById('appCard').style.display='block';
+  try{document.getElementById('appVer').textContent='v'+Android.getVersionName();}catch(e){}
+  function updAppStatus(){
+    try{
+      const accOk=Android.isAccessibilityEnabled();
+      document.getElementById('accDot').className='dot '+(accOk?'dg':'dr');
+      const pkg=Android.getKdsPackage();
+      const kdsDot=document.getElementById('kdsDot');
+      const kdsLabel=document.getElementById('kdsLabel');
+      if(pkg){kdsDot.className='dot dg';kdsLabel.textContent='KDS: '+pkg.split('.').pop();}
+      else{kdsDot.className='dot dd';kdsLabel.textContent='KDS: 미설정';}
+    }catch(e){}
+  }
+  updAppStatus();
+  setInterval(updAppStatus,3000);
+}
+
+// === 앱 선택 ===
+function showPicker(){
+  if(!isApp)return;
+  try{
+    const apps=JSON.parse(Android.getInstalledApps());
+    const list=document.getElementById('pickerList');
+    list.innerHTML='';
+    apps.forEach(a=>{
+      const div=document.createElement('div');
+      div.className='picker-item';
+      div.innerHTML=a.name+'<div class="pkg">'+a.pkg+'</div>';
+      div.onclick=()=>{
+        Android.setKdsPackage(a.pkg);
+        hidePicker();
+        document.getElementById('kdsLabel').textContent='KDS: '+a.name;
+        document.getElementById('kdsDot').className='dot dg';
+      };
+      list.appendChild(div);
+    });
+    document.getElementById('pickerOverlay').style.display='flex';
+  }catch(e){}
+}
+function hidePicker(){document.getElementById('pickerOverlay').style.display='none';}
+
+// === 초기화 ===
+sse('/kds_status.json',hKds);
+sse('/kds_history.json',hHist);
+sse('/kds_log.json',hLog);
+// 초기 로그 로드
+fetch(FB+'/kds_log.json').then(r=>r.json()).then(d=>{
+  if(logTab==='kds'){const lc=document.getElementById('logC');lc.textContent=typeof d==='string'?d:JSON.stringify(d,null,2);}
+}).catch(()=>{});
+// 동기화 시간 주기 갱신
+setInterval(updCount,30000);
+window.addEventListener('resize',drawChart);
+</script>
+</body>
+</html>

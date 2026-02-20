@@ -1,143 +1,67 @@
 package com.poskds.app
 
-import android.app.AlertDialog
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ApplicationInfo
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import android.view.View
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.webkit.JavascriptInterface
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import com.poskds.app.service.AppUpdater
 import com.poskds.app.service.KdsAccessibilityService
 import com.poskds.app.service.KeepAliveService
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val PREFS_NAME = "poskds_prefs"
         private const val KEY_KDS_PACKAGE = "kds_package"
-        private const val KEY_LAST_COUNT = "last_count"
-        private const val KEY_LAST_UPLOAD_TIME = "last_upload_time"
-        private const val KEY_LOG = "log_text"
-
         private const val DEFAULT_KDS_PACKAGE = "com.foodtechkorea.mate_kds"
+        private const val PAGE_URL = "https://wk7007-wk.github.io/PosKDS/kds.html"
     }
 
     private lateinit var prefs: SharedPreferences
-    private lateinit var tvCount: TextView
-    private lateinit var tvLastSync: TextView
-    private lateinit var tvAccessDot: TextView
-    private lateinit var tvKdsDot: TextView
-    private lateinit var tvKdsPackage: TextView
-    private lateinit var tvLog: TextView
-    private lateinit var etKdsPackage: EditText
+    private lateinit var webView: WebView
 
-    private val handler = Handler(Looper.getMainLooper())
-    private val refreshRunnable = object : Runnable {
-        override fun run() {
-            refreshUI()
-            handler.postDelayed(this, 2000)
-        }
-    }
-
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-
-        tvCount = findViewById(R.id.tvCount)
-        tvLastSync = findViewById(R.id.tvLastSync)
-        tvAccessDot = findViewById(R.id.tvAccessDot)
-        tvKdsDot = findViewById(R.id.tvKdsDot)
-        tvKdsPackage = findViewById(R.id.tvKdsPackage)
-        tvLog = findViewById(R.id.tvLog)
-        etKdsPackage = findViewById(R.id.etKdsPackage)
-
         applyDefaults()
 
-        // 배터리 최적화 제외 요청 (서비스 유지)
-        requestBatteryOptimizationExemption()
-
-        // 포그라운드 서비스 시작
-        KeepAliveService.start(this)
-
-        // 저장된 값 로드
-        etKdsPackage.setText(prefs.getString(KEY_KDS_PACKAGE, DEFAULT_KDS_PACKAGE))
-
-        // 버전 표시 + 업데이트
-        val versionName = packageManager.getPackageInfo(packageName, 0).versionName
-        findViewById<TextView>(R.id.tvVersion).text = "v$versionName"
-        findViewById<TextView>(R.id.btnUpdate).setOnClickListener {
-            AppUpdater.checkAndUpdate(this, versionName)
+        webView = findViewById(R.id.webView)
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            cacheMode = WebSettings.LOAD_NO_CACHE
+            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
-
-        // 설정 접기/펼치기
-        val layoutSettings = findViewById<LinearLayout>(R.id.layoutSettings)
-        val btnToggle = findViewById<TextView>(R.id.btnToggleSettings)
-        btnToggle.setOnClickListener {
-            if (layoutSettings.visibility == View.GONE) {
-                layoutSettings.visibility = View.VISIBLE
-                btnToggle.text = "설정 ▼"
-            } else {
-                layoutSettings.visibility = View.GONE
-                btnToggle.text = "설정 ▶"
-            }
-        }
-
-        // 제한 해제 → 앱 정보 페이지
-        findViewById<TextView>(R.id.btnRestrict).setOnClickListener {
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = android.net.Uri.parse("package:$packageName")
-            }
-            startActivity(intent)
-        }
-
-        // 접근성 설정 버튼
-        findViewById<TextView>(R.id.btnAccess).setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }
-
-        // KDS 앱 선택 버튼
-        findViewById<TextView>(R.id.btnPickKds).setOnClickListener {
-            showAppPicker()
-        }
-
-        // 대시보드 열기 버튼
-        findViewById<TextView>(R.id.btnDashboard).setOnClickListener {
-            val url = "https://wk7007-wk.github.io/PosKDS/"
-            startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
-        }
-
-        // 저장 버튼
-        findViewById<TextView>(R.id.btnSave).setOnClickListener {
-            val kdsPackage = etKdsPackage.text.toString().trim()
-            prefs.edit().putString(KEY_KDS_PACKAGE, kdsPackage).apply()
-            Toast.makeText(this, "저장됨", Toast.LENGTH_SHORT).show()
-            refreshUI()
-        }
-    }
-
-    @android.annotation.SuppressLint("BatteryLife")
-    private fun requestBatteryOptimizationExemption() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val pm = getSystemService(PowerManager::class.java)
-            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = android.net.Uri.parse("package:$packageName")
+        webView.addJavascriptInterface(KdsBridge(), "Android")
+        webView.webViewClient = object : WebViewClient() {
+            override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                if (request?.isForMainFrame == true) {
+                    showFallback()
                 }
-                startActivity(intent)
             }
         }
+        webView.loadUrl(PAGE_URL)
+
+        // 서비스 시작
+        KeepAliveService.start(this)
+        requestBatteryOptimizationExemption()
     }
 
     private fun applyDefaults() {
@@ -147,75 +71,101 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showAppPicker() {
-        val pm = packageManager
-        val apps = pm.getInstalledApplications(0)
-            .filter { it.flags and ApplicationInfo.FLAG_SYSTEM == 0 }
-            .sortedBy { pm.getApplicationLabel(it).toString() }
-
-        val names = apps.map { "${pm.getApplicationLabel(it)}  (${it.packageName})" }.toTypedArray()
-
-        AlertDialog.Builder(this, R.style.DarkDialogTheme)
-            .setTitle("KDS 앱 선택")
-            .setItems(names) { _, which ->
-                val selected = apps[which].packageName
-                etKdsPackage.setText(selected)
-                prefs.edit().putString(KEY_KDS_PACKAGE, selected).apply()
-                Toast.makeText(this, "KDS: ${pm.getApplicationLabel(apps[which])}", Toast.LENGTH_SHORT).show()
-                refreshUI()
+    @SuppressLint("BatteryLife")
+    private fun requestBatteryOptimizationExemption() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = getSystemService(PowerManager::class.java)
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:$packageName")
+                })
             }
-            .setNegativeButton("취소", null)
-            .show()
+        }
     }
 
-    override fun onResume() {
-        super.onResume()
-        handler.post(refreshRunnable)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        handler.removeCallbacks(refreshRunnable)
-    }
-
-    private fun refreshUI() {
-        // 접근성 상태
+    private fun showFallback() {
+        val count = prefs.getInt("last_count", -1)
+        val countText = if (count >= 0) count.toString() else "--"
         val accessOk = KdsAccessibilityService.isAvailable()
-        tvAccessDot.setTextColor(if (accessOk) 0xFF2ECC71.toInt() else 0xFFE74C3C.toInt())
+        val accessColor = if (accessOk) "#2ECC71" else "#E74C3C"
+        val html = """
+            <html><body style="background:#1A1A30;color:#E0E0EC;font-family:sans-serif;text-align:center;padding:40px">
+            <h2>PosKDS</h2>
+            <p style="color:#9090A8">네트워크 오류 - 오프라인 모드</p>
+            <p style="font-size:64px;font-weight:bold;color:#FFF">$countText</p>
+            <p style="color:$accessColor">접근성: ${if (accessOk) "ON" else "OFF"}</p>
+            <p style="color:#707088;font-size:12px">접근성 서비스는 백그라운드에서 정상 동작 중</p>
+            <button onclick="location.reload()" style="background:#2AC1BC;color:#FFF;border:none;padding:12px 24px;border-radius:8px;font-size:14px;margin-top:20px">재시도</button>
+            </body></html>
+        """.trimIndent()
+        webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
+    }
 
-        // KDS 패키지
-        val kdsPackage = prefs.getString(KEY_KDS_PACKAGE, "") ?: ""
-        val kdsOk = kdsPackage.isNotEmpty()
-        tvKdsDot.setTextColor(if (kdsOk) 0xFF2ECC71.toInt() else 0xFF707088.toInt())
-        if (kdsOk) {
-            val label = try {
-                val ai = packageManager.getApplicationInfo(kdsPackage, 0)
-                packageManager.getApplicationLabel(ai).toString()
-            } catch (_: Exception) { kdsPackage }
-            tvKdsPackage.text = "  KDS: $label"
-        } else {
-            tvKdsPackage.text = "  KDS: 미설정"
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        if (webView.canGoBack()) webView.goBack()
+        else super.onBackPressed()
+    }
+
+    inner class KdsBridge {
+        @JavascriptInterface
+        fun isAccessibilityEnabled(): Boolean = KdsAccessibilityService.isAvailable()
+
+        @JavascriptInterface
+        fun getKdsPackage(): String =
+            prefs.getString(KEY_KDS_PACKAGE, DEFAULT_KDS_PACKAGE) ?: DEFAULT_KDS_PACKAGE
+
+        @JavascriptInterface
+        fun setKdsPackage(pkg: String) {
+            prefs.edit().putString(KEY_KDS_PACKAGE, pkg).apply()
         }
 
-        // 건수
-        val count = prefs.getInt(KEY_LAST_COUNT, -1)
-        tvCount.text = if (count >= 0) count.toString() else "--"
+        @JavascriptInterface
+        fun getVersionName(): String =
+            try { packageManager.getPackageInfo(packageName, 0).versionName } catch (_: Exception) { "?" }
 
-        // 마지막 동기화
-        val lastUpload = prefs.getLong(KEY_LAST_UPLOAD_TIME, 0L)
-        if (lastUpload > 0) {
-            val ago = (System.currentTimeMillis() - lastUpload) / 1000
-            tvLastSync.text = when {
-                ago < 60 -> "${ago}초 전 업로드"
-                ago < 3600 -> "${ago / 60}분 전 업로드"
-                else -> "${ago / 3600}시간 전"
+        @JavascriptInterface
+        fun checkUpdate() {
+            AppUpdater.checkAndUpdate(this@MainActivity, getVersionName())
+        }
+
+        @JavascriptInterface
+        fun openAccessibilitySettings() {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+
+        @JavascriptInterface
+        fun openAppSettings() {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:$packageName")
+            })
+        }
+
+        @JavascriptInterface
+        fun requestDump() {
+            KdsAccessibilityService.dumpRequested = true
+        }
+
+        @JavascriptInterface
+        fun getInstalledApps(): String {
+            val pm = packageManager
+            val apps = pm.getInstalledApplications(0)
+                .filter { it.flags and ApplicationInfo.FLAG_SYSTEM == 0 }
+                .sortedBy { pm.getApplicationLabel(it).toString() }
+            val arr = JSONArray()
+            for (app in apps) {
+                arr.put(JSONObject().apply {
+                    put("name", pm.getApplicationLabel(app).toString())
+                    put("pkg", app.packageName)
+                })
             }
-        } else {
-            tvLastSync.text = "대기중..."
+            return arr.toString()
         }
 
-        // 로그
-        val log = prefs.getString(KEY_LOG, "") ?: ""
-        tvLog.text = if (log.isNotEmpty()) log else "로그 없음"
+        @JavascriptInterface
+        fun getLastCount(): Int = prefs.getInt("last_count", -1)
+
+        @JavascriptInterface
+        fun getLastUploadTime(): Long = prefs.getLong("last_upload_time", 0)
     }
 }

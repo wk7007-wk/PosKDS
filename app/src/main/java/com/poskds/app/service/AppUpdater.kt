@@ -7,8 +7,10 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
-import org.json.JSONArray
+import org.json.JSONObject
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
@@ -19,29 +21,122 @@ import java.util.Locale
 object AppUpdater {
 
     private const val TAG = "AppUpdater"
-    private const val GITHUB_API = "https://api.github.com/repos/wk7007-wk/PosKDS/releases/latest"
+    private const val FIREBASE_UPDATE_URL =
+        "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/app_update/poskds.json"
     private const val FIREBASE_LOG_URL =
         "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/kds_status/update_log.json"
     private const val APK_NAME = "PosKDS.apk"
 
     private var lastCheckedVersion = ""
     private val dateFormat = SimpleDateFormat("MM-dd HH:mm:ss", Locale.KOREA)
+    private var sseThread: Thread? = null
+    private var sseRunning = false
+    private var currentContext: Context? = null
+    private var currentVersionName: String = ""
 
+    /** 수동 업데이트 확인 (버튼) */
     fun checkAndUpdate(context: Context, currentVersionName: String) {
         check(context, currentVersionName, silent = false)
     }
 
+    /** 자동 업데이트 확인 (백그라운드) */
     fun checkSilent(context: Context, currentVersionName: String) {
         check(context, currentVersionName, silent = true)
+    }
+
+    /** SSE 실시간 업데이트 감지 시작 */
+    fun startAutoUpdate(context: Context, versionName: String) {
+        currentContext = context.applicationContext
+        currentVersionName = versionName
+        if (sseRunning) return
+        sseRunning = true
+        connectSSE()
+        logRemote("자동 업데이트 SSE 시작 (현재: v$versionName)")
+    }
+
+    fun stopAutoUpdate() {
+        sseRunning = false
+        sseThread?.interrupt()
+        sseThread = null
+    }
+
+    private fun connectSSE() {
+        if (!sseRunning) return
+        sseThread = kotlin.concurrent.thread {
+            try {
+                val conn = URL(FIREBASE_UPDATE_URL).openConnection() as HttpURLConnection
+                conn.setRequestProperty("Accept", "text/event-stream")
+                conn.connectTimeout = 15000
+                conn.readTimeout = 0
+
+                if (conn.responseCode != 200) {
+                    conn.disconnect()
+                    scheduleReconnect()
+                    return@thread
+                }
+
+                val reader = BufferedReader(InputStreamReader(conn.inputStream))
+                var eventType = ""
+
+                while (sseRunning) {
+                    val line = reader.readLine() ?: break
+                    when {
+                        line.startsWith("event:") -> eventType = line.substringAfter("event:").trim()
+                        line.startsWith("data:") -> {
+                            if (eventType == "put" || eventType == "patch") {
+                                handleSSEData(line.substringAfter("data:").trim())
+                            }
+                        }
+                    }
+                }
+
+                reader.close()
+                conn.disconnect()
+            } catch (_: InterruptedException) {
+                return@thread
+            } catch (e: Exception) {
+                Log.w(TAG, "SSE 에러: ${e.message}")
+            }
+            scheduleReconnect()
+        }
+    }
+
+    private fun handleSSEData(raw: String) {
+        try {
+            val wrapper = JSONObject(raw)
+            val data = wrapper.opt("data") ?: return
+            if (data.toString() == "null") return
+
+            val obj = if (data is JSONObject) data else JSONObject(data.toString())
+            val version = obj.optString("version", "")
+            val apkUrl = obj.optString("apk_url", "")
+
+            if (version.isEmpty() || apkUrl.isEmpty()) return
+            if (version == currentVersionName) return
+            if (version == lastCheckedVersion) return
+
+            lastCheckedVersion = version
+            val ctx = currentContext ?: return
+            logRemote("SSE 새 버전 감지: v$version (현재: v$currentVersionName)")
+            showToast(ctx, "새 버전 v$version 다운로드 중...")
+            downloadApk(ctx, apkUrl, silent = false)
+        } catch (e: Exception) {
+            Log.w(TAG, "SSE 데이터 처리 실패: ${e.message}")
+        }
+    }
+
+    private fun scheduleReconnect() {
+        if (!sseRunning) return
+        Thread.sleep(10_000)
+        connectSSE()
     }
 
     private fun check(context: Context, currentVersionName: String, silent: Boolean) {
         kotlin.concurrent.thread {
             try {
-                val conn = URL(GITHUB_API).openConnection() as HttpURLConnection
+                val conn = URL(FIREBASE_UPDATE_URL).openConnection() as HttpURLConnection
                 conn.connectTimeout = 10000
                 conn.readTimeout = 10000
-                conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
 
                 if (conn.responseCode != 200) {
                     if (!silent) showToast(context, "업데이트 확인 실패 (HTTP ${conn.responseCode})")
@@ -52,12 +147,17 @@ object AppUpdater {
                 val response = conn.inputStream.bufferedReader().readText()
                 conn.disconnect()
 
-                val json = org.json.JSONObject(response)
-                val tagName = json.optString("tag_name", "")  // e.g. "v0220.0613"
-                val latestVersion = tagName.removePrefix("v")  // "0220.0613"
+                if (response == "null" || response.isBlank()) {
+                    if (!silent) showToast(context, "업데이트 정보 없음")
+                    return@thread
+                }
 
-                if (latestVersion.isEmpty()) {
-                    if (!silent) showToast(context, "릴리즈 정보 없음")
+                val json = JSONObject(response)
+                val latestVersion = json.optString("version", "")
+                val apkUrl = json.optString("apk_url", "")
+
+                if (latestVersion.isEmpty() || apkUrl.isEmpty()) {
+                    if (!silent) showToast(context, "업데이트 정보 불완전")
                     return@thread
                 }
 
@@ -66,33 +166,17 @@ object AppUpdater {
                     return@thread
                 }
 
-                // APK URL 찾기
-                val assets = json.optJSONArray("assets") ?: JSONArray()
-                var apkUrl = ""
-                for (i in 0 until assets.length()) {
-                    val asset = assets.getJSONObject(i)
-                    if (asset.getString("name").endsWith(".apk")) {
-                        apkUrl = asset.getString("browser_download_url")
-                        break
-                    }
-                }
-
-                if (apkUrl.isEmpty()) {
-                    if (!silent) showToast(context, "APK 없는 릴리즈")
-                    return@thread
-                }
-
                 if (silent && latestVersion == lastCheckedVersion) return@thread
                 lastCheckedVersion = latestVersion
 
                 logRemote("새 버전 발견: v$latestVersion (현재: v$currentVersionName)")
-                showToast(context, "v$latestVersion 다운로드 중...")
+                if (!silent) showToast(context, "v$latestVersion 다운로드 중...")
 
                 downloadApk(context, apkUrl, silent)
 
             } catch (e: Exception) {
                 logRemote("업데이트 확인 실패: ${e.javaClass.simpleName}: ${e.message}")
-                if (!silent) showToast(context, "업데이트 확인 실패: ${e.message}")
+                if (!silent) showToast(context, "업데이트 확인 실패")
             }
         }
     }
