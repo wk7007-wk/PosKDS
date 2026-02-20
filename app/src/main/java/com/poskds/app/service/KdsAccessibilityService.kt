@@ -158,9 +158,9 @@ class KdsAccessibilityService : AccessibilityService() {
             for (node in nodes) {
                 val text = node.text?.toString() ?: ""
                 val desc = node.contentDescription?.toString() ?: ""
-                // "조리중 3", "조리중3", "조리중 ③" 패턴
-                val match = Regex("조리중\\s*(\\d+)").find(text)
-                    ?: Regex("조리중\\s*(\\d+)").find(desc)
+                // "조리중 3", "조리중\n3", "조리중3" 패턴 (개행 포함)
+                val match = Regex("조리중[\\s\\n]*(\\d+)").find(text)
+                    ?: Regex("조리중[\\s\\n]*(\\d+)").find(desc)
                 if (match != null) {
                     return match.groupValues[1].toIntOrNull()
                 }
@@ -173,6 +173,9 @@ class KdsAccessibilityService : AccessibilityService() {
                 parent.recycle()
                 if (count != null) return count
             }
+
+            // "조리중" 텍스트는 있지만 숫자 없음 → 0건
+            return 0
         }
 
         // 방법3: 전체 트리 탐색 + 디버깅 덤프
