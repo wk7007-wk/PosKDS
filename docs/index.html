@@ -418,7 +418,10 @@ function getZones(platform){
   const key=platform==='coupang'?'coupang_zones':'baemin_zones';
   const def=platform==='coupang'?CZ_DEF:BZ_DEF;
   let z=S[key];
-  if(!z||!Array.isArray(z)||z.length!==11)return def.slice();
+  if(!z||!Array.isArray(z)||z.length!==11){
+    try{const b=JSON.parse(localStorage.getItem('ad_settings_backup'));if(b&&b[key]&&Array.isArray(b[key])&&b[key].length===11)return b[key].slice();}catch(e){}
+    return def.slice();
+  }
   return z.slice();
 }
 function setZones(platform,zones){
