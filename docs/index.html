@@ -313,9 +313,16 @@ function hSet(m){
   if(m.path==='/')Object.assign(S,m.data);else S[m.path.slice(1)]=m.data;
   sseLoaded=true;try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}updSetUI();updMonitor();
 }
+let _prevAdAction='';
 function hASt(m){
   if(!m.data||m.data==='null')return;
   if(m.path==='/')Object.assign(aS,m.data);else aS[m.path.slice(1)]=m.data;
+  // 광고 변경 TTS 알림
+  const act=aS.last_ad_action||'';
+  if(isApp&&act&&act!==_prevAdAction&&_prevAdAction!==''){
+    try{NativeBridge.speak(act.replace(/^\d{2}:\d{2}\s*/,''));}catch(e){}
+  }
+  _prevAdAction=act;
   updMonitor();
 }
 function hStatus(m){
