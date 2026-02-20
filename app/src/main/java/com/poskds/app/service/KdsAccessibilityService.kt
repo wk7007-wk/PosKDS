@@ -110,26 +110,7 @@ class KdsAccessibilityService : AccessibilityService() {
         }
 
         try {
-            // 덤프 예약 처리: KDS가 포그라운드일 때 실행
-            if (dumpRequested) {
-                dumpRequested = false
-                val sb = StringBuilder()
-                dumpNode(root, sb, 0)
-                val result = sb.toString()
-                log("=== KDS UI 트리 덤프 (${result.lines().size}줄) ===\n$result\n=== 덤프 끝 ===")
-                FirebaseUploader.upload(prefs, lastCount)
-            }
-
-            // 5분마다 자동 덤프 (KDS 포그라운드일 때)
-            if (now - lastDumpTime >= AUTO_DUMP_MS) {
-                lastDumpTime = now
-                val sb = StringBuilder()
-                dumpNode(root, sb, 0)
-                val result = sb.toString()
-                FirebaseUploader.uploadDump(result, result.lines().size)
-                log("자동 덤프 완료 (${result.lines().size}줄)")
-            }
-
+            // 건수 추출을 먼저 실행 (덤프보다 우선)
             val count = extractCookingCount(root)
             if (count != null && count != lastCount) {
                 val prevCount = lastCount
@@ -143,6 +124,26 @@ class KdsAccessibilityService : AccessibilityService() {
 
                 // 건수 이력 기록
                 addHistory(count)
+            }
+
+            // 덤프 예약 처리: 건수 추출 후 실행 (lastCount 최신 보장)
+            if (dumpRequested) {
+                dumpRequested = false
+                val sb = StringBuilder()
+                dumpNode(root, sb, 0)
+                val result = sb.toString()
+                log("=== KDS UI 트리 덤프 (${result.lines().size}줄) ===\n$result\n=== 덤프 끝 ===")
+                FirebaseUploader.upload(prefs, lastCount)
+            }
+
+            // 5분마다 자동 덤프
+            if (now - lastDumpTime >= AUTO_DUMP_MS) {
+                lastDumpTime = now
+                val sb = StringBuilder()
+                dumpNode(root, sb, 0)
+                val result = sb.toString()
+                FirebaseUploader.uploadDump(result, result.lines().size)
+                log("자동 덤프 완료 (${result.lines().size}줄)")
             }
         } catch (e: Exception) {
             log("노드 탐색 실패: ${e.message}")
