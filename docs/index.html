@@ -112,6 +112,23 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   </div>
 </div>
 
+<!-- ═══ 1.5 조리모드 ═══ -->
+<div class="card">
+  <div class="ch" onclick="togSec('ckB')">
+    <div class="row" style="gap:6px">
+      <span style="font-size:13px;font-weight:600;color:#9090A8">조리모드</span>
+      <div class="tog" id="tog_cook_mode" onclick="event.stopPropagation();togCookMode()"></div>
+    </div>
+    <span id="ckA" style="color:#9090A8">&#9654;</span>
+  </div>
+  <div class="cb" id="ckB">
+    <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjCk('target',-1)">-</button><input type="number" id="ck_target" value="20" style="width:40px" onchange="saveCk()"><button class="btn bs bn" onclick="adjCk('target',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl" style="color:#E67E22">중간작업</span><div class="sv"><button class="btn bs bn" onclick="adjCk('mid',-1)">-</button><input type="number" id="ck_mid" value="12" style="width:40px" onchange="saveCk()"><button class="btn bs bn" onclick="adjCk('mid',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl" style="color:#E74C3C">뒷작업</span><div class="sv"><button class="btn bs bn" onclick="adjCk('finish',-1)">-</button><input type="number" id="ck_finish" value="3" style="width:40px" onchange="saveCk()"><button class="btn bs bn" onclick="adjCk('finish',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div id="cookQ" style="margin-top:6px;font-size:12px;color:#707088">대기중</div>
+  </div>
+</div>
+
 <!-- ═══ 2. 게이지 ═══ -->
 <div class="card">
   <div style="margin-bottom:8px">
@@ -336,7 +353,7 @@ function updMonitor(){
   document.getElementById('mCv').textContent=co2===true?'ON':co2===false?'OFF':'-';
   document.getElementById('mCd').className='dot '+(co2===true?'dg':co2===false?'dr':'dd');
   document.getElementById('mLast').textContent='마지막: '+(aS.last_ad_action??'--');
-  updGauges(c);updDelayPred();chkAlert(c);
+  updCkQueue(c);updGauges(c);updDelayPred();chkAlert(c);
 }
 
 // === 동기화 상태 ===
@@ -608,6 +625,63 @@ document.addEventListener('touchend',()=>{
   if(_pulling&&parseInt(_pInd.style.height)>=25){_pInd.textContent='새로고침 중...';_pInd.style.height='24px';setTimeout(()=>location.reload(),300);}
   else{_pInd.style.height='0';}_pulling=false;_pY=0;
 });
+
+// === 조리모드 ===
+const CK_NUM=['하나','둘','삼','넷','다섯','육','칠','팔','아홉','영'];
+let ckOn=false,ckQ=[],ckPrev=null;
+
+function togCookMode(){ckOn=!ckOn;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');if(!ckOn){ckQ=[];updCkUI();}saveCk();}
+
+function updCkQueue(c){
+  if(!ckOn||c==null)return;
+  if(ckPrev==null){ckPrev=c;return;}
+  const d=c-ckPrev;
+  if(d>0)for(let i=0;i<d;i++)ckQ.push({t:Date.now(),ma:false,fa:false});
+  else if(d<0)ckQ.splice(0,Math.min(-d,ckQ.length));
+  ckPrev=c;
+}
+
+function chkCkAlerts(){
+  if(!ckOn||!isApp)return;
+  const tgt=parseInt(document.getElementById('ck_target').value)||20;
+  const mid=parseInt(document.getElementById('ck_mid').value)||12;
+  const fin=parseInt(document.getElementById('ck_finish').value)||3;
+  const now=Date.now();
+  ckQ.forEach((o,i)=>{
+    const rem=tgt-(now-o.t)/60000;
+    const nm=CK_NUM[i]||String(i+1);
+    if(rem<=mid+fin&&!o.ma){o.ma=true;try{NativeBridge.speak(nm+' 중간작업');}catch(e){}}
+    if(rem<=fin&&!o.fa){o.fa=true;try{NativeBridge.speak(nm+' 뒷작업');}catch(e){}}
+  });
+  updCkUI();
+}
+
+function updCkUI(){
+  const el=document.getElementById('cookQ');if(!el)return;
+  if(!ckOn||ckQ.length===0){el.innerHTML='<span style="color:#707088">대기중</span>';return;}
+  const tgt=parseInt(document.getElementById('ck_target').value)||20;
+  const mid=parseInt(document.getElementById('ck_mid').value)||12;
+  const fin=parseInt(document.getElementById('ck_finish').value)||3;
+  const now=Date.now();
+  let h='';
+  ckQ.forEach((o,i)=>{
+    const el2=Math.floor((now-o.t)/60000);
+    const rem=Math.max(0,tgt-el2);
+    const nm=CK_NUM[i]||String(i+1);
+    let st,cl;
+    if(rem<=fin){st='뒷작업';cl='#E74C3C';}
+    else if(rem<=mid+fin){st='중간작업';cl='#E67E22';}
+    else{st='앞작업';cl='#2ECC71';}
+    h+=`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:#E0E0EC;font-weight:600">${nm}</span><span style="color:#707088">${el2}분경과 ${rem}분남음</span><span style="color:${cl};font-weight:600">${st}</span></div>`;
+  });
+  el.innerHTML=h;
+}
+
+function adjCk(k,d){const e=document.getElementById('ck_'+k);if(!e)return;e.value=Math.max(1,parseInt(e.value||0)+d);saveCk();}
+function saveCk(){try{localStorage.setItem('ck',JSON.stringify({on:ckOn,t:parseInt(document.getElementById('ck_target').value)||20,m:parseInt(document.getElementById('ck_mid').value)||12,f:parseInt(document.getElementById('ck_finish').value)||3}));}catch(e){}}
+function loadCk(){try{const s=JSON.parse(localStorage.getItem('ck'));if(s){ckOn=!!s.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');if(s.t)document.getElementById('ck_target').value=s.t;if(s.m)document.getElementById('ck_mid').value=s.m;if(s.f)document.getElementById('ck_finish').value=s.f;}}catch(e){}}
+loadCk();
+setInterval(chkCkAlerts,1000);
 
 // === 초기화 ===
 if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
