@@ -42,9 +42,6 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 .tbtn{padding:2px 8px;border-radius:4px;border:1px solid #2E2E52;font-size:10px;font-weight:600;cursor:pointer;background:#2A2A45;color:#E0E0EC;touch-action:manipulation;}
 .tbtn.on{border-color:#2ECC71;color:#2ECC71;}
 .tbtn.off{border-color:#E74C3C;color:#E74C3C;}
-.popup-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;}
-.popup-box{background:#242444;border:2px solid #E74C3C;border-radius:16px;padding:24px;max-width:400px;width:90%;text-align:center;animation:popIn .3s;}
-@keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
 </style>
 </head>
 <body>
@@ -246,12 +243,12 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   <button class="nbtn bn" onclick="nb('openAppSettings')">앱 정보 (제한해제)</button>
 </div>
 
-<div style="text-align:center;color:#707088;font-size:10px;padding:12px 0;">PosDelay Dashboard v3.1</div>
+<div style="text-align:center;color:#707088;font-size:10px;padding:12px 0;">PosDelay Dashboard v3.2</div>
 
 <script>
 const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app';
 let S={},aS={},kS={},stS={},hD=[],cLt='kds';
-let popupShown=false,aTS=0,aLC=0;
+let aTS=0;
 let avgInterval=3.0; // 분/건 (클램핑 2~4)
 const isApp=typeof NativeBridge!=='undefined';
 
@@ -409,12 +406,12 @@ function updGauges(c){
   const bo=S.baemin_off_threshold||8,bu=S.baemin_mid_upper_threshold||7,bm=S.baemin_mid_threshold||5,bn2=S.baemin_on_threshold||3;
   let h='';
   for(let i=0;i<=10;i++){
-    let cl=i>=co?'#E74C3C':i<=cn?'#2ECC71':'#E67E22';
+    let cl=i>=co?'#E74C3C':i<=cn?'#2ECC71':'#2A2A45';
     const cAct=i>=co?'COUPANG_AD_OFF':'COUPANG_AD_ON';
     h+=`<div class="gc${i===c?' act':''}" style="background:${cl}" onclick="gaugeAd('coupang',${i})">${i}</div>`;
   }
   document.getElementById('cG').innerHTML=h;
-  document.getElementById('cSt').innerHTML=c>=co?'<span style="color:#E74C3C">OFF</span>':c<=cn?'<span style="color:#2ECC71">ON</span>':'<span style="color:#E67E22">유지</span>';
+  document.getElementById('cSt').innerHTML=c>=co?'<span style="color:#E74C3C">OFF</span>':c<=cn?'<span style="color:#2ECC71">ON</span>':'<span style="color:#9090A8">유지</span>';
 
   h='';
   for(let i=0;i<=10;i++){
@@ -509,50 +506,58 @@ function pushSettings(){
   .then(r=>{toast(r.ok?'설정 저장 완료':'저장 실패: '+r.status);}).catch(e=>toast('에러: '+e.message));
 }
 
-// === 알림 + 팝업 ===
+// === 알림 (지연: 최초+3분반복, 정상복귀: 1회) ===
+let alertMode='normal'; // 'normal' | 'delayed'
+let lastAlertTime=0;
+const ALERT_REPEAT=180000; // 3분
+
 function chkAlert(c){
   if(c==null)return;
   const bdt=S.baemin_delay_threshold||5,cdt=S.coupang_delay_threshold||5;
-  const th=Math.min(bdt,cdt);
   const btt=S.baemin_target_time||20,bfc=S.baemin_fixed_cook_time||15;
   const ctt=S.coupang_target_time||20,cfc=S.coupang_fixed_cook_time||15;
   const bn=document.getElementById('alertB');
+  const now=Date.now();
 
-  if(c>=th){
-    if(aTS===0||aLC<th)aTS=Date.now();
-    aLC=c;
-    const el=Math.floor((Date.now()-aTS)/60000);
-    const timeStr=new Date(aTS).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  // 플랫폼별 지연 계산
+  let msgs=[];
+  const bDelay=Math.max(0,Math.round(c*avgInterval+bfc-btt));
+  const cDelay=Math.max(0,Math.round(c*avgInterval+cfc-ctt));
+  if(c>=bdt&&bDelay>0)msgs.push('배민 '+bDelay+'분');
+  if(c>=cdt&&cDelay>0)msgs.push('쿠팡 '+cDelay+'분');
 
-    // 플랫폼별 지연 계산
-    let msgs=[];
-    const bDelay=Math.max(0,Math.round(c*avgInterval+bfc-btt));
-    const cDelay=Math.max(0,Math.round(c*avgInterval+cfc-ctt));
-    if(c>=bdt&&bDelay>0)msgs.push('배민 '+bDelay+'분');
-    if(c>=cdt&&cDelay>0)msgs.push('쿠팡 '+cDelay+'분');
+  if(msgs.length>0){
+    // 지연 상태
+    bn.className='alert warn';
+    bn.innerHTML=`&#9888; 지연 ${msgs.join(', ')} (${c}건)`;
 
-    if(msgs.length>0){
-      bn.className='alert warn';
-      bn.innerHTML=`&#9888; ${timeStr} 이후 주문건 지연 ${msgs.join(', ')} (${c}건, ${el}분 경과)`;
-
-      if(el>0&&'Notification'in window&&Notification.permission==='granted'&&el%5===0){
-        new Notification('주문 지연',{body:`${timeStr} 이후 지연 ${msgs.join(', ')} (${c}건)`,tag:'pd-alert'});
-      }
-      if(el>=1&&!popupShown){showDelayPopup(c,msgs.join(', '),timeStr);}
+    if(alertMode!=='delayed'){
+      // 최초 진입 → 즉시 알림
+      alertMode='delayed';aTS=now;lastAlertTime=now;
+      sendNotif('주문 지연',`지연 ${msgs.join(', ')} (${c}건)`);
+    }else if(now-lastAlertTime>=ALERT_REPEAT){
+      // 3분마다 반복
+      lastAlertTime=now;
+      const el=Math.floor((now-aTS)/60000);
+      sendNotif('주문 지연 지속',`지연 ${msgs.join(', ')} (${c}건, ${el}분 경과)`);
     }
   }else{
-    if(aTS>0&&aLC>=th){bn.className='alert ok';bn.textContent=`정상 복귀 (${c}건)`;setTimeout(()=>{bn.className='alert';},10000);}
-    aTS=0;aLC=c;popupShown=false;
+    // 정상 상태
+    if(alertMode==='delayed'){
+      // 정상 복귀 1회 알림
+      alertMode='normal';
+      bn.className='alert ok';bn.textContent=`정상 복귀 (${c}건)`;
+      sendNotif('정상 복귀',`${c}건 - 지연 해소`);
+      setTimeout(()=>{bn.className='alert';},10000);
+    }
+    aTS=0;
   }
 }
 
-function showDelayPopup(count,delayText,timeStr){
-  popupShown=true;
-  const ov=document.createElement('div');
-  ov.className='popup-overlay';
-  ov.innerHTML=`<div class="popup-box"><div style="font-size:18px;font-weight:bold;color:#E74C3C;margin-bottom:8px">&#9888; 주문 지연</div><div style="font-size:36px;font-weight:bold;color:#FFF;margin:8px 0">${count}건</div><div style="color:#E74C3C;font-size:14px;margin-bottom:12px">${timeStr} 이후 지연 ${delayText}</div><button style="padding:8px 24px;border-radius:8px;border:none;background:#2ECC71;color:#FFF;font-size:14px;font-weight:600;cursor:pointer" onclick="this.closest('.popup-overlay').remove();setTimeout(()=>{popupShown=false},60000)">확인</button></div>`;
-  document.body.appendChild(ov);
-  try{const ac=new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator();o.type='square';o.frequency.value=800;o.connect(ac.destination);o.start();setTimeout(()=>o.stop(),300);}catch(e){}
+function sendNotif(title,body){
+  if('Notification'in window&&Notification.permission==='granted'){
+    new Notification(title,{body:body,tag:'pd-alert'});
+  }
 }
 
 // === 차트 ===
