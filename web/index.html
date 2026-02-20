@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PosKDS Dashboard</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(180deg, #1A1A30, #121225);
+  color: #E0E0EC;
+  min-height: 100vh;
+  padding: 16px;
+}
+.card {
+  background: linear-gradient(180deg, #242444, #1A1A35);
+  border: 1px solid #2E2E52;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: 14px;
+  color: #9090A8;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.big-number {
+  font-size: 64px;
+  font-weight: bold;
+  color: #FFFFFF;
+  text-align: center;
+  line-height: 1;
+}
+.sub-text {
+  font-size: 12px;
+  color: #707088;
+  text-align: center;
+  margin-top: 4px;
+}
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.dot-green { background: #2ECC71; }
+.dot-orange { background: #E67E22; }
+.dot-red { background: #E74C3C; }
+.dot-gray { background: #707088; }
+.label { color: #9090A8; font-size: 13px; }
+.value { color: #FFFFFF; font-size: 13px; font-weight: 600; }
+.value-baemin { color: #2AC1BC; }
+.value-coupang { color: #FFD700; }
+
+/* Gauge */
+.gauge-section { margin-bottom: 12px; }
+.gauge-label {
+  font-size: 12px;
+  color: #9090A8;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+.gauge-bar {
+  display: flex;
+  gap: 2px;
+  height: 28px;
+}
+.gauge-cell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  color: #FFF;
+  border-radius: 3px;
+  opacity: 0.7;
+}
+.gauge-cell.active {
+  opacity: 1;
+  box-shadow: inset 0 0 0 2px #FFFFFF;
+}
+
+/* Settings */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #2A2A45;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 13px; color: #9090A8; }
+.setting-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #FFF;
+  touch-action: manipulation;
+}
+.btn-sm { padding: 2px 8px; font-size: 12px; }
+.btn-green { background: #2ECC71; }
+.btn-red { background: #E74C3C; }
+.btn-orange { background: #E67E22; }
+.btn-neutral { background: #2A2A45; color: #E0E0EC; }
+.btn-baemin { background: #2AC1BC; }
+.btn-coupang { background: #FFD700; color: #1A1A30; }
+input[type="number"] {
+  width: 60px;
+  background: #2A2A45;
+  border: 1px solid #2E2E52;
+  color: #FFF;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+input[type="time"] {
+  background: #2A2A45;
+  border: 1px solid #2E2E52;
+  color: #FFF;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+select {
+  background: #2A2A45;
+  border: 1px solid #2E2E52;
+  color: #FFF;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* Toggle */
+.toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: #E74C3C;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle.on { background: #2ECC71; }
+.toggle::after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #FFF;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.2s;
+}
+.toggle.on::after { left: 22px; }
+
+/* Log */
+.log-box {
+  background: #1A1A30;
+  border: 1px solid #2A2A45;
+  border-radius: 8px;
+  padding: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 11px;
+  color: #707088;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Prediction */
+.prediction {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  margin-top: 8px;
+}
+.prediction-item .pred-label {
+  font-size: 11px;
+  color: #707088;
+}
+.prediction-item .pred-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: #FFFFFF;
+}
+
+/* Chart */
+canvas {
+  width: 100%;
+  height: 120px;
+  display: block;
+  margin-top: 8px;
+}
+
+/* Alert banner */
+.alert-banner {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 12px;
+  display: none;
+}
+.alert-banner.warning {
+  background: #E74C3C33;
+  border: 1px solid #E74C3C;
+  color: #E74C3C;
+  display: block;
+}
+.alert-banner.ok {
+  background: #2ECC7133;
+  border: 1px solid #2ECC71;
+  color: #2ECC71;
+  display: block;
+}
+
+/* Collapsible */
+.collapse-header {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.collapse-body { display: none; }
+.collapse-body.open { display: block; }
+
+/* Tab */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.tab {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #2A2A45;
+  color: #9090A8;
+}
+.tab.active { background: #2AC1BC; color: #FFF; }
+
+/* Connection status */
+.conn-status {
+  font-size: 11px;
+  text-align: right;
+  margin-bottom: 8px;
+}
+</style>
+</head>
+<body>
+
+<!-- Connection Status -->
+<div class="conn-status" id="connStatus">
+  <span class="dot dot-gray" id="connDot" style="width:8px;height:8px;display:inline-block;vertical-align:middle;"></span>
+  <span id="connText" style="color:#707088;">...</span>
+</div>
+
+<!-- Alert Banner -->
+<div class="alert-banner" id="alertBanner"></div>
+
+<!-- KDS Count Card -->
+<div class="card" style="text-align:center;">
+  <div class="card-title">KDS</div>
+  <div class="big-number" id="kdsCount">--</div>
+  <div class="sub-text" id="kdsTime">...</div>
+  <!-- Prediction -->
+  <div class="prediction" id="predictionArea" style="display:none;">
+    <div class="prediction-item">
+      <div class="pred-label">...</div>
+      <div class="pred-value" id="predSpeed">-</div>
+    </div>
+    <div class="prediction-item">
+      <div class="pred-label">...</div>
+      <div class="pred-value" id="predNormal">-</div>
+    </div>
+  </div>
+</div>
+
+<!-- Gauge Cards -->
+<div class="card">
+  <div class="gauge-section">
+    <div class="gauge-label">
+      <span style="color:#FFD700;">...</span>
+      <span id="coupangStateText" style="font-size:11px;"></span>
+    </div>
+    <div class="gauge-bar" id="coupangGauge"></div>
+  </div>
+  <div class="gauge-section" style="margin-bottom:0;">
+    <div class="gauge-label">
+      <span style="color:#2AC1BC;">...</span>
+      <span id="baeminStateText" style="font-size:11px;"></span>
+    </div>
+    <div class="gauge-bar" id="baeminGauge"></div>
+  </div>
+</div>
+
+<!-- Ad Status Card -->
+<div class="card">
+  <div class="card-title">...</div>
+  <div class="status-row">
+    <span class="label">...</span>
+    <span class="dot" id="baeminBidDot"></span>
+    <span class="value value-baemin" id="baeminBidValue">-</span>
+  </div>
+  <div class="status-row">
+    <span class="label">...</span>
+    <span class="dot" id="coupangOnDot"></span>
+    <span class="value value-coupang" id="coupangOnValue">-</span>
+  </div>
+  <div class="status-row">
+    <span class="label">...</span>
+    <span class="value" id="lastAdAction" style="font-size:12px;">-</span>
+  </div>
+</div>
+
+<!-- Settings Card (Editable) -->
+<div class="card">
+  <div class="collapse-header" onclick="toggleSection('settingsBody')">
+    <span class="card-title" style="margin:0;">...</span>
+    <span id="settingsArrow" style="color:#9090A8;">&#9654;</span>
+  </div>
+  <div class="collapse-body" id="settingsBody">
+    <!-- Coupang thresholds -->
+    <div style="margin-top:12px;padding:8px 0;border-bottom:1px solid #2A2A45;">
+      <span style="color:#FFD700;font-size:13px;font-weight:600;">...</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="setting-value">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('coupang_off_threshold',-1)">-</button>
+        <input type="number" id="set_coupang_off_threshold" min="2" max="30" onchange="saveSetting('coupang_off_threshold',this.value)">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('coupang_off_threshold',1)">+</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="setting-value">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('coupang_on_threshold',-1)">-</button>
+        <input type="number" id="set_coupang_on_threshold" min="1" max="29" onchange="saveSetting('coupang_on_threshold',this.value)">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('coupang_on_threshold',1)">+</button>
+      </div>
+    </div>
+
+    <!-- Baemin thresholds -->
+    <div style="padding:8px 0;border-bottom:1px solid #2A2A45;">
+      <span style="color:#2AC1BC;font-size:13px;font-weight:600;">...</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="setting-value">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_off_threshold',-1)">-</button>
+        <input type="number" id="set_baemin_off_threshold" min="3" max="30" onchange="saveSetting('baemin_off_threshold',this.value)">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_off_threshold',1)">+</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="setting-value">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_mid_upper_threshold',-1)">-</button>
+        <input type="number" id="set_baemin_mid_upper_threshold" min="2" max="29" onchange="saveSetting('baemin_mid_upper_threshold',this.value)">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_mid_upper_threshold',1)">+</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="setting-value">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_mid_threshold',-1)">-</button>
+        <input type="number" id="set_baemin_mid_threshold" min="2" max="29" onchange="saveSetting('baemin_mid_threshold',this.value)">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_mid_threshold',1)">+</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="setting-value">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_on_threshold',-1)">-</button>
+        <input type="number" id="set_baemin_on_threshold" min="1" max="28" onchange="saveSetting('baemin_on_threshold',this.value)">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_on_threshold',1)">+</button>
+      </div>
+    </div>
+
+    <!-- Amounts -->
+    <div style="padding:8px 0;border-bottom:1px solid #2A2A45;">
+      <span style="color:#E0E0EC;font-size:13px;font-weight:600;">...</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="setting-value">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_amount',-50)">-50</button>
+        <input type="number" id="set_baemin_amount" min="50" max="1000" step="50" onchange="saveSetting('baemin_amount',this.value)">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_amount',50)">+50</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="setting-value">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_mid_amount',-50)">-50</button>
+        <input type="number" id="set_baemin_mid_amount" min="50" max="1000" step="50" onchange="saveSetting('baemin_mid_amount',this.value)">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_mid_amount',50)">+50</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="setting-value">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_reduced_amount',-50)">-50</button>
+        <input type="number" id="set_baemin_reduced_amount" min="50" max="1000" step="50" onchange="saveSetting('baemin_reduced_amount',this.value)">
+        <button class="btn btn-sm btn-neutral" onclick="adjSetting('baemin_reduced_amount',50)">+50</button>
+      </div>
+    </div>
+
+    <!-- Toggles -->
+    <div style="padding:8px 0;border-bottom:1px solid #2A2A45;">
+      <span style="color:#E0E0EC;font-size:13px;font-weight:600;">...</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="toggle" id="tog_ad_enabled" onclick="toggleSetting('ad_enabled')"></div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="toggle" id="tog_order_auto_off_enabled" onclick="toggleSetting('order_auto_off_enabled')"></div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="toggle" id="tog_coupang_auto_enabled" onclick="toggleSetting('coupang_auto_enabled')"></div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="toggle" id="tog_baemin_auto_enabled" onclick="toggleSetting('baemin_auto_enabled')"></div>
+    </div>
+
+    <!-- Schedule -->
+    <div style="padding:8px 0;border-bottom:1px solid #2A2A45;">
+      <span style="color:#E0E0EC;font-size:13px;font-weight:600;">...</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <div class="toggle" id="tog_schedule_enabled" onclick="toggleSetting('schedule_enabled')"></div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <input type="time" id="set_ad_off_time" onchange="saveSetting('ad_off_time',this.value)">
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">...</span>
+      <input type="time" id="set_ad_on_time" onchange="saveSetting('ad_on_time',this.value)">
+    </div>
+
+    <div style="margin-top:12px;">
+      <button class="btn btn-green" onclick="pushSettings()" style="width:100%;padding:10px;">...</button>
+    </div>
+  </div>
+</div>
+
+<!-- History Chart -->
+<div class="card">
+  <div class="collapse-header" onclick="toggleSection('chartBody')">
+    <span class="card-title" style="margin:0;">...</span>
+    <span id="chartArrow" style="color:#9090A8;">&#9654;</span>
+  </div>
+  <div class="collapse-body" id="chartBody">
+    <canvas id="historyChart"></canvas>
+  </div>
+</div>
+
+<!-- Logs Card -->
+<div class="card">
+  <div class="collapse-header" onclick="toggleSection('logBody')">
+    <span class="card-title" style="margin:0;">...</span>
+    <span id="logArrow" style="color:#9090A8;">&#9654;</span>
+  </div>
+  <div class="collapse-body" id="logBody">
+    <div class="tabs">
+      <div class="tab active" onclick="switchLogTab('kds')">KDS</div>
+      <div class="tab" onclick="switchLogTab('posdelay')">PosDelay</div>
+      <div class="tab" onclick="switchLogTab('dump')">Dump</div>
+    </div>
+    <div class="log-box" id="logContent">...</div>
+  </div>
+</div>
+
+<div style="text-align:center;color:#707088;font-size:11px;padding:20px 0;">
+  PosKDS Dashboard v1.0
+</div>
+
+<script>
+const FB = 'https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app';
+let settings = {};
+let adState = {};
+let kdsStatus = {};
+let historyData = [];
+let currentLogTab = 'kds';
+let alertTimerStart = 0;
+let lastAlertCount = 0;
+
+// === Labels (Korean) ===
+function applyLabels() {
+  const labels = {
+    '.card-title': ['KDS', '...', '...', '...', '...', '...'],
+  };
+  // Direct label assignments
+  document.querySelectorAll('.card')[0].querySelector('.card-title').textContent = 'KDS ........';
+  document.querySelectorAll('.card')[2].querySelector('.card-title').textContent = '... ...';
+  document.querySelectorAll('.card')[3].querySelector('.collapse-header .card-title').textContent = '... ... (........)';
+  document.querySelectorAll('.card')[4].querySelector('.collapse-header .card-title').textContent = '... ......';
+  document.querySelectorAll('.card')[5].querySelector('.collapse-header .card-title').textContent = '...';
+}
+
+// Simple Korean labels
+(function setLabels(){
+  const q = s => document.querySelector(s);
+  const qa = s => document.querySelectorAll(s);
+
+  // Card titles
+  qa('.card')[0].querySelector('.card-title').textContent = 'KDS 조리중';
+  // Gauge labels
+  qa('.gauge-label span')[0].textContent = '쿠팡';
+  qa('.gauge-label span')[2].textContent = '배민';
+
+  // Ad status
+  qa('.card')[2].querySelector('.card-title').textContent = '광고 상태';
+  const statusLabels = qa('.card')[2].querySelectorAll('.label');
+  statusLabels[0].textContent = '배민 입찰가';
+  statusLabels[1].textContent = '쿠팡 광고';
+  statusLabels[2].textContent = '최근 실행';
+
+  // Settings card
+  qa('.card')[3].querySelector('.card-title').textContent = '설정 (양방향)';
+  const sectionTitles = qa('.card')[3].querySelectorAll('span[style*="font-weight:600"]');
+  sectionTitles[0].textContent = '쿠팡 임계값';
+  sectionTitles[1].textContent = '배민 임계값';
+  sectionTitles[2].textContent = '금액';
+  sectionTitles[3].textContent = '토글';
+  sectionTitles[4].textContent = '스케줄';
+  const settingLabels = qa('.card')[3].querySelectorAll('.setting-label');
+  settingLabels[0].textContent = '끄기';
+  settingLabels[1].textContent = '켜기';
+  settingLabels[2].textContent = '최소(끄기)';
+  settingLabels[3].textContent = '중간상한';
+  settingLabels[4].textContent = '중간';
+  settingLabels[5].textContent = '최대(켜기)';
+  settingLabels[6].textContent = '배민 최대금액';
+  settingLabels[7].textContent = '배민 중간금액';
+  settingLabels[8].textContent = '배민 최소금액';
+  settingLabels[9].textContent = '광고 마스터';
+  settingLabels[10].textContent = '건수 자동';
+  settingLabels[11].textContent = '쿠팡 자동';
+  settingLabels[12].textContent = '배민 자동';
+  settingLabels[13].textContent = '스케줄';
+  settingLabels[14].textContent = 'OFF 시간';
+  settingLabels[15].textContent = 'ON 시간';
+  qa('.card')[3].querySelector('.btn-green').textContent = '설정 저장 (앱에 반영)';
+
+  // Chart
+  qa('.card')[4].querySelector('.card-title').textContent = '건수 변동 (최근 2시간)';
+
+  // Logs
+  qa('.card')[5].querySelector('.card-title').textContent = '로그';
+
+  // Prediction labels
+  const predLabels = qa('.prediction-item .pred-label');
+  predLabels[0].textContent = '조리 속도';
+  predLabels[1].textContent = '예상 정상화';
+})();
+
+// === Firebase SSE Connections ===
+function connectSSE(path, callback) {
+  const url = FB + path;
+  const es = new EventSource(url);
+  es.onopen = () => updateConn(true);
+  es.onerror = () => {
+    updateConn(false);
+    setTimeout(() => { es.close(); connectSSE(path, callback); }, 10000);
+  };
+  es.addEventListener('put', e => callback(JSON.parse(e.data)));
+  es.addEventListener('patch', e => callback(JSON.parse(e.data)));
+  return es;
+}
+
+function updateConn(ok) {
+  const dot = document.getElementById('connDot');
+  const text = document.getElementById('connText');
+  dot.className = 'dot ' + (ok ? 'dot-green' : 'dot-red');
+  text.textContent = ok ? '실시간 연결' : '연결 끊김';
+  text.style.color = ok ? '#2ECC71' : '#E74C3C';
+}
+
+// === Data Handlers ===
+function handleKdsStatus(msg) {
+  if (!msg.data || msg.data === 'null') return;
+  const d = (msg.path === '/') ? msg.data : Object.assign(kdsStatus, {[msg.path.slice(1)]: msg.data});
+  if (msg.path === '/') Object.assign(kdsStatus, msg.data);
+
+  const count = kdsStatus.count;
+  const time = kdsStatus.time || '';
+
+  document.getElementById('kdsCount').textContent = (count != null) ? count : '--';
+  document.getElementById('kdsTime').textContent = time ? timeAgo(time) : '...';
+
+  updateGauges(count);
+  checkAlert(count);
+  updatePrediction(count);
+}
+
+function handleAdSettings(msg) {
+  if (!msg.data || msg.data === 'null') return;
+  if (msg.path === '/') Object.assign(settings, msg.data);
+  else settings[msg.path.slice(1)] = msg.data;
+
+  updateSettingsUI();
+  updateGauges(kdsStatus.count);
+}
+
+function handleAdState(msg) {
+  if (!msg.data || msg.data === 'null') return;
+  if (msg.path === '/') Object.assign(adState, msg.data);
+  else adState[msg.path.slice(1)] = msg.data;
+
+  updateAdStateUI();
+}
+
+function handleHistory(msg) {
+  if (!msg.data || msg.data === 'null') return;
+  if (msg.path === '/' && msg.data.entries) {
+    historyData = msg.data.entries;
+  }
+  drawChart();
+  updatePrediction(kdsStatus.count);
+}
+
+function handleLogs(msg, type) {
+  if (currentLogTab === type) {
+    const el = document.getElementById('logContent');
+    if (type === 'kds') {
+      el.textContent = (typeof msg.data === 'string') ? msg.data : JSON.stringify(msg.data, null, 2);
+    } else if (type === 'dump') {
+      if (msg.data && msg.data.tree) {
+        el.textContent = `[${msg.data.time}] ${msg.data.lines}줄\n${msg.data.tree}`;
+      }
+    } else if (type === 'posdelay') {
+      if (Array.isArray(msg.data)) {
+        el.textContent = msg.data.map(e => `[${e.time}] ${e.msg}`).join('\n');
+      } else if (msg.data) {
+        el.textContent = JSON.stringify(msg.data, null, 2);
+      }
+    }
+    el.scrollTop = el.scrollHeight;
+  }
+}
+
+// === UI Updates ===
+function updateGauges(count) {
+  if (count == null) return;
+  const cOff = settings.coupang_off_threshold || 5;
+  const cOn = settings.coupang_on_threshold || 3;
+  const bOff = settings.baemin_off_threshold || 8;
+  const bMidU = settings.baemin_mid_upper_threshold || 7;
+  const bMid = settings.baemin_mid_threshold || 5;
+  const bOn = settings.baemin_on_threshold || 3;
+
+  // Coupang gauge (0-15)
+  let cHtml = '';
+  for (let i = 0; i <= 15; i++) {
+    let color;
+    if (i >= cOff) color = '#E74C3C';      // OFF (red)
+    else if (i <= cOn) color = '#2ECC71';   // ON (green)
+    else color = '#E67E22';                  // transition
+    const active = (i === count) ? ' active' : '';
+    cHtml += `<div class="gauge-cell${active}" style="background:${color};">${i}</div>`;
+  }
+  document.getElementById('coupangGauge').innerHTML = cHtml;
+
+  // Coupang state text
+  let cState = '';
+  if (count >= cOff) cState = '<span style="color:#E74C3C;">광고 OFF</span>';
+  else if (count <= cOn) cState = '<span style="color:#2ECC71;">광고 ON</span>';
+  else cState = '<span style="color:#E67E22;">유지</span>';
+  document.getElementById('coupangStateText').innerHTML = cState;
+
+  // Baemin gauge (0-15)
+  let bHtml = '';
+  for (let i = 0; i <= 15; i++) {
+    let color;
+    if (i >= bOff) color = '#E74C3C';           // OFF (min amount)
+    else if (i >= bMid && i <= bMidU) color = '#E67E22'; // MID
+    else if (i <= bOn) color = '#2ECC71';         // ON (max amount)
+    else color = '#2A2A45';                        // neutral
+    const active = (i === count) ? ' active' : '';
+    bHtml += `<div class="gauge-cell${active}" style="background:${color};">${i}</div>`;
+  }
+  document.getElementById('baeminGauge').innerHTML = bHtml;
+
+  // Baemin state text
+  let bState = '';
+  if (count >= bOff) bState = '<span style="color:#E74C3C;">최소 ' + (settings.baemin_reduced_amount || 50) + '원</span>';
+  else if (count >= bMid && count <= bMidU) bState = '<span style="color:#E67E22;">중간 ' + (settings.baemin_mid_amount || 100) + '원</span>';
+  else if (count <= bOn) bState = '<span style="color:#2ECC71;">최대 ' + (settings.baemin_amount || 200) + '원</span>';
+  else bState = '<span style="color:#9090A8;">유지</span>';
+  document.getElementById('baeminStateText').innerHTML = bState;
+}
+
+function updateAdStateUI() {
+  const bid = adState.baemin_current_bid;
+  const cOn = adState.coupang_current_on;
+  const lastAction = adState.last_ad_action || '-';
+
+  document.getElementById('baeminBidValue').textContent = bid != null ? bid + '원' : '-';
+  document.getElementById('baeminBidDot').className = 'dot ' + (bid > 0 ? 'dot-green' : 'dot-gray');
+
+  document.getElementById('coupangOnValue').textContent = cOn === true ? 'ON' : cOn === false ? 'OFF' : '-';
+  document.getElementById('coupangOnDot').className = 'dot ' + (cOn === true ? 'dot-green' : cOn === false ? 'dot-red' : 'dot-gray');
+
+  document.getElementById('lastAdAction').textContent = lastAction;
+}
+
+function updateSettingsUI() {
+  const fields = [
+    'coupang_off_threshold', 'coupang_on_threshold',
+    'baemin_off_threshold', 'baemin_mid_upper_threshold', 'baemin_mid_threshold', 'baemin_on_threshold',
+    'baemin_amount', 'baemin_mid_amount', 'baemin_reduced_amount'
+  ];
+  fields.forEach(f => {
+    const el = document.getElementById('set_' + f);
+    if (el && settings[f] != null) el.value = settings[f];
+  });
+
+  // Time fields
+  if (settings.ad_off_time) document.getElementById('set_ad_off_time').value = settings.ad_off_time;
+  if (settings.ad_on_time) document.getElementById('set_ad_on_time').value = settings.ad_on_time;
+
+  // Toggles
+  ['ad_enabled', 'order_auto_off_enabled', 'coupang_auto_enabled', 'baemin_auto_enabled', 'schedule_enabled'].forEach(f => {
+    const el = document.getElementById('tog_' + f);
+    if (el) el.className = 'toggle' + (settings[f] ? ' on' : '');
+  });
+}
+
+// === Settings Control ===
+function adjSetting(key, delta) {
+  const el = document.getElementById('set_' + key);
+  if (!el) return;
+  const newVal = parseInt(el.value || 0) + delta;
+  el.value = newVal;
+  settings[key] = newVal;
+}
+
+function saveSetting(key, value) {
+  if (typeof value === 'string' && !isNaN(value)) value = parseInt(value);
+  settings[key] = value;
+}
+
+function toggleSetting(key) {
+  settings[key] = !settings[key];
+  const el = document.getElementById('tog_' + key);
+  if (el) el.className = 'toggle' + (settings[key] ? ' on' : '');
+}
+
+function pushSettings() {
+  settings._version = Date.now();
+  settings._updated_by = 'web';
+  settings._updated_at = new Date().toLocaleString('ko-KR');
+
+  fetch(FB + '/posdelay/ad_settings.json', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings)
+  }).then(r => {
+    if (r.ok) showToast('설정 저장 완료 - 앱에 반영됩니다');
+    else showToast('저장 실패: ' + r.status);
+  }).catch(e => showToast('에러: ' + e.message));
+}
+
+// === Alert System ===
+function checkAlert(count) {
+  if (count == null) return;
+  const threshold = settings.coupang_off_threshold || 5;
+  const banner = document.getElementById('alertBanner');
+
+  if (count >= threshold) {
+    if (alertTimerStart === 0 || lastAlertCount < threshold) {
+      alertTimerStart = Date.now();
+    }
+    lastAlertCount = count;
+    const elapsed = Math.floor((Date.now() - alertTimerStart) / 60000);
+    const predText = getPredictionText(count, threshold);
+    banner.className = 'alert-banner warning';
+    banner.innerHTML = `&#9888; 주문 밀림! ${count}건 (${elapsed}분 경과)${predText}`;
+    // Notification API
+    if (elapsed > 0 && Notification.permission === 'granted') {
+      // Only notify every 5 min
+      if (elapsed % 5 === 0) {
+        new Notification('PosKDS 주문 밀림', {
+          body: `${count}건 (${elapsed}분 경과)${predText}`,
+          icon: '🍳',
+          tag: 'posdelay-alert'
+        });
+      }
+    }
+  } else {
+    if (alertTimerStart > 0) {
+      banner.className = 'alert-banner ok';
+      banner.textContent = '정상 범위 (건수 < 임계값)';
+      setTimeout(() => { banner.style.display = 'none'; }, 10000);
+    }
+    alertTimerStart = 0;
+    lastAlertCount = count;
+  }
+}
+
+// === Prediction (Phase 6) ===
+// 사용자 요청: 평균값=최대치, 최소1건=최소치
+// 내점 주문(3초 이내 완료) 제외
+function updatePrediction(currentCount) {
+  const predArea = document.getElementById('predictionArea');
+  if (!historyData || historyData.length < 3) {
+    predArea.style.display = 'none';
+    return;
+  }
+
+  // 건수 감소 이벤트 추출 (= 조리 완료)
+  const cookTimes = [];
+  for (let i = 1; i < historyData.length; i++) {
+    const prev = historyData[i - 1];
+    const curr = historyData[i];
+    if (curr.count < prev.count) {
+      const diff = curr.time - prev.time;
+      const diffMin = diff / 60000;
+      // 30초 미만은 내점(홀) 주문으로 간주 → 제외
+      if (diff >= 30000 && diffMin <= 30) {
+        cookTimes.push(diffMin);
+      }
+    }
+  }
+
+  if (cookTimes.length < 2) {
+    predArea.style.display = 'none';
+    return;
+  }
+
+  // 최근 10건만
+  const recent = cookTimes.slice(-10);
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  const fastest = Math.min(...recent);
+
+  const threshold = settings.coupang_off_threshold || 5;
+  const excess = Math.max(0, (currentCount || 0) - threshold);
+
+  predArea.style.display = 'flex';
+  document.getElementById('predSpeed').textContent =
+    fastest.toFixed(1) + '~' + avg.toFixed(1) + '분/건';
+
+  if (excess > 0) {
+    const minTime = Math.ceil(fastest * excess);
+    const maxTime = Math.ceil(avg * excess);
+    document.getElementById('predNormal').textContent =
+      '약 ' + minTime + '~' + maxTime + '분';
+    document.getElementById('predNormal').style.color = '#E74C3C';
+  } else {
+    document.getElementById('predNormal').textContent = '정상';
+    document.getElementById('predNormal').style.color = '#2ECC71';
+  }
+}
+
+function getPredictionText(count, threshold) {
+  if (!historyData || historyData.length < 3) return '';
+  const cookTimes = [];
+  for (let i = 1; i < historyData.length; i++) {
+    const prev = historyData[i - 1];
+    const curr = historyData[i];
+    if (curr.count < prev.count) {
+      const diff = curr.time - prev.time;
+      if (diff >= 30000 && diff <= 1800000) {
+        cookTimes.push(diff / 60000);
+      }
+    }
+  }
+  if (cookTimes.length < 2) return '';
+  const recent = cookTimes.slice(-10);
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  const fastest = Math.min(...recent);
+  const excess = Math.max(0, count - threshold);
+  if (excess <= 0) return '';
+  return ` | 예상 ${Math.ceil(fastest * excess)}~${Math.ceil(avg * excess)}분`;
+}
+
+// === Chart ===
+function drawChart() {
+  const canvas = document.getElementById('historyChart');
+  if (!canvas || !historyData || historyData.length < 2) return;
+  const ctx = canvas.getContext('2d');
+
+  // Filter to last 2 hours
+  const now = Date.now();
+  const twoHoursAgo = now - 2 * 60 * 60 * 1000;
+  const data = historyData.filter(e => e.time >= twoHoursAgo);
+  if (data.length < 2) return;
+
+  const W = canvas.width = canvas.offsetWidth * 2;
+  const H = canvas.height = 240;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { top: 20, right: 10, bottom: 30, left: 35 };
+  const cw = W - pad.left - pad.right;
+  const ch = H - pad.top - pad.bottom;
+
+  const minT = data[0].time;
+  const maxT = data[data.length - 1].time;
+  const maxC = Math.max(...data.map(d => d.count), 5);
+
+  const x = t => pad.left + ((t - minT) / (maxT - minT || 1)) * cw;
+  const y = c => pad.top + ch - (c / maxC) * ch;
+
+  // Grid
+  ctx.strokeStyle = '#2A2A45';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const gy = pad.top + (ch / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, gy);
+    ctx.lineTo(W - pad.right, gy);
+    ctx.stroke();
+    // Label
+    ctx.fillStyle = '#707088';
+    ctx.font = '18px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round(maxC - (maxC / 5) * i), pad.left - 5, gy + 5);
+  }
+
+  // Time labels
+  ctx.textAlign = 'center';
+  const timeSpan = maxT - minT;
+  const step = timeSpan / 4;
+  for (let i = 0; i <= 4; i++) {
+    const t = minT + step * i;
+    const d = new Date(t);
+    ctx.fillText(d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0'), x(t), H - 5);
+  }
+
+  // Threshold lines
+  const cOff = settings.coupang_off_threshold || 5;
+  ctx.strokeStyle = '#E74C3C44';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 4]);
+  ctx.beginPath();
+  ctx.moveTo(pad.left, y(cOff));
+  ctx.lineTo(W - pad.right, y(cOff));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Line
+  ctx.strokeStyle = '#2AC1BC';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    const px = x(d.time), py = y(d.count);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+
+  // Fill area
+  ctx.globalAlpha = 0.1;
+  ctx.fillStyle = '#2AC1BC';
+  ctx.lineTo(x(data[data.length - 1].time), pad.top + ch);
+  ctx.lineTo(x(data[0].time), pad.top + ch);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Points
+  data.forEach(d => {
+    ctx.fillStyle = d.count >= cOff ? '#E74C3C' : '#2ECC71';
+    ctx.beginPath();
+    ctx.arc(x(d.time), y(d.count), 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+// === Log Tab Switch ===
+function switchLogTab(tab) {
+  currentLogTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  const el = document.getElementById('logContent');
+  el.textContent = '로딩중...';
+  // Fetch the data
+  const urls = {
+    kds: FB + '/kds_log.json',
+    posdelay: FB + '/posdelay/logs.json',
+    dump: FB + '/kds_dump.json'
+  };
+  fetch(urls[tab]).then(r => r.json()).then(data => {
+    if (tab === 'kds') {
+      el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    } else if (tab === 'dump') {
+      if (data && data.tree) {
+        el.textContent = `[${data.time}] ${data.lines}줄\n${data.tree}`;
+      } else {
+        el.textContent = '덤프 없음';
+      }
+    } else if (tab === 'posdelay') {
+      if (Array.isArray(data)) {
+        el.textContent = data.map(e => `[${e.time}] ${e.msg}`).join('\n');
+      } else {
+        el.textContent = data ? JSON.stringify(data, null, 2) : '로그 없음';
+      }
+    }
+    el.scrollTop = el.scrollHeight;
+  }).catch(e => { el.textContent = '로드 실패: ' + e.message; });
+}
+
+// === Utils ===
+function timeAgo(timeStr) {
+  try {
+    const d = new Date(timeStr.replace(' ', 'T'));
+    const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (sec < 60) return sec + '초 전';
+    if (sec < 3600) return Math.floor(sec / 60) + '분 전';
+    return Math.floor(sec / 3600) + '시간 전';
+  } catch (e) { return timeStr; }
+}
+
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  const isOpen = el.classList.toggle('open');
+  const arrowId = id.replace('Body', 'Arrow');
+  const arrow = document.getElementById(arrowId);
+  if (arrow) arrow.innerHTML = isOpen ? '&#9660;' : '&#9654;';
+  if (id === 'chartBody' && isOpen) setTimeout(drawChart, 100);
+}
+
+function showToast(msg) {
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2ECC71;color:#FFF;padding:10px 20px;border-radius:8px;font-size:14px;z-index:9999;';
+  div.textContent = msg;
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 3000);
+}
+
+// === Request Notification Permission ===
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+// === Start SSE Connections ===
+connectSSE('/kds_status.json', handleKdsStatus);
+connectSSE('/posdelay/ad_settings.json', handleAdSettings);
+connectSSE('/posdelay/ad_state.json', handleAdState);
+connectSSE('/kds_history.json', handleHistory);
+
+// Initial log load
+fetch(FB + '/kds_log.json').then(r => r.json()).then(data => {
+  document.getElementById('logContent').textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+}).catch(() => {});
+
+// Update alert timer every 30s
+setInterval(() => checkAlert(kdsStatus.count), 30000);
+
+// Resize chart
+window.addEventListener('resize', drawChart);
+</script>
+</body>
+</html>

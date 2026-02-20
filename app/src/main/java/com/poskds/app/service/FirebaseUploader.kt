@@ -57,6 +57,35 @@ object FirebaseUploader {
         }
     }
 
+    fun uploadDump(tree: String, lineCount: Int) {
+        kotlin.concurrent.thread {
+            try {
+                val now = dateFormat.format(Date())
+                val json = JSONObject().apply {
+                    put("tree", tree)
+                    put("time", now)
+                    put("lines", lineCount)
+                }.toString()
+                firebasePut("$FIREBASE_BASE/kds_dump.json", json)
+            } catch (e: Exception) {
+                Log.w(TAG, "덤프 업로드 에러: ${e.message}")
+            }
+        }
+    }
+
+    fun uploadHistory(entries: org.json.JSONArray) {
+        kotlin.concurrent.thread {
+            try {
+                val json = JSONObject().apply {
+                    put("entries", entries)
+                }.toString()
+                firebasePut("$FIREBASE_BASE/kds_history.json", json)
+            } catch (e: Exception) {
+                Log.w(TAG, "이력 업로드 에러: ${e.message}")
+            }
+        }
+    }
+
     private fun firebasePut(url: String, json: String) {
         val conn = URL(url).openConnection() as HttpURLConnection
         conn.requestMethod = "PUT"

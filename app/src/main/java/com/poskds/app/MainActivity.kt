@@ -112,14 +112,10 @@ class MainActivity : AppCompatActivity() {
             showAppPicker()
         }
 
-        // UI 트리 덤프 버튼 (예약 방식: KDS 화면 전환 시 덤프)
-        findViewById<TextView>(R.id.btnDump).setOnClickListener {
-            if (!KdsAccessibilityService.isAvailable()) {
-                Toast.makeText(this, "접근성 서비스 비활성", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            KdsAccessibilityService.dumpRequested = true
-            Toast.makeText(this, "KDS 화면 전환 시 덤프됩니다", Toast.LENGTH_SHORT).show()
+        // 대시보드 열기 버튼
+        findViewById<TextView>(R.id.btnDashboard).setOnClickListener {
+            val url = "https://wk7007-wk.github.io/PosKDS/"
+            startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)))
         }
 
         // 저장 버튼

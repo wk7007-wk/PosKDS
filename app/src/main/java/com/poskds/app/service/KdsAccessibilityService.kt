@@ -7,6 +7,8 @@ import android.os.Looper
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 import java.io.FileWriter
 import java.text.SimpleDateFormat
@@ -23,6 +25,7 @@ class KdsAccessibilityService : AccessibilityService() {
         private const val KEY_LAST_UPLOAD_TIME = "last_upload_time"
         private const val KEY_LOG = "log_text"
         private const val HEARTBEAT_MS = 3 * 60 * 1000L
+        private const val AUTO_DUMP_MS = 5 * 60 * 1000L // 5분마다 자동 덤프
         private const val MAX_LOG_SIZE = 500_000L // 500KB
         var logFile: String = "/sdcard/Download/PosKDS_log.txt"
             private set
@@ -30,8 +33,9 @@ class KdsAccessibilityService : AccessibilityService() {
         var instance: KdsAccessibilityService? = null
             private set
 
-        @Volatile
-        var dumpRequested = false
+        @JvmField var dumpRequested = false
+
+        private const val KEY_HISTORY = "kds_history"
 
         fun isAvailable(): Boolean = instance != null
     }
@@ -43,6 +47,7 @@ class KdsAccessibilityService : AccessibilityService() {
     private val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.KOREA)
     private var eventCount = 0
     private var lastEventLogTime = 0L
+    private var lastDumpTime = 0L
 
     private val heartbeatRunnable = object : Runnable {
         override fun run() {
@@ -115,15 +120,29 @@ class KdsAccessibilityService : AccessibilityService() {
                 FirebaseUploader.upload(prefs, lastCount)
             }
 
+            // 5분마다 자동 덤프 (KDS 포그라운드일 때)
+            if (now - lastDumpTime >= AUTO_DUMP_MS) {
+                lastDumpTime = now
+                val sb = StringBuilder()
+                dumpNode(root, sb, 0)
+                val result = sb.toString()
+                FirebaseUploader.uploadDump(result, result.lines().size)
+                log("자동 덤프 완료 (${result.lines().size}줄)")
+            }
+
             val count = extractCookingCount(root)
             if (count != null && count != lastCount) {
-                log("조리중 건수 변경: $lastCount → $count")
+                val prevCount = lastCount
+                log("조리중 건수 변경: $prevCount → $count")
                 lastCount = count
                 prefs.edit().putInt(KEY_LAST_COUNT, count).apply()
 
                 FirebaseUploader.upload(prefs, count)
                 lastUploadTime = System.currentTimeMillis()
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, lastUploadTime).apply()
+
+                // 건수 이력 기록
+                addHistory(count)
             }
         } catch (e: Exception) {
             log("노드 탐색 실패: ${e.message}")
@@ -230,6 +249,23 @@ class KdsAccessibilityService : AccessibilityService() {
             val child = node.getChild(i) ?: continue
             dumpNode(child, sb, depth + 1)
             child.recycle()
+        }
+    }
+
+    private fun addHistory(count: Int) {
+        try {
+            val historyJson = prefs.getString(KEY_HISTORY, "[]") ?: "[]"
+            val arr = try { JSONArray(historyJson) } catch (_: Exception) { JSONArray() }
+            arr.put(JSONObject().apply {
+                put("time", System.currentTimeMillis())
+                put("count", count)
+            })
+            // 최근 100건만 유지
+            while (arr.length() > 100) arr.remove(0)
+            prefs.edit().putString(KEY_HISTORY, arr.toString()).apply()
+            FirebaseUploader.uploadHistory(arr)
+        } catch (e: Exception) {
+            log("이력 기록 실패: ${e.message}")
         }
     }
 

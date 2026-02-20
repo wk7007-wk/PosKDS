@@ -272,10 +272,10 @@
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/btnDump"
+                    android:id="@+id/btnDashboard"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="UI트리 덤프"
+                    android:text="대시보드 열기"
                     android:textColor="#2AC1BC"
                     android:textSize="12sp"
                     android:padding="6dp" />
