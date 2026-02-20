@@ -568,7 +568,9 @@ function updSchDisp(){
 // === 저장/복원 ===
 function saveAll(){
   if(!sseLoaded||Object.keys(S).length<3){toast('데이터 미수신 - 저장 불가');return;}
+  S._ck={on:ckOn,t:parseInt(document.getElementById('ck_target').value)||20,m:parseInt(document.getElementById('ck_mid').value)||12,f:parseInt(document.getElementById('ck_finish').value)||3};
   try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}
+  saveCk();
   S._version=Date.now();S._updated_by='web';S._updated_at=new Date().toLocaleString('ko-KR');
   fetch(FB+'/posdelay/ad_settings.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)}).then(()=>toast('저장 완료')).catch(()=>toast('저장 실패'));
 }
@@ -577,6 +579,7 @@ function restoreAll(){
     const b=localStorage.getItem('ad_settings_backup');
     if(!b){toast('백업 없음');return;}
     const d=JSON.parse(b);Object.assign(S,d);sseLoaded=true;
+    if(d._ck){ckOn=!!d._ck.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');document.getElementById('ck_target').value=d._ck.t||20;document.getElementById('ck_mid').value=d._ck.m||12;document.getElementById('ck_finish').value=d._ck.f||3;saveCk();}
     updSetUI();updMonitor();
     fetch(FB+'/posdelay/ad_settings.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)}).then(()=>toast('복원 완료')).catch(()=>toast('복원 실패'));
   }catch(e){toast('복원 실패');}
