@@ -119,9 +119,9 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
       <span style="font-size:13px;font-weight:600;color:#9090A8">조리모드</span>
       <div class="tog" id="tog_cook_mode" onclick="event.stopPropagation();togCookMode()"></div>
     </div>
-    <span id="ckA" style="color:#9090A8">&#9654;</span>
+    <span id="ckA" style="color:#9090A8">&#9660;</span>
   </div>
-  <div class="cb" id="ckB">
+  <div class="cb open" id="ckB">
     <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjCk('target',-1)">-</button><input type="number" id="ck_target" value="20" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('target',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
     <div class="sr"><span class="sl" style="color:#E67E22">조리</span><div class="sv"><button class="btn bs bn" onclick="adjCk('mid',-1)">-</button><input type="number" id="ck_mid" value="12" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('mid',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
     <div class="sr"><span class="sl" style="color:#E74C3C">포장</span><div class="sv"><button class="btn bs bn" onclick="adjCk('finish',-1)">-</button><input type="number" id="ck_finish" value="3" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('finish',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
@@ -180,9 +180,9 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   <input type="time" id="schTimePicker" style="position:absolute;opacity:0;pointer-events:none">
   <div class="ch" onclick="togSec('adB')">
     <span style="font-size:13px;font-weight:600;color:#9090A8">광고 설정</span>
-    <span id="adA" style="color:#9090A8">&#9654;</span>
+    <span id="adA" style="color:#9090A8">&#9660;</span>
   </div>
-  <div class="cb" id="adB">
+  <div class="cb open" id="adB">
     <div class="sec" style="color:#2AC1BC">배민 금액</div>
     <div class="sr"><span class="sl" style="color:#2ECC71">최대</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_amount',-50)">-</button><input type="number" id="set_baemin_amount" style="width:65px" readonly><button class="btn bs bn" onclick="adjS('baemin_amount',50)">+</button></div></div>
     <div class="sr"><span class="sl" style="color:#E67E22">중간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_mid_amount',-50)">-</button><input type="number" id="set_baemin_mid_amount" style="width:65px" readonly><button class="btn bs bn" onclick="adjS('baemin_mid_amount',50)">+</button></div></div>
@@ -199,9 +199,9 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <div class="card">
   <div class="ch" onclick="togSec('dlB')">
     <span style="font-size:13px;font-weight:600;color:#9090A8">지연 설정</span>
-    <span id="dlA" style="color:#9090A8">&#9654;</span>
+    <span id="dlA" style="color:#9090A8">&#9660;</span>
   </div>
-  <div class="cb" id="dlB">
+  <div class="cb open" id="dlB">
     <div style="font-size:10px;color:#707088;padding:4px 0">지연 = max(0, 건수 × 완료간격 + 고정조리 - 목표)</div>
     <div class="sec" style="color:#2AC1BC">배민</div>
     <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_target_time',-1)">-</button><input type="number" id="set_baemin_target_time" min="15" max="30" readonly><button class="btn bs bn" onclick="adjS('baemin_target_time',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
@@ -218,18 +218,18 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <div class="card">
   <div class="ch" onclick="togSec('chB')">
     <span style="font-size:13px;font-weight:600;color:#9090A8">건수 변동 (2시간)</span>
-    <span id="chA" style="color:#9090A8">&#9654;</span>
+    <span id="chA" style="color:#9090A8">&#9660;</span>
   </div>
-  <div class="cb" id="chB"><canvas id="hChart"></canvas></div>
+  <div class="cb open" id="chB"><canvas id="hChart"></canvas></div>
 </div>
 
 <!-- ═══ 6. 로그 ═══ -->
 <div class="card">
   <div class="ch" onclick="togSec('lgB')">
     <span style="font-size:13px;font-weight:600;color:#9090A8">로그</span>
-    <span id="lgA" style="color:#9090A8">&#9654;</span>
+    <span id="lgA" style="color:#9090A8">&#9660;</span>
   </div>
-  <div class="cb" id="lgB">
+  <div class="cb open" id="lgB">
     <div class="tabs">
       <div class="tab active" onclick="sLt('kds',this)">KDS</div>
       <div class="tab" onclick="sLt('posdelay',this)">PosDelay</div>
