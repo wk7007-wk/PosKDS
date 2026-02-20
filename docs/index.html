@@ -653,7 +653,7 @@ function chkCkAlerts(){
     const nm=ckNum(i+1);
     if(rem<=mid+fin&&!o.ma){o.ma=true;try{NativeBridge.speak(nm+'번 조리');}catch(e){}}
     if(rem<=fin&&!o.fa){o.fa=true;try{NativeBridge.speak(nm+'번 포장');}catch(e){}}
-    if(rem<=0&&!o.da){o.da=true;try{NativeBridge.speak(nm+'번 완료');}catch(e){}}
+    if(rem<=0&&!o.da){o.da=true;try{NativeBridge.speak(nm+'번 시간초과');}catch(e){}}
   });
   updCkUI();
 }
@@ -671,7 +671,7 @@ function updCkUI(){
     const rem=Math.max(0,tgt-el2);
     const nm=ckNum(i+1);
     let st,cl;
-    if(rem<=0){st='완료';cl='#FFFFFF';}
+    if(rem<=0){st='시간초과';cl='#FFFFFF';}
     else if(rem<=fin){st='포장';cl='#E74C3C';}
     else if(rem<=mid+fin){st='조리';cl='#E67E22';}
     else{st='대기';cl='#2ECC71';}
