@@ -190,14 +190,6 @@ class KdsAccessibilityService : AccessibilityService() {
                 }
             }
 
-            // 방법2: "조리중" 노드의 형제/자식 노드에서 숫자 찾기
-            for (node in nodes) {
-                val parent = node.parent ?: continue
-                val count = findNumberInSiblings(parent)
-                parent.recycle()
-                if (count != null) return count
-            }
-
             // "조리중" 텍스트는 있지만 숫자 없음 → 0건
             return 0
         }
