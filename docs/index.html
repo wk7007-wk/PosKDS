@@ -46,6 +46,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 </head>
 <body>
 
+<div id="pullInd" style="text-align:center;color:#707088;font-size:11px;height:0;overflow:hidden;transition:height .2s">&#8595; 새로고침</div>
 <div class="conn"><span class="dot dd" id="cD"></span> <span id="cT" style="color:#707088">...</span></div>
 <div class="alert" id="alertB"></div>
 
@@ -595,6 +596,21 @@ function sLt(tab,el){
 // === 유틸 ===
 function togSec(id){const e=document.getElementById(id),o=e.classList.toggle('open');const a=document.getElementById(id.replace('B','A'));if(a)a.innerHTML=o?'&#9660;':'&#9654;';if(id==='chB'&&o)setTimeout(drawChart,100);}
 function toast(m){const d=document.createElement('div');d.style.cssText='position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#2ECC71;color:#FFF;padding:8px 16px;border-radius:8px;font-size:13px;z-index:9999;';d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),3000);}
+
+// === 풀투리프레시 ===
+let _pY=0,_pulling=false;
+const _pInd=document.getElementById('pullInd');
+document.addEventListener('touchstart',e=>{if(window.scrollY===0)_pY=e.touches[0].clientY;else _pY=0;},{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(_pY===0)return;
+  const d=e.touches[0].clientY-_pY;
+  if(d>0&&d<150&&window.scrollY===0){_pulling=true;_pInd.style.height=Math.min(d/2,30)+'px';_pInd.textContent=d>80?'↑ 놓으면 새로고침':'↓ 새로고침';}
+  else{_pulling=false;_pInd.style.height='0';}
+},{passive:true});
+document.addEventListener('touchend',()=>{
+  if(_pulling&&parseInt(_pInd.style.height)>=25){_pInd.textContent='새로고침 중...';_pInd.style.height='24px';setTimeout(()=>location.reload(),300);}
+  else{_pInd.style.height='0';}_pulling=false;_pY=0;
+});
 
 // === 초기화 ===
 if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
