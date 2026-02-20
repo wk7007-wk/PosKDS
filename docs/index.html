@@ -736,12 +736,12 @@ setInterval(chkCkAlerts,1000);
 
 // === 초기화 ===
 if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
-// SSE 미수신 시 3초 후 localStorage에서 자동 복원
-setTimeout(()=>{
-  if(!sseLoaded){
-    try{const b=localStorage.getItem('ad_settings_backup');if(b){Object.assign(S,JSON.parse(b));sseLoaded=true;updSetUI();updMonitor();}}catch(e){}
-  }
-},3000);
+// 즉시 localStorage 복원 시도
+try{const b=localStorage.getItem('ad_settings_backup');if(b){Object.assign(S,JSON.parse(b));updSetUI();updMonitor();}}catch(e){}
+// HTTP 직접 조회 (SSE 백업)
+fetch(FB+'/posdelay/ad_settings.json').then(r=>r.json()).then(d=>{
+  if(d&&typeof d==='object'){Object.assign(S,d);sseLoaded=true;try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}updSetUI();updMonitor();}
+}).catch(()=>{});
 sse('/kds_status.json',hKds);
 sse('/posdelay/ad_settings.json',hSet);
 sse('/posdelay/ad_state.json',hASt);
