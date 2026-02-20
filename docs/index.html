@@ -289,6 +289,7 @@ function hASt(m){
 }
 function hStatus(m){
   if(!m.data||m.data==='null')return;
+  if(Date.now()<_localEditUntil)return; // 로컬 변경 중 SSE 무시
   if(m.path==='/')Object.assign(stS,m.data);else stS[m.path.slice(1)]=m.data;
   updSyncStatus();
 }
@@ -348,6 +349,11 @@ function updSyncItem(dotId,txtId,label,ts){
 }
 function togSource(src){
   if(isApp){
+    // 즉시 UI 반영 (낙관적 업데이트)
+    const key=src+'_paused';
+    stS[key]=!stS[key];
+    updSyncStatus();
+    _localEditUntil=Date.now()+3000; // 3초간 SSE 무시
     try{NativeBridge.toggleSource(src);}catch(e){}
     nb('trackUsage','toggle_'+src);
     setTimeout(()=>{try{
