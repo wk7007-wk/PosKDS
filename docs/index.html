@@ -246,7 +246,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   <button class="nbtn bn" onclick="nb('openAppSettings')">앱 정보 (제한해제)</button>
 </div>
 
-<div style="text-align:center;color:#707088;font-size:10px;padding:12px 0;">PosDelay Dashboard v3.0</div>
+<div style="text-align:center;color:#707088;font-size:10px;padding:12px 0;">PosDelay Dashboard v3.1</div>
 
 <script>
 const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -388,10 +388,18 @@ function updSyncItem(dotId,txtId,label,ts){
 }
 
 function togSource(src){
-  // 앱에서만 동작 (NativeBridge 필요)
-  // 웹에서는 Firebase로 toggle 요청
-  // TODO: 양방향 구현 시 추가
-  if(isApp){nb('trackUsage','toggle_'+src);}
+  if(isApp){
+    try{NativeBridge.toggleSource(src);}catch(e){}
+    nb('trackUsage','toggle_'+src);
+    // 즉시 UI 갱신
+    setTimeout(()=>{
+      try{
+        const st=JSON.parse(NativeBridge.getSourceStatus());
+        stS.kds_paused=st.kds_paused;stS.mate_paused=st.mate_paused;stS.pc_paused=st.pc_paused;
+        updSyncStatus();
+      }catch(e){}
+    },300);
+  }
 }
 
 // === 게이지 (0~10) ===
@@ -402,7 +410,8 @@ function updGauges(c){
   let h='';
   for(let i=0;i<=10;i++){
     let cl=i>=co?'#E74C3C':i<=cn?'#2ECC71':'#E67E22';
-    h+=`<div class="gc${i===c?' act':''}" style="background:${cl}" onclick="nb('trackUsage','gauge_tap')">${i}</div>`;
+    const cAct=i>=co?'COUPANG_AD_OFF':'COUPANG_AD_ON';
+    h+=`<div class="gc${i===c?' act':''}" style="background:${cl}" onclick="gaugeAd('coupang',${i})">${i}</div>`;
   }
   document.getElementById('cG').innerHTML=h;
   document.getElementById('cSt').innerHTML=c>=co?'<span style="color:#E74C3C">OFF</span>':c<=cn?'<span style="color:#2ECC71">ON</span>':'<span style="color:#E67E22">유지</span>';
@@ -410,11 +419,30 @@ function updGauges(c){
   h='';
   for(let i=0;i<=10;i++){
     let cl=i>=bo?'#E74C3C':(i>=bm&&i<=bu)?'#E67E22':i<=bn2?'#2ECC71':'#2A2A45';
-    h+=`<div class="gc${i===c?' act':''}" style="background:${cl}">${i}</div>`;
+    h+=`<div class="gc${i===c?' act':''}" style="background:${cl}" onclick="gaugeAd('baemin',${i})">${i}</div>`;
   }
   document.getElementById('bG').innerHTML=h;
   const ba=S.baemin_amount||200,bma=S.baemin_mid_amount||100,bra=S.baemin_reduced_amount||50;
   document.getElementById('bSt').innerHTML=c>=bo?`<span style="color:#E74C3C">최소 ${bra}원</span>`:(c>=bm&&c<=bu)?`<span style="color:#E67E22">중간 ${bma}원</span>`:c<=bn2?`<span style="color:#2ECC71">최대 ${ba}원</span>`:'<span style="color:#9090A8">유지</span>';
+}
+
+// === 게이지 탭 → 광고 실행 ===
+function gaugeAd(platform,idx){
+  if(!isApp)return;
+  nb('trackUsage','gauge_'+platform+'_'+idx);
+  if(platform==='coupang'){
+    const co=S.coupang_off_threshold||5,cn=S.coupang_on_threshold||3;
+    if(idx>=co)nb('executeAd','COUPANG_AD_OFF',0);
+    else if(idx<=cn)nb('executeAd','COUPANG_AD_ON',0);
+    else toast('유지 구간 (동작 없음)');
+  }else{
+    const bo=S.baemin_off_threshold||8,bu=S.baemin_mid_upper_threshold||7,bm=S.baemin_mid_threshold||5,bn=S.baemin_on_threshold||3;
+    const ba=S.baemin_amount||200,bma=S.baemin_mid_amount||100,bra=S.baemin_reduced_amount||50;
+    if(idx>=bo)nb('executeAd','BAEMIN_SET_AMOUNT',bra);
+    else if(idx>=bm&&idx<=bu)nb('executeAd','BAEMIN_SET_AMOUNT',bma);
+    else if(idx<=bn)nb('executeAd','BAEMIN_SET_AMOUNT',ba);
+    else toast('유지 구간 (동작 없음)');
+  }
 }
 
 // === 조리 속도 계산 (클램핑 2~4분) ===
