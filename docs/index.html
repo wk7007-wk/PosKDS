@@ -713,9 +713,9 @@ function chkCkAlerts(){
     const rem=tgt-(now-o.t)/60000;
     const nm=ckNum(i+1);
     if(isApp){
-      if(rem<=mid+fin&&!o.ma){o.ma=true;try{NativeBridge.speak(nm+'번 조리');}catch(e){}}
-      if(rem<=fin&&!o.fa){o.fa=true;try{NativeBridge.speak(nm+'번 포장');}catch(e){}}
-      if(rem<=0&&!o.da){o.da=true;try{NativeBridge.speak(nm+'번 시간초과');}catch(e){}}
+      if(rem<=mid+fin&&!o.ma){o.ma=true;try{NativeBridge.speakCook(nm+'번 조리');}catch(e){}}
+      if(rem<=fin&&!o.fa){o.fa=true;try{NativeBridge.speakCook(nm+'번 포장');}catch(e){}}
+      if(rem<=0&&!o.da){o.da=true;try{NativeBridge.speakCook(nm+'번 시간초과');}catch(e){}}
     }
   });
   updCkUI();
