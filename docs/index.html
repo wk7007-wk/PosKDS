@@ -314,16 +314,9 @@ function hSet(m){
   if(m.path==='/')Object.assign(S,m.data);else S[m.path.slice(1)]=m.data;
   sseLoaded=true;try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}updSetUI();updMonitor();
 }
-let _prevAdAction='';
 function hASt(m){
   if(!m.data||m.data==='null')return;
   if(m.path==='/')Object.assign(aS,m.data);else aS[m.path.slice(1)]=m.data;
-  // 광고 변경 TTS 알림
-  const act=aS.last_ad_action||'';
-  if(isApp&&act&&act!==_prevAdAction&&_prevAdAction!==''){
-    try{NativeBridge.speak(act.replace(/^\d{2}:\d{2}\s*/,''));}catch(e){}
-  }
-  _prevAdAction=act;
   updMonitor();
 }
 function hStatus(m){
@@ -774,7 +767,7 @@ function pollAll(){
     fetch(FB+'/posdelay/ad_settings.json').then(r=>r.json()),
   ]).then(([k,a,st,s])=>{
     if(k)Object.assign(kS,k);
-    if(a){const prev=_prevAdAction;Object.assign(aS,a);const act=aS.last_ad_action||'';if(isApp&&act&&act!==prev&&prev!==''){try{NativeBridge.speak(act.replace(/^\d{2}:\d{2}\s*/,''));}catch(e){}}  _prevAdAction=act;}
+    if(a){Object.assign(aS,a);}
     if(st)Object.assign(stS,st);
     if(s&&typeof s==='object'){Object.assign(S,s);sseLoaded=true;try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}}
     updSetUI();updSyncStatus();updMonitor();
