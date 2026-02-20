@@ -65,13 +65,11 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
       <span style="color:#2AC1BC;font-size:12px;font-weight:600">배민</span>
       <span class="dot dd" id="mBd"></span>
       <span id="mBv" style="font-size:12px;font-weight:600;color:#2AC1BC">-</span>
-      <span id="mBth" style="font-size:10px;color:#707088">(-/-)</span>
     </div>
     <div class="row" style="gap:4px">
       <span style="color:#FFD700;font-size:12px;font-weight:600">쿠팡</span>
       <span class="dot dd" id="mCd"></span>
       <span id="mCv" style="font-size:12px;font-weight:600;color:#FFD700">-</span>
-      <span id="mCth" style="font-size:10px;color:#707088">(-/-)</span>
     </div>
   </div>
   <div style="padding:4px 0;border-bottom:1px solid #2A2A45">
@@ -116,17 +114,30 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 
 <!-- ═══ 2. 게이지 ═══ -->
 <div class="card">
-  <div style="margin-bottom:6px">
-    <div class="row" style="justify-content:space-between;margin-bottom:2px">
-      <span style="color:#FFD700;font-size:12px;font-weight:600">쿠팡</span>
-      <span id="cSt" style="font-size:11px"></span>
+  <div style="margin-bottom:8px">
+    <div class="row" style="justify-content:space-between;margin-bottom:6px">
+      <div class="row" style="gap:6px">
+        <span style="color:#FFD700;font-size:12px;font-weight:600">쿠팡</span>
+        <span id="cSt" style="font-size:11px"></span>
+      </div>
+      <div class="row" style="gap:6px">
+        <button class="btn bs bg" style="min-width:36px" onclick="exAd('coupang','on')">ON</button>
+        <button class="btn bs bred" style="min-width:36px" onclick="exAd('coupang','off')">OFF</button>
+      </div>
     </div>
     <div class="gauge" id="cG"></div>
   </div>
-  <div>
-    <div class="row" style="justify-content:space-between;margin-bottom:2px">
-      <span style="color:#2AC1BC;font-size:12px;font-weight:600">배민</span>
-      <span id="bSt" style="font-size:11px"></span>
+  <div style="border-top:1px solid #2A2A45;padding-top:8px">
+    <div class="row" style="justify-content:space-between;margin-bottom:6px">
+      <div class="row" style="gap:6px">
+        <span style="color:#2AC1BC;font-size:12px;font-weight:600">배민</span>
+        <span id="bSt" style="font-size:11px"></span>
+      </div>
+      <div class="row" style="gap:6px">
+        <button class="btn bs bg" style="min-width:36px" onclick="exAd('baemin','max')">최대</button>
+        <button class="btn bs bor" style="min-width:36px" onclick="exAd('baemin','mid')">중간</button>
+        <button class="btn bs bred" style="min-width:36px" onclick="exAd('baemin','min')">최소</button>
+      </div>
     </div>
     <div class="gauge" id="bG"></div>
   </div>
@@ -148,14 +159,10 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
         <input type="time" id="set_ad_off_time" style="width:70px" onchange="saveS('ad_off_time',this.value)">
       </div>
     </div>
-    <div class="sec" style="color:#FFD700">쿠팡 임계값</div>
-    <div class="sr"><span class="sl">켜기</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_on_threshold',-1)">-</button><input type="number" id="set_coupang_on_threshold" onchange="saveS('coupang_on_threshold',this.value)"><button class="btn bs bn" onclick="adjS('coupang_on_threshold',1)">+</button></div></div>
-    <div class="sr"><span class="sl">끄기</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_off_threshold',-1)">-</button><input type="number" id="set_coupang_off_threshold" onchange="saveS('coupang_off_threshold',this.value)"><button class="btn bs bn" onclick="adjS('coupang_off_threshold',1)">+</button></div></div>
-    <div class="sec" style="color:#2AC1BC">배민 임계값 + 금액</div>
-    <div class="sr"><span class="sl">최대(켜기)</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_on_threshold',-1)">-</button><input type="number" id="set_baemin_on_threshold" onchange="saveS('baemin_on_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_on_threshold',1)">+</button><span style="color:#2A2A45">│</span><button class="btn bs bn" onclick="adjS('baemin_amount',-50)">-</button><input type="number" id="set_baemin_amount" style="width:55px" onchange="saveS('baemin_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_amount',50)">+</button></div></div>
-    <div class="sr"><span class="sl">중간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_mid_threshold',-1)">-</button><input type="number" id="set_baemin_mid_threshold" onchange="saveS('baemin_mid_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_mid_threshold',1)">+</button><span style="color:#2A2A45">│</span><button class="btn bs bn" onclick="adjS('baemin_mid_amount',-50)">-</button><input type="number" id="set_baemin_mid_amount" style="width:55px" onchange="saveS('baemin_mid_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_mid_amount',50)">+</button></div></div>
-    <div class="sr"><span class="sl">중간↑</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_mid_upper_threshold',-1)">-</button><input type="number" id="set_baemin_mid_upper_threshold" onchange="saveS('baemin_mid_upper_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_mid_upper_threshold',1)">+</button></div></div>
-    <div class="sr"><span class="sl">최소(끄기)</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_off_threshold',-1)">-</button><input type="number" id="set_baemin_off_threshold" onchange="saveS('baemin_off_threshold',this.value)"><button class="btn bs bn" onclick="adjS('baemin_off_threshold',1)">+</button><span style="color:#2A2A45">│</span><button class="btn bs bn" onclick="adjS('baemin_reduced_amount',-50)">-</button><input type="number" id="set_baemin_reduced_amount" style="width:55px" onchange="saveS('baemin_reduced_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_reduced_amount',50)">+</button></div></div>
+    <div class="sec" style="color:#2AC1BC">배민 금액</div>
+    <div class="sr"><span class="sl" style="color:#2ECC71">최대</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_amount',-50)">-</button><input type="number" id="set_baemin_amount" style="width:55px" onchange="saveS('baemin_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_amount',50)">+</button></div></div>
+    <div class="sr"><span class="sl" style="color:#E67E22">중간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_mid_amount',-50)">-</button><input type="number" id="set_baemin_mid_amount" style="width:55px" onchange="saveS('baemin_mid_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_mid_amount',50)">+</button></div></div>
+    <div class="sr"><span class="sl" style="color:#E74C3C">최소</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_reduced_amount',-50)">-</button><input type="number" id="set_baemin_reduced_amount" style="width:55px" onchange="saveS('baemin_reduced_amount',this.value)"><button class="btn bs bn" onclick="adjS('baemin_reduced_amount',50)">+</button></div></div>
     <div class="sec">토글</div>
     <div class="sr"><span class="sl">광고 마스터</span><div class="tog" id="tog_ad_enabled" onclick="togS('ad_enabled')"></div></div>
     <div class="sr"><span class="sl">건수 자동</span><div class="tog" id="tog_order_auto_off_enabled" onclick="togS('order_auto_off_enabled')"></div></div>
@@ -305,21 +312,20 @@ function updMonitor(){
   document.getElementById('mCount').textContent=c!=null?c:'--';
   const st=document.getElementById('mStatus');
   if(c!=null){
-    const co=g(S,'coupang_off_threshold',5),bo=g(S,'baemin_off_threshold',8);
-    const bdt=g(S,'baemin_delay_threshold',5),cdt=g(S,'coupang_delay_threshold',5);
-    const maxTh=Math.max(co,bo,bdt,cdt);
-    if(c>=maxTh){st.textContent='지연 필요';st.style.color='#E74C3C';}
-    else if(c>=Math.min(co,bo,bdt,cdt)){st.textContent='주의';st.style.color='#E67E22';}
-    else{st.textContent='정상';st.style.color='#2ECC71';}
+    const ci=Math.min(c,10);
+    const cz=getZones('coupang'),bz=getZones('baemin');
+    const cState=cz[ci],bState=bz[ci];
+    if(cState===2||bState===3){st.textContent='끄기/최소';st.style.color='#E74C3C';}
+    else if(bState===2){st.textContent='중간';st.style.color='#E67E22';}
+    else if(cState===1||bState===1){st.textContent='정상';st.style.color='#2ECC71';}
+    else{st.textContent='유지';st.style.color='#9090A8';}
   }
   const b=aS.baemin_current_bid;
   document.getElementById('mBv').textContent=b!=null&&b>0?b+'원':'-';
   document.getElementById('mBd').className='dot '+(b>0?(b>=g(S,'baemin_amount',200)?'dg':b>=g(S,'baemin_mid_amount',100)?'do':'dr'):'dd');
-  document.getElementById('mBth').textContent='('+g(S,'baemin_on_threshold',3)+'/'+g(S,'baemin_off_threshold',8)+')';
   const co2=aS.coupang_current_on;
   document.getElementById('mCv').textContent=co2===true?'ON':co2===false?'OFF':'-';
   document.getElementById('mCd').className='dot '+(co2===true?'dg':co2===false?'dr':'dd');
-  document.getElementById('mCth').textContent='('+g(S,'coupang_on_threshold',3)+'/'+g(S,'coupang_off_threshold',5)+')';
   document.getElementById('mLast').textContent='마지막: '+(aS.last_ad_action??'--');
   updGauges(c);updDelayPred();chkAlert(c);
 }
@@ -364,44 +370,73 @@ function togSource(src){
   }
 }
 
-// === 게이지 ===
+// === 게이지 (셀 배열 기반) ===
+// 쿠팡: 0=hold, 1=on(초록), 2=off(빨강)
+// 배민: 0=hold, 1=max(초록), 2=mid(주황), 3=min(빨강)
+const CZ_DEF=[1,1,1,0,0,2,2,2,2,2,2]; // 쿠팡 기본
+const BZ_DEF=[1,1,1,0,2,2,0,3,3,3,3]; // 배민 기본
+const CZ_COLORS={'0':'#2A2A45','1':'#2ECC71','2':'#E74C3C'};
+const BZ_COLORS={'0':'#2A2A45','1':'#2ECC71','2':'#E67E22','3':'#E74C3C'};
+const CZ_NEXT={'0':1,'1':2,'2':0}; // 순환: hold→on→off→hold
+const BZ_NEXT={'0':1,'1':2,'2':3,'3':0}; // hold→max→mid→min→hold
+
+function getZones(platform){
+  const key=platform==='coupang'?'coupang_zones':'baemin_zones';
+  const def=platform==='coupang'?CZ_DEF:BZ_DEF;
+  let z=S[key];
+  if(!z||!Array.isArray(z)||z.length!==11)return def.slice();
+  return z.slice();
+}
+function setZones(platform,zones){
+  const key=platform==='coupang'?'coupang_zones':'baemin_zones';
+  S[key]=zones;
+  updGauges(kS.count);
+  _autoSave();
+}
+function tapGauge(platform,idx){
+  nb('trackUsage','gauge_paint_'+platform+'_'+idx);
+  const zones=getZones(platform);
+  const next=platform==='coupang'?CZ_NEXT:BZ_NEXT;
+  zones[idx]=next[zones[idx]]??0;
+  setZones(platform,zones);
+}
+
 function updGauges(c){
-  if(c==null)return;
-  const co=g(S,'coupang_off_threshold',5),cn=g(S,'coupang_on_threshold',3);
-  const bo=g(S,'baemin_off_threshold',8),bu=g(S,'baemin_mid_upper_threshold',7),bm=g(S,'baemin_mid_threshold',5),bn2=g(S,'baemin_on_threshold',3);
+  const cz=getZones('coupang'), bz=getZones('baemin');
   let h='';
   for(let i=0;i<=10;i++){
-    let cl=i>co?'#E74C3C':i<=cn?'#2ECC71':'#2A2A45';
-    h+=`<div class="gc${i===c?' act':''}" style="background:${cl}" onclick="gaugeAd('coupang',${i})">${i}</div>`;
+    h+=`<div class="gc${c!=null&&i===c?' act':''}" style="background:${CZ_COLORS[cz[i]]}" onclick="tapGauge('coupang',${i})">${i}</div>`;
   }
   document.getElementById('cG').innerHTML=h;
-  document.getElementById('cSt').innerHTML=c>co?'<span style="color:#E74C3C">OFF</span>':c<=cn?'<span style="color:#2ECC71">ON</span>':'<span style="color:#9090A8">유지</span>';
+  // 상태 텍스트
+  if(c!=null){
+    const cs=cz[c];
+    document.getElementById('cSt').innerHTML=cs===2?'<span style="color:#E74C3C">OFF</span>':cs===1?'<span style="color:#2ECC71">ON</span>':'<span style="color:#9090A8">유지</span>';
+  }
   h='';
   for(let i=0;i<=10;i++){
-    let cl=i>bo?'#E74C3C':(i>=bm&&i<=bu)?'#E67E22':i<=bn2?'#2ECC71':'#2A2A45';
-    h+=`<div class="gc${i===c?' act':''}" style="background:${cl}" onclick="gaugeAd('baemin',${i})">${i}</div>`;
+    h+=`<div class="gc${c!=null&&i===c?' act':''}" style="background:${BZ_COLORS[bz[i]]}" onclick="tapGauge('baemin',${i})">${i}</div>`;
   }
   document.getElementById('bG').innerHTML=h;
   const ba=g(S,'baemin_amount',200),bma=g(S,'baemin_mid_amount',100),bra=g(S,'baemin_reduced_amount',50);
-  document.getElementById('bSt').innerHTML=c>bo?`<span style="color:#E74C3C">최소 ${bra}원</span>`:(c>=bm&&c<=bu)?`<span style="color:#E67E22">중간 ${bma}원</span>`:c<=bn2?`<span style="color:#2ECC71">최대 ${ba}원</span>`:'<span style="color:#9090A8">유지</span>';
+  if(c!=null){
+    const bs2=bz[c];
+    document.getElementById('bSt').innerHTML=bs2===3?`<span style="color:#E74C3C">최소 ${bra}원</span>`:bs2===2?`<span style="color:#E67E22">중간 ${bma}원</span>`:bs2===1?`<span style="color:#2ECC71">최대 ${ba}원</span>`:'<span style="color:#9090A8">유지</span>';
+  }
 }
 
-// === 게이지 탭 → 광고 ===
-function gaugeAd(platform,idx){
+// === 실행 버튼 ===
+function exAd(platform,action){
   if(!isApp)return;
-  nb('trackUsage','gauge_'+platform+'_'+idx);
+  nb('trackUsage','exec_'+platform+'_'+action);
   if(platform==='coupang'){
-    const co=g(S,'coupang_off_threshold',5),cn=g(S,'coupang_on_threshold',3);
-    if(idx>co)nb('executeAd','COUPANG_AD_OFF',0);
-    else if(idx<=cn)nb('executeAd','COUPANG_AD_ON',0);
-    else toast('유지 구간');
+    if(action==='on')nb('executeAd','COUPANG_AD_ON',0);
+    else nb('executeAd','COUPANG_AD_OFF',0);
   }else{
-    const bo=g(S,'baemin_off_threshold',8),bu=g(S,'baemin_mid_upper_threshold',7),bm=g(S,'baemin_mid_threshold',5),bn=g(S,'baemin_on_threshold',3);
     const ba=g(S,'baemin_amount',200),bma=g(S,'baemin_mid_amount',100),bra=g(S,'baemin_reduced_amount',50);
-    if(idx>bo)nb('executeAd','BAEMIN_SET_AMOUNT',bra);
-    else if(idx>=bm&&idx<=bu)nb('executeAd','BAEMIN_SET_AMOUNT',bma);
-    else if(idx<=bn)nb('executeAd','BAEMIN_SET_AMOUNT',ba);
-    else toast('유지 구간');
+    if(action==='max')nb('executeAd','BAEMIN_SET_AMOUNT',ba);
+    else if(action==='mid')nb('executeAd','BAEMIN_SET_AMOUNT',bma);
+    else nb('executeAd','BAEMIN_SET_AMOUNT',bra);
   }
 }
 
@@ -439,7 +474,7 @@ function updDelayPred(){
 
 // === 설정 UI ===
 function updSetUI(){
-  const fields=['coupang_off_threshold','coupang_on_threshold','baemin_off_threshold','baemin_mid_upper_threshold','baemin_mid_threshold','baemin_on_threshold','baemin_amount','baemin_mid_amount','baemin_reduced_amount','baemin_target_time','baemin_fixed_cook_time','baemin_delay_threshold','coupang_target_time','coupang_fixed_cook_time','coupang_delay_threshold'];
+  const fields=['baemin_amount','baemin_mid_amount','baemin_reduced_amount','baemin_target_time','baemin_fixed_cook_time','baemin_delay_threshold','coupang_target_time','coupang_fixed_cook_time','coupang_delay_threshold'];
   fields.forEach(f=>{const e=document.getElementById('set_'+f);if(e&&S[f]!=null)e.value=S[f];});
   if(S.ad_off_time)document.getElementById('set_ad_off_time').value=S.ad_off_time;
   if(S.ad_on_time)document.getElementById('set_ad_on_time').value=S.ad_on_time;
@@ -447,6 +482,7 @@ function updSetUI(){
     const e=document.getElementById('tog_'+f);if(e)e.className='tog'+(S[f]?' on':'');
   });
   const sd=document.getElementById('schDot');if(sd)sd.className='dot '+(S.schedule_enabled?'dg':'dr');
+  updGauges(kS.count);
 }
 
 // 설정 변경 → 즉시 Firebase 저장 + 게이지 갱신
