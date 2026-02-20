@@ -24,7 +24,7 @@ class KdsAccessibilityService : AccessibilityService() {
         private const val KEY_LAST_COUNT = "last_count"
         private const val KEY_LAST_UPLOAD_TIME = "last_upload_time"
         private const val KEY_LOG = "log_text"
-        private const val HEARTBEAT_MS = 3 * 60 * 1000L
+        private const val HEARTBEAT_MS = 30 * 1000L
         private const val AUTO_DUMP_MS = 5 * 60 * 1000L // 5분마다 자동 덤프
         private const val MAX_LOG_SIZE = 500_000L // 500KB
         var logFile: String = "/sdcard/Download/PosKDS_log.txt"
