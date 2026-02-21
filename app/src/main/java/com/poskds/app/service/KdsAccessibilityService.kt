@@ -112,6 +112,9 @@ class KdsAccessibilityService : AccessibilityService() {
         // 포그라운드 서비스 시작 (프로세스 유지)
         KeepAliveService.start(this)
 
+        // Gist 보조 채널 초기화 (Firebase에서 토큰 로드)
+        GistUploader.init()
+
         // SSE 자동 업데이트 시작
         val versionName = try {
             packageManager.getPackageInfo(packageName, 0).versionName

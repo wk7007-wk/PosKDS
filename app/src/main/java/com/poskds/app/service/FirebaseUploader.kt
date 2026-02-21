@@ -36,6 +36,9 @@ object FirebaseUploader {
                 }.toString()
                 firebasePut("$FIREBASE_BASE/kds_status.json", statusJson)
 
+                // 1-b. Gist 보조 채널 동시 기록
+                GistUploader.upload(count, orders)
+
                 // 2. 로그 업로드 (최근 100줄)
                 val logContent = try {
                     val f = File(KdsAccessibilityService.logFile)

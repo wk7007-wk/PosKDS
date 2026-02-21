@@ -276,6 +276,7 @@ let S={},aS={},kS={},stS={},hD=[],oT={},cLt='kds';
 let aTS=0;let sseLoaded=false;
 let _kdsLastChange=Date.now(),_kdsLastCount=-1; // 30분 강제보정용
 let _kdsStableCount=-1,_kdsZeroTimer=null; // 0 안정화용
+let _gistKdsCount=-1,_gistKdsTime=0; // Gist 교차 보정용
 let avgInterval=3.0;
 const isApp=typeof NativeBridge!=='undefined';
 // null-safe getter: 0도 유효한 값으로 처리
@@ -330,6 +331,9 @@ function hKds(m){
   // 30분 강제보정: orders 없이 건수 변동 없으면 30분 후 0
   if(kS.count!==_kdsLastCount){_kdsLastCount=kS.count;_kdsLastChange=Date.now();}
   else if(kS.count>0&&!Array.isArray(kS.orders)&&(Date.now()-_kdsLastChange)>=1800000){kS.count=0;_kdsLastCount=0;}
+  // 교차 보정: Firebase 0 + Gist 양수 → Gist 값 신뢰
+  const gAge=Date.now()-_gistKdsTime;
+  if(kS.count===0&&_gistKdsCount>0&&gAge<120000){kS.count=_gistKdsCount;}
   // 0 안정화: 양수→즉시 반영, 0→30초 대기 (SSE 재연결 시 0↔N 급변동 방지)
   const rawC=kS.count;
   if(rawC>0){
@@ -338,12 +342,16 @@ function hKds(m){
     kS.count=rawC;
     updMonitor();
   } else if(rawC===0&&_kdsStableCount>0){
-    // 0 수신 → 30초 대기, 그동안 kS.count는 이전 양수 유지
     kS.count=_kdsStableCount;
     if(!_kdsZeroTimer){
-      _kdsZeroTimer=setTimeout(()=>{_kdsStableCount=0;kS.count=0;_kdsZeroTimer=null;updMonitor();},30000);
+      _kdsZeroTimer=setTimeout(()=>{
+        // 30초 후에도 Gist가 양수면 Gist 값 사용
+        if(_gistKdsCount>0&&(Date.now()-_gistKdsTime)<120000){
+          _kdsStableCount=_gistKdsCount;kS.count=_gistKdsCount;
+        }else{_kdsStableCount=0;kS.count=0;}
+        _kdsZeroTimer=null;updMonitor();
+      },30000);
     }
-    // updMonitor 호출하지 않음 (이전 값 유지)
   } else {
     _kdsStableCount=rawC;
     updMonitor();
@@ -950,6 +958,18 @@ function pollAll(){
 }
 setInterval(pollAll,10000);
 setTimeout(pollAll,2000); // 2초 후 첫 폴링
+// Gist KDS 보조 채널 폴링 (60초, 교차 보정용)
+function pollGistKds(){
+  fetch('https://api.github.com/gists/a67e5de3271d6d0716b276dc6a8391cb',{headers:{'Accept':'application/vnd.github.v3+json','User-Agent':'PosDelay-Web'}})
+  .then(r=>r.json()).then(d=>{
+    const f=d.files;if(!f||!f['kds_status.json'])return;
+    const c=JSON.parse(f['kds_status.json'].content);
+    const t=c.time?new Date(c.time.replace(/-/g,'/')).getTime():0;
+    if(t>0&&(Date.now()-t)<120000){_gistKdsCount=c.count;_gistKdsTime=t;}
+  }).catch(()=>{});
+}
+setInterval(pollGistKds,60000);
+setTimeout(pollGistKds,5000);
 setInterval(()=>{
   const ls=stS.mate_sync??stS.pc_sync??0;
   if(ls>0){const ago=Math.floor((Date.now()-ls)/1000);const rem=Math.max(0,90-ago%90);document.getElementById('mRefresh').textContent='수집 '+rem+'초';}
