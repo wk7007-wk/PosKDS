@@ -320,8 +320,8 @@ function updC(ok){
 function hKds(m){
   if(!m.data||m.data==='null')return;
   if(m.path==='/')Object.assign(kS,m.data);else kS[m.path.slice(1)]=m.data;
-  // 교차검증: count>0인데 orders 비어있으면 0으로 보정
-  if(kS.count>0&&(!kS.orders||kS.orders.length===0))kS.count=0;
+  // 교차검증: count>0 + orders가 빈배열[]일 때만 0 보정 (orders 필드 없으면 count 신뢰)
+  if(kS.count>0&&Array.isArray(kS.orders)&&kS.orders.length===0)kS.count=0;
   updMonitor();
 }
 function hSet(m){
