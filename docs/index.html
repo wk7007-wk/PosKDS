@@ -825,7 +825,7 @@ function updCkUI(){
   const now=Date.now();
   const sorted=[...ckQ].sort((a,b)=>a.t-b.t);
   function mmss(ms){const neg=ms<0;const a=Math.abs(ms);const m=Math.floor(a/60000),s=Math.floor((a%60000)/1000);return(neg?'-':'')+m+':'+String(s).padStart(2,'0');}
-  let h='<div style="display:flex;gap:4px;padding:2px 4px;font-size:9px;color:#707088;border-bottom:1px solid #2A2A45"><span style="width:52px">주문</span><span style="width:38px">접수</span><span style="width:28px">상태</span><span style="flex:1"></span><span style="width:40px;text-align:right">전체</span><span style="width:40px;text-align:right">조리</span><span style="width:40px;text-align:right">포장</span></div>';
+  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#2ECC71">전체</span><span style="min-width:50px;text-align:center;color:#E67E22">조리</span><span style="min-width:50px;text-align:center;color:#E74C3C">포장</span></div>';
   sorted.forEach(o=>{
     const elMs=now-o.t;
     const allRem=tgtMs-elMs;
@@ -839,11 +839,18 @@ function updCkUI(){
     const allCl=st==='대기'?'#2ECC71':'#2ECC7155';
     const cookCl=st==='조리'?'#E67E22':'#E67E2255';
     const pkgCl=st==='포장'||st==='초과'?'#E74C3C':'#E74C3C55';
-    const kds=o.onKds?'':'<span style="color:#707088;font-size:8px"> 완</span>';
+    const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
     const op=o.onKds?'1':'0.4';
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
-    h+=`<div style="display:flex;align-items:center;gap:4px;padding:3px 4px;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace;font-weight:bold;font-size:12px"><span style="color:#E0E0EC;width:52px">${o.num}번${kds}</span><span style="color:#9090A8;font-size:10px;width:38px">${oTime}</span><span style="color:${bgCl};font-size:10px;width:28px">${st}</span><span style="flex:1"></span><span style="color:${allCl};width:40px;text-align:right">${mmss(allRem)}</span><span style="color:${cookCl};width:40px;text-align:right">${mmss(cookRem)}</span><span style="color:${pkgCl};width:40px;text-align:right">${mmss(pkgRem)}</span></div>`;
+    h+=`<div style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace">
+<span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번${kds}</span>
+<span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
+<span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
+<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${allCl}">${mmss(allRem)}</span>
+<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
+<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>
+</div>`;
   });
   if(listEl)listEl.innerHTML=h;
   if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>`;
