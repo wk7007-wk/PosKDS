@@ -125,9 +125,9 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
     <span id="ckA" style="color:#9090A8">&#9660;</span>
   </div>
   <div class="cb open" id="ckB">
-    <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjCk('target',-1)">-</button><input type="number" id="ck_target" value="20" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('target',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
-    <div class="sr"><span class="sl" style="color:#E67E22">조리</span><div class="sv"><button class="btn bs bn" onclick="adjCk('mid',-1)">-</button><input type="number" id="ck_mid" value="12" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('mid',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
-    <div class="sr"><span class="sl" style="color:#E74C3C">포장</span><div class="sv"><button class="btn bs bn" onclick="adjCk('finish',-1)">-</button><input type="number" id="ck_finish" value="3" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('finish',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl">전체</span><div class="sv"><button class="btn bs bn" onclick="adjCk('target',-1)">-</button><input type="number" id="ck_target" value="25" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('target',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl" style="color:#E67E22">조리</span><div class="sv"><button class="btn bs bn" onclick="adjCk('mid',-1)">-</button><input type="number" id="ck_mid" value="17" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('mid',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl" style="color:#E74C3C">포장</span><div class="sv"><button class="btn bs bn" onclick="adjCk('finish',-1)">-</button><input type="number" id="ck_finish" value="4" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('finish',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
     <div id="cookQ" style="margin-top:6px;font-size:12px;color:#707088">대기중</div>
   </div>
   <!-- 실시간 리스트 (설정 접힘과 무관하게 항상 표시) -->
@@ -816,44 +816,49 @@ function updCkUI(){
     return;
   }
   if(listArea)listArea.style.display='block';
-  const tgt=parseInt(document.getElementById('ck_target').value)||20;
-  const mid=parseInt(document.getElementById('ck_mid').value)||12;
-  const fin=parseInt(document.getElementById('ck_finish').value)||3;
-  const tgtMs=tgt*60000;
+  const tgt=parseInt(document.getElementById('ck_target').value)||25;
+  const mid=parseInt(document.getElementById('ck_mid').value)||17;
+  const fin=parseInt(document.getElementById('ck_finish').value)||4;
+  const tgtMs=tgt*60000;const midMs=mid*60000;const finMs=fin*60000;
   const now=Date.now();
   const sorted=[...ckQ].sort((a,b)=>(tgtMs-(now-a.t))-(tgtMs-(now-b.t)));
+  function mmss(ms){const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000);return m+':'+String(s).padStart(2,'0');}
   let h='';
   sorted.forEach(o=>{
     const elMs=now-o.t;
     const remMs=Math.max(0,tgtMs-elMs);
     const overMs=Math.max(0,elMs-tgtMs);
-    const remMin=Math.floor(remMs/60000);
-    const remSec=Math.floor((remMs%60000)/1000);
-    const overMin=Math.floor(overMs/60000);
-    const overSec=Math.floor((overMs%60000)/1000);
     const pct=Math.min(100,(elMs/tgtMs)*100);
-    const remTotalMin=remMs/60000;
-    let st,cl,bgCl;
-    if(remMs<=0){st='초과';cl='#FFF';bgCl='#E74C3C';}
-    else if(remTotalMin<=fin){st='포장';cl='#E74C3C';bgCl='#E74C3C';}
-    else if(remTotalMin<=mid){st='조리';cl='#E67E22';bgCl='#E67E22';}
-    else{st='대기';cl='#2ECC71';bgCl='#2ECC71';}
-    const timeDisp=remMs>0
-      ?`${remMin}:${String(remSec).padStart(2,'0')}`
-      :`<span style="color:#E74C3C">+${overMin}:${String(overSec).padStart(2,'0')}</span>`;
+    const remMin=remMs/60000;
+    // 상태 판정
+    let st,bgCl;
+    if(remMs<=0){st='초과';bgCl='#E74C3C';}
+    else if(remMin<=fin){st='포장';bgCl='#E74C3C';}
+    else if(remMin<=mid){st='조리';bgCl='#E67E22';}
+    else{st='대기';bgCl='#2ECC71';}
+    // 3개 타이머
+    const allDisp=remMs>0?mmss(remMs):'+'+mmss(overMs);
+    const allCl=remMs<=0?'#FFF':bgCl;
+    const cookRemMs=Math.max(0,remMs-finMs);
+    const cookDisp=remMin>mid?'--:--':remMin<=fin?'0:00':mmss(cookRemMs);
+    const cookCl=remMin>mid?'#707088':'#E67E22';
+    const pkgDisp=remMin>fin?'--:--':mmss(remMs);
+    const pkgCl=remMin>fin?'#707088':'#E74C3C';
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완료</span>';
     const op=o.onKds?'1':'0.4';
-    // 주문시간 표시 (접수 시간)
     const oDate=new Date(o.t);
     const oTime=oDate.getHours()+':'+String(oDate.getMinutes()).padStart(2,'0');
-    h+=`<div style="padding:3px 0;border-bottom:1px solid #2A2A45;opacity:${op}">
-      <div style="display:flex;align-items:center;gap:4px">
-        <span style="font-size:12px;font-weight:bold;color:#E0E0EC;min-width:32px">${o.num}번${kds}</span>
-        <span style="font-size:9px;color:#707088">${oTime}</span>
-        <span style="font-size:15px;font-weight:bold;color:${cl};font-family:monospace;min-width:48px;text-align:right">${timeDisp}</span>
-        <span style="color:#707088;font-size:9px">/${tgt}:00</span>
+    h+=`<div style="padding:4px 0;border-bottom:1px solid #2A2A45;opacity:${op}">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:13px;font-weight:bold;color:#E0E0EC">${o.num}번${kds}</span>
+        <span style="font-size:11px;color:#9090A8">${oTime}</span>
         <span style="flex:1"></span>
-        <span style="font-size:11px;font-weight:700;color:${cl};min-width:28px;text-align:right">${st}</span>
+        <span style="font-size:11px;font-weight:700;color:${bgCl}">${st}</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:2px;font-family:monospace;font-weight:bold">
+        <span style="font-size:13px;color:${allCl}">전체 ${allDisp}</span>
+        <span style="font-size:13px;color:${cookCl}">조리 ${cookDisp}</span>
+        <span style="font-size:13px;color:${pkgCl}">포장 ${pkgDisp}</span>
       </div>
       <div style="background:#1A1A30;border-radius:2px;height:3px;margin-top:2px;overflow:hidden">
         <div style="width:${pct}%;height:100%;background:${bgCl};border-radius:2px"></div>
