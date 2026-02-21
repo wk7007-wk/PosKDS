@@ -42,6 +42,8 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 .tbtn{padding:2px 8px;border-radius:4px;border:1px solid #2E2E52;font-size:10px;font-weight:600;cursor:pointer;background:#2A2A45;color:#E0E0EC;touch-action:manipulation;}
 .tbtn.on{border-color:#2ECC71;color:#2ECC71;}
 .tbtn.off{border-color:#E74C3C;color:#E74C3C;}
+.ck-row{transition:opacity 0.3s;}
+.ck-dying{opacity:0.3 !important;text-decoration:line-through;}
 </style>
 </head>
 <body>
@@ -786,8 +788,12 @@ function chkCkAlerts(){
   const finS=parseInt(document.getElementById('ck_finish').value)||240;
   const tgtMs=tgtS*1000;const cookStartMs=tgtMs-midS*1000;const pkgStartMs=tgtMs-finS*1000;
   const now=Date.now();
-  // 시간초과 후 5분 지나면 자동 제거
-  ckQ=ckQ.filter(o=>(now-o.t)<tgtMs+300000);
+  // 60분 후 자동 삭제 + 탭 삭제 예약 처리
+  ckQ=ckQ.filter(o=>{
+    if((now-o.t)>=3600000)return false; // 60분 초과 삭제
+    if(o.delAt&&now>=o.delAt)return false; // 탭 5초 후 삭제
+    return true;
+  });
   ckQ.forEach(o=>{
     const elMs=now-o.t;
     if(isApp){
@@ -836,14 +842,15 @@ function updCkUI(){
     else if(elMs>=pkgStartMs){st='포장';bgCl='#E74C3C';}
     else if(elMs>=cookStartMs){st='조리';bgCl='#E67E22';}
     else{st='대기';bgCl='#2ECC71';}
-    const allCl=st==='대기'?'#2ECC71':'#2ECC7155';
-    const cookCl=st==='조리'?'#E67E22':'#E67E2255';
+    const allCl='#2ECC7188'; // 전체는 항상 반투명
+    const cookCl='#E67E22'; // 조리는 항상 밝게 (가장 중요)
     const pkgCl=st==='포장'||st==='초과'?'#E74C3C':'#E74C3C55';
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
     const op=o.onKds?'1':'0.4';
+    const dying=o.delAt?' ck-dying':'';
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
-    h+=`<div style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace">
+    h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace;cursor:pointer">
 <span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번${kds}</span>
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
@@ -859,6 +866,7 @@ function updCkUI(){
 function ckDisp(k){const e=document.getElementById('ck_'+k);const d=document.getElementById('ck_'+k+'_disp');if(!e||!d)return;const v=parseInt(e.value)||0;const m=Math.floor(v/60),s=v%60;d.textContent=m+':'+String(s).padStart(2,'0');}
 function adjCk(k,d){const e=document.getElementById('ck_'+k);if(!e)return;e.value=Math.max(10,parseInt(e.value||0)+d);ckDisp(k);saveCk();}
 function saveCk(){try{localStorage.setItem('ck',JSON.stringify({on:ckOn,t:parseInt(document.getElementById('ck_target').value)||1500,m:parseInt(document.getElementById('ck_mid').value)||1020,f:parseInt(document.getElementById('ck_finish').value)||240}));}catch(e){}}
+function ckTapDel(num){const o=ckQ.find(x=>x.num===num);if(!o)return;if(o.delAt){o.delAt=null;}else{o.delAt=Date.now()+5000;}updCkUI();}
 function loadCk(){try{const s=JSON.parse(localStorage.getItem('ck'));if(s){ckOn=!!s.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');
   // 구버전 분단위(< 100) → 초단위 자동변환
   const t=s.t||1500;const m=s.m||1020;const f=s.f||240;
