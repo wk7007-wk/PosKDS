@@ -245,6 +245,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   <div class="sr"><div class="row"><span class="dot dd" id="pdD"></span><span class="sl" style="margin-left:4px">지연 접근성</span></div><button class="btn bs bb" onclick="nb('openAccessibilitySettings')">설정</button></div>
   <div class="sr"><div class="row"><span class="dot dd" id="pkD"></span><span class="sl" style="margin-left:4px">KDS 접근성</span></div><button class="btn bs bb" onclick="nb('openAccessibilitySettings')">설정</button></div>
   <div class="sr"><div class="row"><span class="dot dd" id="pnD"></span><span class="sl" style="margin-left:4px">알림 리스너</span></div><button class="btn bs bb" onclick="nb('openNotificationSettings')">설정</button></div>
+  <div class="sr"><div class="row"><span class="dot dd" id="pbD"></span><span class="sl" style="margin-left:4px">배터리 최적화 면제</span></div><button class="btn bs bb" onclick="nb('openBatterySettings')">설정</button></div>
   <div class="sr"><span class="sl">앱 버전</span><span id="appVer" style="color:#FFF;font-size:12px">-</span></div>
   <div class="row" style="gap:4px;margin-top:6px">
     <button class="btn bb" onclick="nb('showLoginDialog','baemin')" style="flex:1">배민 로그인</button>
@@ -285,6 +286,7 @@ if(isApp){
     document.getElementById('pdD').className='dot '+(p.delay?'dg':'dr');
     document.getElementById('pkD').className='dot '+(p.kds?'dg':'dr');
     document.getElementById('pnD').className='dot '+(p.notification?'dg':'dr');
+    document.getElementById('pbD').className='dot '+(p.battery?'dg':'dr');
   }catch(e){}},3000);
 }
 
