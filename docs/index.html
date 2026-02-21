@@ -836,14 +836,20 @@ function updCkUI(){
     else if(remMin<=fin){st='포장';bgCl='#E74C3C';}
     else if(remMin<=mid){st='조리';bgCl='#E67E22';}
     else{st='대기';bgCl='#2ECC71';}
-    // 3개 타이머 (미진입도 해당 시간 표시)
+    // 3개 동시 카운트다운: 전체=25, 조리=25-17=8부터, 포장=25-4=21부터
+    const cookStartMs=(tgt-mid)*60000; // 조리 시작 경과시간 (8분)
+    const pkgStartMs=(tgt-fin)*60000;  // 포장 시작 경과시간 (21분)
     const allDisp=remMs>0?mmss(remMs):'+'+mmss(overMs);
-    const allCl=remMs<=0?'#FFF':bgCl;
-    const cookRemMs=Math.max(0,remMs-finMs);
-    const cookDisp=remMs<=0?'0:00':mmss(cookRemMs);
-    const cookCl=remMin<=mid?'#E67E22':'#707088';
-    const pkgDisp=remMs<=0?'0:00':mmss(Math.min(remMs,finMs));
-    const pkgCl=remMin<=fin?'#E74C3C':'#707088';
+    const cookTotal=mid*60000; // 조리 전체시간 (17분)
+    const cookRem=Math.max(0,cookTotal-Math.max(0,elMs-cookStartMs));
+    const cookDisp=mmss(elMs<cookStartMs?cookTotal:cookRem);
+    const pkgTotal=fin*60000; // 포장 전체시간 (4분)
+    const pkgRem=Math.max(0,pkgTotal-Math.max(0,elMs-pkgStartMs));
+    const pkgDisp=mmss(elMs<pkgStartMs?pkgTotal:pkgRem);
+    // 해당 구간만 밝게
+    const allCl=remMs<=0?'#FFF':st==='대기'?'#2ECC71':'#2ECC7155';
+    const cookCl=st==='조리'?'#E67E22':'#E67E2255';
+    const pkgCl=st==='포장'||st==='초과'?'#E74C3C':'#E74C3C55';
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완료</span>';
     const op=o.onKds?'1':'0.4';
     const oDate=new Date(o.t);
