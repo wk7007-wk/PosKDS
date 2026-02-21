@@ -56,12 +56,28 @@ class KdsAccessibilityService : AccessibilityService() {
             val root = try { rootInActiveWindow } catch (_: Exception) { null }
             if (root != null) {
                 try {
-                    val count = extractCookingCount(root)
+                    var count = extractCookingCount(root)
+                    val orders = extractOrderNumbers(root)
+                    // 교차 검증: count null이면 주문번호 기반 보정
+                    if (count == null && orders.isEmpty() && lastCount > 0) {
+                        count = 0
+                        log("하트비트 건수 추출 실패 → 주문 없음 → 0건 보정")
+                    } else if (count == null && orders.isNotEmpty()) {
+                        count = orders.size
+                        log("하트비트 건수 추출 실패 → 주문 ${orders.size}건 보정")
+                    } else if (count != null && count > 0 && orders.isEmpty() && lastOrders.isEmpty()) {
+                        log("하트비트 건수=$count 이지만 주문 없음 → 0건 보정")
+                        count = 0
+                    }
                     if (count != null && count != lastCount) {
                         log("하트비트 건수 보정: $lastCount → $count")
                         lastCount = count
                         prefs.edit().putInt(KEY_LAST_COUNT, count).apply()
                         addHistory(count)
+                    }
+                    if (orders != lastOrders) {
+                        log("하트비트 주문번호 보정: $lastOrders → $orders")
+                        lastOrders = orders
                     }
                 } catch (_: Exception) {}
                 root.recycle()
@@ -135,8 +151,27 @@ class KdsAccessibilityService : AccessibilityService() {
 
         try {
             // 건수 + 주문번호 추출
-            val count = extractCookingCount(root)
+            var count = extractCookingCount(root)
             val orders = extractOrderNumbers(root)
+
+            // 교차 검증: count 추출 실패 시 주문번호 기반 보정
+            if (count == null) {
+                if (orders.isEmpty() && lastOrders.isNotEmpty()) {
+                    // 주문번호가 전부 사라졌으면 0건
+                    count = 0
+                    log("건수 추출 실패 → 주문번호 기반 보정: 0건")
+                } else if (orders.isNotEmpty() && orders.size != lastCount) {
+                    // 주문번호 수로 보정
+                    count = orders.size
+                    log("건수 추출 실패 → 주문번호 수 기반 보정: ${orders.size}건")
+                }
+            } else if (count > 0 && orders.isEmpty() && lastOrders.isEmpty()) {
+                // 탭에 숫자 있지만 실제 주문번호가 없으면 0건일 가능성
+                // (KDS UI 갱신 지연 — 탭 숫자가 늦게 바뀌는 경우)
+                log("건수=$count 이지만 주문번호 없음 → 0건 보정")
+                count = 0
+            }
+
             val countChanged = count != null && count != lastCount
             val ordersChanged = orders != lastOrders
 
