@@ -1,11 +1,15 @@
 package com.poskds.app.service
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
 import androidx.core.content.FileProvider
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -268,12 +272,44 @@ object AppUpdater {
                 setDataAndType(uri, "application/vnd.android.package-archive")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
             }
-            context.startActivity(intent)
-            logRemote("설치 인텐트 실행 완료")
+
+            // 직접 실행 시도
+            try {
+                context.startActivity(intent)
+                logRemote("설치 인텐트 직접 실행 완료")
+            } catch (_: Exception) {
+                logRemote("직접 실행 실패 → 알림으로 전환")
+            }
+
+            // 알림으로도 항상 띄움 (백그라운드 대비)
+            showInstallNotification(context, intent)
         } catch (e: Exception) {
             logRemote("설치 실패: ${e.javaClass.simpleName}: ${e.message}")
             showToast(context, "설치 실패: ${e.message}")
         }
+    }
+
+    private fun showInstallNotification(context: Context, installIntent: Intent) {
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "kds_update"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val ch = NotificationChannel(channelId, "앱 업데이트", NotificationManager.IMPORTANCE_HIGH)
+            nm.createNotificationChannel(ch)
+        }
+        val pi = PendingIntent.getActivity(
+            context, 0, installIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val n = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setContentTitle("")
+            .setContentText("업데이트 다운로드 완료 - 탭하여 설치")
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pi)
+            .build()
+        nm.notify(9999, n)
+        logRemote("설치 알림 표시 완료")
     }
 
     private fun logRemote(message: String) {
