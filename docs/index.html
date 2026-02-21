@@ -124,7 +124,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
     </div>
     <span id="ckA" style="color:#9090A8">&#9660;</span>
   </div>
-  <div class="cb" id="ckB">
+  <div class="cb open" id="ckB">
     <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjCk('target',-1)">-</button><input type="number" id="ck_target" value="20" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('target',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
     <div class="sr"><span class="sl" style="color:#E67E22">조리</span><div class="sv"><button class="btn bs bn" onclick="adjCk('mid',-1)">-</button><input type="number" id="ck_mid" value="12" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('mid',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
     <div class="sr"><span class="sl" style="color:#E74C3C">포장</span><div class="sv"><button class="btn bs bn" onclick="adjCk('finish',-1)">-</button><input type="number" id="ck_finish" value="3" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('finish',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
@@ -734,7 +734,9 @@ function sLt(tab,el){
 }
 
 // === 유틸 ===
-function togSec(id){const e=document.getElementById(id),o=e.classList.toggle('open');const a=document.getElementById(id.replace('B','A'));if(a)a.innerHTML=o?'&#9660;':'&#9654;';if(id==='chB'&&o)setTimeout(drawChart,100);}
+function togSec(id){const e=document.getElementById(id),o=e.classList.toggle('open');const a=document.getElementById(id.replace('B','A'));if(a)a.innerHTML=o?'&#9660;':'&#9654;';if(id==='chB'&&o)setTimeout(drawChart,100);try{const c=JSON.parse(localStorage.getItem('_collapsed')||'{}');if(o)delete c[id];else c[id]=1;localStorage.setItem('_collapsed',JSON.stringify(c));}catch(e){}}
+// 수동 접기 복원
+try{const c=JSON.parse(localStorage.getItem('_collapsed')||'{}');Object.keys(c).forEach(id=>{const e=document.getElementById(id);if(e){e.classList.remove('open');const a=document.getElementById(id.replace('B','A'));if(a)a.innerHTML='&#9654;';}});}catch(e){}
 function fmtHM(dt){return dt.getHours()+'시'+String(dt.getMinutes()).padStart(2,'0')+'분';}
 function toast(m){const d=document.createElement('div');d.style.cssText='position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#2ECC71;color:#FFF;padding:8px 16px;border-radius:8px;font-size:13px;z-index:9999;';d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),3000);}
 
