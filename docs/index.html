@@ -259,7 +259,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 
 <script>
 const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app';
-let S={},aS={},kS={},stS={},hD=[],cLt='kds';
+let S={},aS={},kS={},stS={},hD=[],oT={},cLt='kds';
 let aTS=0;let sseLoaded=false;
 let avgInterval=3.0;
 const isApp=typeof NativeBridge!=='undefined';
@@ -718,10 +718,11 @@ function togCookMode(){ckOn=!ckOn;document.getElementById('tog_cook_mode').class
 function updCkQueue(){
   if(!ckOn)return;
   const orders=kS.orders||[];
-  // 새 주문번호 등장 → 타이머 시작
+  // 새 주문번호 등장 → 타이머 시작 (Firebase order_tracking 시간 우선)
   orders.forEach(n=>{
     if(!ckQ.find(o=>o.num===n)){
-      ckQ.push({num:n,t:Date.now(),onKds:true,ma:false,fa:false,da:false});
+      const fbTime=oT[String(n)];  // Firebase에 저장된 최초 등장 시간
+      ckQ.push({num:n,t:fbTime||Date.now(),onKds:true,ma:false,fa:false,da:false});
     }
   });
   // KDS에서 사라진 주문 표시 (제거하지 않음, onKds만 false)
@@ -786,6 +787,10 @@ try{const b=localStorage.getItem('ad_settings_backup');if(b){Object.assign(S,JSO
 fetch(FB+'/posdelay/ad_settings.json').then(r=>r.json()).then(d=>{
   if(d&&typeof d==='object'){Object.assign(S,d);sseLoaded=true;try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}updSetUI();updMonitor();}
 }).catch(()=>{});
+sse('/posdelay/order_tracking.json',m=>{
+  if(!m.data||m.data==='null')return;
+  if(m.path==='/')Object.assign(oT,m.data);else oT[m.path.slice(1)]=m.data;
+});
 sse('/kds_status.json',hKds);
 sse('/posdelay/ad_settings.json',hSet);
 sse('/posdelay/ad_state.json',hASt);
