@@ -125,9 +125,10 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
     <span id="ckA" style="color:#9090A8">&#9660;</span>
   </div>
   <div class="cb open" id="ckB">
-    <div class="sr"><span class="sl">전체</span><div class="sv"><button class="btn bs bn" onclick="adjCk('target',-1)">-</button><input type="number" id="ck_target" value="25" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('target',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
-    <div class="sr"><span class="sl" style="color:#E67E22">조리</span><div class="sv"><button class="btn bs bn" onclick="adjCk('mid',-1)">-</button><input type="number" id="ck_mid" value="17" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('mid',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
-    <div class="sr"><span class="sl" style="color:#E74C3C">포장</span><div class="sv"><button class="btn bs bn" onclick="adjCk('finish',-1)">-</button><input type="number" id="ck_finish" value="4" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('finish',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl" style="color:#2ECC71">전체</span><div class="sv"><button class="btn bs bn" onclick="adjCk('target',-10)">-</button><span id="ck_target_disp" style="color:#FFF;font-size:13px;font-weight:bold;min-width:44px;text-align:center">25:00</span><button class="btn bs bn" onclick="adjCk('target',10)">+</button></div></div>
+    <div class="sr"><span class="sl" style="color:#E67E22">조리</span><div class="sv"><button class="btn bs bn" onclick="adjCk('mid',-10)">-</button><span id="ck_mid_disp" style="color:#FFF;font-size:13px;font-weight:bold;min-width:44px;text-align:center">17:00</span><button class="btn bs bn" onclick="adjCk('mid',10)">+</button></div></div>
+    <div class="sr"><span class="sl" style="color:#E74C3C">포장</span><div class="sv"><button class="btn bs bn" onclick="adjCk('finish',-10)">-</button><span id="ck_finish_disp" style="color:#FFF;font-size:13px;font-weight:bold;min-width:44px;text-align:center">4:00</span><button class="btn bs bn" onclick="adjCk('finish',10)">+</button></div></div>
+    <input type="hidden" id="ck_target" value="1500"><input type="hidden" id="ck_mid" value="1020"><input type="hidden" id="ck_finish" value="240">
     <div id="cookQ" style="margin-top:6px;font-size:12px;color:#707088">대기중</div>
   </div>
   <!-- 실시간 리스트 (설정 접힘과 무관하게 항상 표시) -->
@@ -462,14 +463,11 @@ function updGauges(c){
   // 조리모드 구간 예상: 현재 건수 + 조리속도 기반
   let ckMidIdx=-1,ckFinIdx=-1; // 조리시작/포장시작 건수
   if(ckOn&&c!=null&&avgInterval>0){
-    const tgt=parseInt(document.getElementById('ck_target').value)||20;
-    const midMin=parseInt(document.getElementById('ck_mid').value)||12;
-    const finMin=parseInt(document.getElementById('ck_finish').value)||3;
-    // N건 밀리면 대기시간 = N × avgInterval분
-    // 조리 구간: 대기시간 >= (목표-조리)분 → N >= (tgt-mid)/avg
-    // 포장 구간: 대기시간 >= (목표-포장)분 → N >= (tgt-fin)/avg
-    ckMidIdx=Math.ceil((tgt-midMin)/avgInterval);
-    ckFinIdx=Math.ceil((tgt-finMin)/avgInterval);
+    const tgtMin=(parseInt(document.getElementById('ck_target').value)||1500)/60;
+    const midMin=(parseInt(document.getElementById('ck_mid').value)||1020)/60;
+    const finMin=(parseInt(document.getElementById('ck_finish').value)||240)/60;
+    ckMidIdx=Math.ceil((tgtMin-midMin)/avgInterval);
+    ckFinIdx=Math.ceil((tgtMin-finMin)/avgInterval);
   }
   function cellMark(i){
     if(!ckOn||ckMidIdx<0)return '';
@@ -638,7 +636,7 @@ function updSchDisp(){
 // === 저장/복원 ===
 function saveAll(){
   if(!sseLoaded||Object.keys(S).length<3){toast('데이터 미수신 - 저장 불가');return;}
-  S._ck={on:ckOn,t:parseInt(document.getElementById('ck_target').value)||20,m:parseInt(document.getElementById('ck_mid').value)||12,f:parseInt(document.getElementById('ck_finish').value)||3};
+  S._ck={on:ckOn,t:parseInt(document.getElementById('ck_target').value)||1500,m:parseInt(document.getElementById('ck_mid').value)||1020,f:parseInt(document.getElementById('ck_finish').value)||240};
   try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}
   saveCk();
   S._version=Date.now();S._updated_by='web';S._updated_at=new Date().toLocaleString('ko-KR');
@@ -649,7 +647,7 @@ function restoreAll(){
     const b=localStorage.getItem('ad_settings_backup');
     if(!b){toast('백업 없음');return;}
     const d=JSON.parse(b);Object.assign(S,d);sseLoaded=true;
-    if(d._ck){ckOn=!!d._ck.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');document.getElementById('ck_target').value=d._ck.t||20;document.getElementById('ck_mid').value=d._ck.m||12;document.getElementById('ck_finish').value=d._ck.f||3;saveCk();}
+    if(d._ck){ckOn=!!d._ck.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');document.getElementById('ck_target').value=d._ck.t||1500;document.getElementById('ck_mid').value=d._ck.m||1020;document.getElementById('ck_finish').value=d._ck.f||240;ckDisp('target');ckDisp('mid');ckDisp('finish');saveCk();}
     updSetUI();updMonitor();
     fetch(FB+'/posdelay/ad_settings.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)}).then(()=>toast('복원 완료')).catch(()=>toast('복원 실패'));
   }catch(e){toast('복원 실패');}
@@ -778,21 +776,19 @@ function updCkQueue(){
 
 function chkCkAlerts(){
   if(!ckOn)return;
-  const tgt=parseInt(document.getElementById('ck_target').value)||20;
-  const mid=parseInt(document.getElementById('ck_mid').value)||12;
-  const fin=parseInt(document.getElementById('ck_finish').value)||3;
+  const tgtS=parseInt(document.getElementById('ck_target').value)||1500;
+  const midS=parseInt(document.getElementById('ck_mid').value)||1020;
+  const finS=parseInt(document.getElementById('ck_finish').value)||240;
+  const tgtMs=tgtS*1000;const cookStartMs=tgtMs-midS*1000;const pkgStartMs=tgtMs-finS*1000;
   const now=Date.now();
   // 시간초과 후 5분 지나면 자동 제거
-  ckQ=ckQ.filter(o=>(now-o.t)/60000<tgt+5);
+  ckQ=ckQ.filter(o=>(now-o.t)<tgtMs+300000);
   ckQ.forEach(o=>{
-    const rem=tgt-(now-o.t)/60000;
+    const elMs=now-o.t;
     if(isApp){
-      // 조리: KDS에 아직 있는 건만
-      if(rem<=mid&&!o.ma){o.ma=true;if(o.onKds){try{NativeBridge.speakCook(o.num+'번 조리');}catch(e){}}}
-      // 포장: 모든 건
-      if(rem<=fin&&!o.fa){o.fa=true;try{NativeBridge.speakCook(o.num+'번 포장');}catch(e){}}
-      // 시간초과: 모든 건
-      if(rem<=0&&!o.da){o.da=true;try{NativeBridge.speakCook(o.num+'번 시간초과');}catch(e){}}
+      if(elMs>=cookStartMs&&!o.ma){o.ma=true;if(o.onKds){try{NativeBridge.speakCook(o.num+'번 조리');}catch(e){}}}
+      if(elMs>=pkgStartMs&&!o.fa){o.fa=true;try{NativeBridge.speakCook(o.num+'번 포장');}catch(e){}}
+      if(elMs>=tgtMs&&!o.da){o.da=true;try{NativeBridge.speakCook(o.num+'번 시간초과');}catch(e){}}
     }
   });
   updCkUI();
@@ -816,68 +812,52 @@ function updCkUI(){
     return;
   }
   if(listArea)listArea.style.display='block';
-  const tgt=parseInt(document.getElementById('ck_target').value)||25;
-  const mid=parseInt(document.getElementById('ck_mid').value)||17;
-  const fin=parseInt(document.getElementById('ck_finish').value)||4;
-  const tgtMs=tgt*60000;const midMs=mid*60000;const finMs=fin*60000;
+  const tgtS=parseInt(document.getElementById('ck_target').value)||1500;
+  const midS=parseInt(document.getElementById('ck_mid').value)||1020;
+  const finS=parseInt(document.getElementById('ck_finish').value)||240;
+  const tgtMs=tgtS*1000;const midMs=midS*1000;const finMs=finS*1000;
+  const cookStartMs=tgtMs-midMs;const pkgStartMs=tgtMs-finMs;
   const now=Date.now();
   const sorted=[...ckQ].sort((a,b)=>(tgtMs-(now-a.t))-(tgtMs-(now-b.t)));
-  function mmss(ms){const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000);return m+':'+String(s).padStart(2,'0');}
+  function mmss(ms){const neg=ms<0;const a=Math.abs(ms);const m=Math.floor(a/60000),s=Math.floor((a%60000)/1000);return(neg?'-':'')+m+':'+String(s).padStart(2,'0');}
   let h='';
   sorted.forEach(o=>{
     const elMs=now-o.t;
-    const remMs=Math.max(0,tgtMs-elMs);
-    const overMs=Math.max(0,elMs-tgtMs);
     const pct=Math.min(100,(elMs/tgtMs)*100);
-    const remMin=remMs/60000;
-    // 상태 판정
+    const allRem=tgtMs-elMs;
+    const cookRem=midMs-(elMs-cookStartMs);
+    const pkgRem=finMs-(elMs-pkgStartMs);
+    // 상태
     let st,bgCl;
-    if(remMs<=0){st='초과';bgCl='#E74C3C';}
-    else if(remMin<=fin){st='포장';bgCl='#E74C3C';}
-    else if(remMin<=mid){st='조리';bgCl='#E67E22';}
+    if(allRem<=0){st='초과';bgCl='#E74C3C';}
+    else if(elMs>=pkgStartMs){st='포장';bgCl='#E74C3C';}
+    else if(elMs>=cookStartMs){st='조리';bgCl='#E67E22';}
     else{st='대기';bgCl='#2ECC71';}
-    // 3개 동시 카운트다운: 전체=25, 조리=25-17=8부터, 포장=25-4=21부터
-    const cookStartMs=(tgt-mid)*60000; // 조리 시작 경과시간 (8분)
-    const pkgStartMs=(tgt-fin)*60000;  // 포장 시작 경과시간 (21분)
-    const allDisp=remMs>0?mmss(remMs):'+'+mmss(overMs);
-    const cookTotal=mid*60000; // 조리 전체시간 (17분)
-    const cookRem=Math.max(0,cookTotal-Math.max(0,elMs-cookStartMs));
-    const cookDisp=mmss(elMs<cookStartMs?cookTotal:cookRem);
-    const pkgTotal=fin*60000; // 포장 전체시간 (4분)
-    const pkgRem=Math.max(0,pkgTotal-Math.max(0,elMs-pkgStartMs));
-    const pkgDisp=mmss(elMs<pkgStartMs?pkgTotal:pkgRem);
-    // 해당 구간만 밝게
-    const allCl=remMs<=0?'#FFF':st==='대기'?'#2ECC71':'#2ECC7155';
+    const allCl=st==='대기'?'#2ECC71':'#2ECC7155';
     const cookCl=st==='조리'?'#E67E22':'#E67E2255';
     const pkgCl=st==='포장'||st==='초과'?'#E74C3C':'#E74C3C55';
-    const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완료</span>';
+    const kds=o.onKds?'':'<span style="color:#707088;font-size:8px">완료</span>';
     const op=o.onKds?'1':'0.4';
     const oDate=new Date(o.t);
     const oTime=oDate.getHours()+':'+String(oDate.getMinutes()).padStart(2,'0');
-    h+=`<div style="padding:4px 0;border-bottom:1px solid #2A2A45;opacity:${op}">
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:13px;font-weight:bold;color:#E0E0EC">${o.num}번${kds}</span>
-        <span style="font-size:11px;color:#9090A8">${oTime}</span>
-        <span style="flex:1"></span>
-        <span style="font-size:11px;font-weight:700;color:${bgCl}">${st}</span>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:2px;font-family:monospace;font-weight:bold">
-        <span style="font-size:13px;color:${allCl}">전체 ${allDisp}</span>
-        <span style="font-size:13px;color:${cookCl}">조리 ${cookDisp}</span>
-        <span style="font-size:13px;color:${pkgCl}">포장 ${pkgDisp}</span>
-      </div>
-      <div style="background:#1A1A30;border-radius:2px;height:3px;margin-top:2px;overflow:hidden">
-        <div style="width:${pct}%;height:100%;background:${bgCl};border-radius:2px"></div>
-      </div>
+    h+=`<div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace;font-weight:bold;font-size:12px">
+      <span style="color:#E0E0EC">${o.num}번${kds}</span>
+      <span style="color:#9090A8;font-size:11px">${oTime}</span>
+      <span style="color:${bgCl};font-size:10px">${st}</span>
+      <span style="flex:1"></span>
+      <span style="color:${allCl}">${mmss(allRem)}</span>
+      <span style="color:${cookCl}">${mmss(cookRem)}</span>
+      <span style="color:${pkgCl}">${mmss(pkgRem)}</span>
     </div>`;
   });
   if(listEl)listEl.innerHTML=h;
   if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>`;
 }
 
-function adjCk(k,d){const e=document.getElementById('ck_'+k);if(!e)return;e.value=Math.max(1,parseInt(e.value||0)+d);saveCk();}
-function saveCk(){try{localStorage.setItem('ck',JSON.stringify({on:ckOn,t:parseInt(document.getElementById('ck_target').value)||20,m:parseInt(document.getElementById('ck_mid').value)||12,f:parseInt(document.getElementById('ck_finish').value)||3}));}catch(e){}}
-function loadCk(){try{const s=JSON.parse(localStorage.getItem('ck'));if(s){ckOn=!!s.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');if(s.t)document.getElementById('ck_target').value=s.t;if(s.m)document.getElementById('ck_mid').value=s.m;if(s.f)document.getElementById('ck_finish').value=s.f;}}catch(e){}}
+function ckDisp(k){const e=document.getElementById('ck_'+k);const d=document.getElementById('ck_'+k+'_disp');if(!e||!d)return;const v=parseInt(e.value)||0;const m=Math.floor(v/60),s=v%60;d.textContent=m+':'+String(s).padStart(2,'0');}
+function adjCk(k,d){const e=document.getElementById('ck_'+k);if(!e)return;e.value=Math.max(10,parseInt(e.value||0)+d);ckDisp(k);saveCk();}
+function saveCk(){try{localStorage.setItem('ck',JSON.stringify({on:ckOn,t:parseInt(document.getElementById('ck_target').value)||1500,m:parseInt(document.getElementById('ck_mid').value)||1020,f:parseInt(document.getElementById('ck_finish').value)||240}));}catch(e){}}
+function loadCk(){try{const s=JSON.parse(localStorage.getItem('ck'));if(s){ckOn=!!s.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');if(s.t)document.getElementById('ck_target').value=s.t;if(s.m)document.getElementById('ck_mid').value=s.m;if(s.f)document.getElementById('ck_finish').value=s.f;}ckDisp('target');ckDisp('mid');ckDisp('finish');}catch(e){}}
 loadCk();
 setInterval(chkCkAlerts,1000);
 
