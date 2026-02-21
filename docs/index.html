@@ -51,19 +51,6 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <div class="alert" id="alertB"></div>
 <div class="alert" id="anomalyB"></div>
 
-<!-- ═══ 0. 조리모드 실시간 리스트 ═══ -->
-<div class="card" id="cookListCard" style="display:none;padding:8px 12px">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-    <div style="display:flex;align-items:center;gap:6px">
-      <span style="color:#9090A8;font-size:11px">처리중</span>
-      <span id="ckCount" style="font-size:18px;font-weight:bold;color:#FFF">--</span>
-      <span style="color:#9090A8;font-size:11px">건</span>
-    </div>
-    <span id="ckStatus" style="font-size:12px;font-weight:600;color:#2ECC71">정상</span>
-  </div>
-  <div id="cookList"></div>
-</div>
-
 <!-- ═══ 1. 모니터링 ═══ -->
 <div class="card">
   <div class="row" style="justify-content:space-between;margin-bottom:6px">
@@ -127,20 +114,25 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   </div>
 </div>
 
-<!-- ═══ 1.5 조리모드 ═══ -->
-<div class="card">
+<!-- ═══ 1.5 조리모드 (모니터링 바로 아래) ═══ -->
+<div class="card" id="cookCard">
   <div class="ch" onclick="togSec('ckB')">
     <div class="row" style="gap:6px">
       <span style="font-size:13px;font-weight:600;color:#9090A8">조리모드</span>
       <div class="tog" id="tog_cook_mode" onclick="event.stopPropagation();togCookMode()"></div>
+      <span id="ckStatus" style="font-size:11px;font-weight:600;color:#2ECC71"></span>
     </div>
     <span id="ckA" style="color:#9090A8">&#9660;</span>
   </div>
-  <div class="cb open" id="ckB">
+  <div class="cb" id="ckB">
     <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjCk('target',-1)">-</button><input type="number" id="ck_target" value="20" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('target',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
     <div class="sr"><span class="sl" style="color:#E67E22">조리</span><div class="sv"><button class="btn bs bn" onclick="adjCk('mid',-1)">-</button><input type="number" id="ck_mid" value="12" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('mid',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
     <div class="sr"><span class="sl" style="color:#E74C3C">포장</span><div class="sv"><button class="btn bs bn" onclick="adjCk('finish',-1)">-</button><input type="number" id="ck_finish" value="3" style="width:40px" onchange="saveCk()" readonly><button class="btn bs bn" onclick="adjCk('finish',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
     <div id="cookQ" style="margin-top:6px;font-size:12px;color:#707088">대기중</div>
+  </div>
+  <!-- 실시간 리스트 (설정 접힘과 무관하게 항상 표시) -->
+  <div id="cookListArea" style="display:none;margin-top:6px;border-top:1px solid #2A2A45;padding-top:6px">
+    <div id="cookList"></div>
   </div>
 </div>
 
@@ -173,6 +165,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
     </div>
     <div class="gauge" id="bG"></div>
   </div>
+  <div id="gaugeLegend" style="display:none;gap:8px;justify-content:center;padding-top:4px;border-top:1px solid #2A2A45;margin-top:4px"></div>
 </div>
 
 <!-- ═══ 3. 광고 설정 ═══ -->
@@ -464,25 +457,50 @@ function tapGauge(platform,idx){
 
 function updGauges(c){
   const cz=getZones('coupang'), bz=getZones('baemin');
+  // 조리모드 구간 예상: 현재 건수 + 조리속도 기반
+  let ckMidIdx=-1,ckFinIdx=-1; // 조리시작/포장시작 건수
+  if(ckOn&&c!=null&&avgInterval>0){
+    const tgt=parseInt(document.getElementById('ck_target').value)||20;
+    const midMin=parseInt(document.getElementById('ck_mid').value)||12;
+    const finMin=parseInt(document.getElementById('ck_finish').value)||3;
+    // N건 밀리면 대기시간 = N × avgInterval분
+    // 조리 구간: 대기시간 >= (목표-조리)분 → N >= (tgt-mid)/avg
+    // 포장 구간: 대기시간 >= (목표-포장)분 → N >= (tgt-fin)/avg
+    ckMidIdx=Math.ceil((tgt-midMin)/avgInterval);
+    ckFinIdx=Math.ceil((tgt-finMin)/avgInterval);
+  }
+  function cellMark(i){
+    if(!ckOn||ckMidIdx<0)return '';
+    if(i>=ckFinIdx)return '<span style="position:absolute;bottom:0;left:0;right:0;height:2px;background:#E74C3C;opacity:.8"></span>';
+    if(i>=ckMidIdx)return '<span style="position:absolute;bottom:0;left:0;right:0;height:2px;background:#E67E22;opacity:.8"></span>';
+    return '';
+  }
   let h='';
   for(let i=0;i<=10;i++){
-    h+=`<div class="gc${c!=null&&i===c?' act':''}" style="background:${CZ_COLORS[cz[i]]}" onclick="tapGauge('coupang',${i})">${i}</div>`;
+    h+=`<div class="gc${c!=null&&i===c?' act':''}" style="background:${CZ_COLORS[cz[i]]};position:relative" onclick="tapGauge('coupang',${i})">${i}${cellMark(i)}</div>`;
   }
   document.getElementById('cG').innerHTML=h;
-  // 상태 텍스트
   if(c!=null){
     const cs=cz[c];
     document.getElementById('cSt').innerHTML=cs===2?'<span style="color:#E74C3C">OFF</span>':cs===1?'<span style="color:#2ECC71">ON</span>':'<span style="color:#9090A8">유지</span>';
   }
   h='';
   for(let i=0;i<=10;i++){
-    h+=`<div class="gc${c!=null&&i===c?' act':''}" style="background:${BZ_COLORS[bz[i]]}" onclick="tapGauge('baemin',${i})">${i}</div>`;
+    h+=`<div class="gc${c!=null&&i===c?' act':''}" style="background:${BZ_COLORS[bz[i]]};position:relative" onclick="tapGauge('baemin',${i})">${i}${cellMark(i)}</div>`;
   }
   document.getElementById('bG').innerHTML=h;
   const ba=g(S,'baemin_amount',200),bma=g(S,'baemin_mid_amount',100),bra=g(S,'baemin_reduced_amount',50);
   if(c!=null){
     const bs2=bz[c];
     document.getElementById('bSt').innerHTML=bs2===3?`<span style="color:#E74C3C">최소 ${bra}원</span>`:bs2===2?`<span style="color:#E67E22">중간 ${bma}원</span>`:bs2===1?`<span style="color:#2ECC71">최대 ${ba}원</span>`:'<span style="color:#9090A8">유지</span>';
+  }
+  // 게이지 아래 조리구간 범례
+  const lgEl=document.getElementById('gaugeLegend');
+  if(lgEl){
+    if(ckOn&&ckMidIdx>=0){
+      lgEl.style.display='flex';
+      lgEl.innerHTML=`<span style="color:#2ECC71;font-size:9px">대기 0~${ckMidIdx-1}</span><span style="color:#E67E22;font-size:9px">조리 ${ckMidIdx}~${ckFinIdx-1}</span><span style="color:#E74C3C;font-size:9px">포장 ${ckFinIdx}+</span><span style="color:#707088;font-size:9px">(${avgInterval.toFixed(1)}분/건)</span>`;
+    }else{lgEl.style.display='none';}
   }
 }
 
@@ -777,33 +795,28 @@ function chkCkAlerts(){
 }
 
 function updCkUI(){
-  const listCard=document.getElementById('cookListCard');
+  const listArea=document.getElementById('cookListArea');
   const listEl=document.getElementById('cookList');
   const settingsEl=document.getElementById('cookQ');
-  // 조리모드 카드 내 건수 업데이트
-  const ckCntEl=document.getElementById('ckCount');
   const ckStEl=document.getElementById('ckStatus');
-  const c=getActiveCount();
-  if(ckCntEl)ckCntEl.textContent=c!=null?c:'--';
-  if(ckStEl&&c!=null){
-    const activeOrders=ckQ.filter(o=>o.onKds).length;
-    if(activeOrders===0)ckStEl.textContent='대기';
-    else ckStEl.textContent=activeOrders+'건 조리';
-    ckStEl.style.color=activeOrders>3?'#E74C3C':activeOrders>1?'#E67E22':'#2ECC71';
+  const activeOrders=ckQ.filter(o=>o.onKds).length;
+  if(ckStEl){
+    if(!ckOn){ckStEl.textContent='';ckStEl.style.color='#707088';}
+    else if(activeOrders===0){ckStEl.textContent='대기';ckStEl.style.color='#9090A8';}
+    else{ckStEl.textContent=activeOrders+'건';ckStEl.style.color=activeOrders>3?'#E74C3C':activeOrders>1?'#E67E22':'#2ECC71';}
   }
   if(!ckOn||ckQ.length===0){
-    if(listCard)listCard.style.display=ckOn?'block':'none';
+    if(listArea)listArea.style.display=ckOn?'block':'none';
     if(settingsEl)settingsEl.innerHTML='<span style="color:#707088">대기중</span>';
     if(listEl&&ckOn)listEl.innerHTML='<div style="text-align:center;color:#707088;font-size:11px;padding:8px">주문 대기중</div>';
     return;
   }
-  if(listCard)listCard.style.display='block';
+  if(listArea)listArea.style.display='block';
   const tgt=parseInt(document.getElementById('ck_target').value)||20;
   const mid=parseInt(document.getElementById('ck_mid').value)||12;
   const fin=parseInt(document.getElementById('ck_finish').value)||3;
   const tgtMs=tgt*60000;
   const now=Date.now();
-  // 긴급순 정렬 (남은시간 적은 것 위)
   const sorted=[...ckQ].sort((a,b)=>(tgtMs-(now-a.t))-(tgtMs-(now-b.t)));
   let h='';
   sorted.forEach(o=>{
@@ -826,9 +839,13 @@ function updCkUI(){
       :`<span style="color:#E74C3C">+${overMin}:${String(overSec).padStart(2,'0')}</span>`;
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완료</span>';
     const op=o.onKds?'1':'0.4';
+    // 주문시간 표시 (접수 시간)
+    const oDate=new Date(o.t);
+    const oTime=oDate.getHours()+':'+String(oDate.getMinutes()).padStart(2,'0');
     h+=`<div style="padding:3px 0;border-bottom:1px solid #2A2A45;opacity:${op}">
       <div style="display:flex;align-items:center;gap:4px">
         <span style="font-size:12px;font-weight:bold;color:#E0E0EC;min-width:32px">${o.num}번${kds}</span>
+        <span style="font-size:9px;color:#707088">${oTime}</span>
         <span style="font-size:15px;font-weight:bold;color:${cl};font-family:monospace;min-width:48px;text-align:right">${timeDisp}</span>
         <span style="color:#707088;font-size:9px">/${tgt}:00</span>
         <span style="flex:1"></span>
@@ -840,7 +857,7 @@ function updCkUI(){
     </div>`;
   });
   if(listEl)listEl.innerHTML=h;
-  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${ckQ.filter(o=>o.onKds).length}건 조리중</span>`;
+  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>`;
 }
 
 function adjCk(k,d){const e=document.getElementById('ck_'+k);if(!e)return;e.value=Math.max(1,parseInt(e.value||0)+d);saveCk();}
