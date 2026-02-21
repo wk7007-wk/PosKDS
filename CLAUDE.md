@@ -23,6 +23,13 @@ curl -s https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/k
 - PosDelay 앱의 WebView가 이 대시보드를 로드
 - 조리모드, 모니터링, 광고 제어 UI 포함
 
-## 주의사항
-- 주방폰은 원격 기기 → 로그는 Firebase로만 접근 가능
+## 주방폰 제약
+- **물리적으로 원격** — 업데이트 거의 불가능 (매장에 있고 접근 어려움)
+- 로그는 Firebase로만 접근 가능
+- **KDS 앱 수정/업데이트 전제 금지** — 데이터 보정은 항상 수신 측(PosDelay/웹)에서 처리
 - 웹 대시보드 수정 시 앱 재설치 불필요 (GitHub Pages 자동 반영)
+
+## KDS 데이터 신뢰도
+- KDS가 `orders` 배열을 보내지 않는 구버전일 수 있음
+- `orders` 없이 `count`만 올 때 → 30분간 건수 변동 없으면 0으로 강제 보정 (수신 측)
+- `orders` 있을 때 → 25분 초과 개별 주문 차감 (기존 필터)
