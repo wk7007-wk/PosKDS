@@ -275,6 +275,7 @@ const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app
 let S={},aS={},kS={},stS={},hD=[],oT={},cLt='kds';
 let aTS=0;let sseLoaded=false;
 let _kdsLastChange=Date.now(),_kdsLastCount=-1; // 30분 강제보정용
+let _kdsStableCount=-1,_kdsZeroTimer=null; // 0 안정화용
 let avgInterval=3.0;
 const isApp=typeof NativeBridge!=='undefined';
 // null-safe getter: 0도 유효한 값으로 처리
@@ -329,7 +330,24 @@ function hKds(m){
   // 30분 강제보정: orders 없이 건수 변동 없으면 30분 후 0
   if(kS.count!==_kdsLastCount){_kdsLastCount=kS.count;_kdsLastChange=Date.now();}
   else if(kS.count>0&&!Array.isArray(kS.orders)&&(Date.now()-_kdsLastChange)>=1800000){kS.count=0;_kdsLastCount=0;}
-  updMonitor();
+  // 0 안정화: 양수→즉시 반영, 0→30초 대기 (SSE 재연결 시 0↔N 급변동 방지)
+  const rawC=kS.count;
+  if(rawC>0){
+    if(_kdsZeroTimer){clearTimeout(_kdsZeroTimer);_kdsZeroTimer=null;}
+    _kdsStableCount=rawC;
+    kS.count=rawC;
+    updMonitor();
+  } else if(rawC===0&&_kdsStableCount>0){
+    // 0 수신 → 30초 대기, 그동안 kS.count는 이전 양수 유지
+    kS.count=_kdsStableCount;
+    if(!_kdsZeroTimer){
+      _kdsZeroTimer=setTimeout(()=>{_kdsStableCount=0;kS.count=0;_kdsZeroTimer=null;updMonitor();},30000);
+    }
+    // updMonitor 호출하지 않음 (이전 값 유지)
+  } else {
+    _kdsStableCount=rawC;
+    updMonitor();
+  }
 }
 function hSet(m){
   if(!m.data||m.data==='null')return;
