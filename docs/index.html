@@ -765,9 +765,14 @@ function updCkQueue(){
   const orders=kS.orders||[];
   // 새 주문번호 등장 → 타이머 시작 (Firebase order_tracking 시간 우선)
   orders.forEach(n=>{
-    if(!ckQ.find(o=>o.num===n)){
-      const fbTime=oT[String(n)];  // Firebase에 저장된 최초 등장 시간
+    const existing=ckQ.find(o=>o.num===n);
+    if(!existing){
+      const fbTime=oT[String(n)];
       ckQ.push({num:n,t:fbTime||Date.now(),onKds:true,ma:false,fa:false,da:false});
+    } else {
+      // oT 데이터가 나중에 도착하면 접수시간 업데이트
+      const fbTime=oT[String(n)];
+      if(fbTime && existing.t!==fbTime) existing.t=fbTime;
     }
   });
   // KDS에서 사라진 주문 표시 (제거하지 않음, onKds만 false)
@@ -818,16 +823,14 @@ function updCkUI(){
   const tgtMs=tgtS*1000;const midMs=midS*1000;const finMs=finS*1000;
   const cookStartMs=tgtMs-midMs;const pkgStartMs=tgtMs-finMs;
   const now=Date.now();
-  const sorted=[...ckQ].sort((a,b)=>(tgtMs-(now-a.t))-(tgtMs-(now-b.t)));
+  const sorted=[...ckQ].sort((a,b)=>a.t-b.t);
   function mmss(ms){const neg=ms<0;const a=Math.abs(ms);const m=Math.floor(a/60000),s=Math.floor((a%60000)/1000);return(neg?'-':'')+m+':'+String(s).padStart(2,'0');}
-  let h='';
+  let h='<div style="display:flex;gap:4px;padding:2px 4px;font-size:9px;color:#707088;border-bottom:1px solid #2A2A45"><span style="width:52px">주문</span><span style="width:38px">접수</span><span style="width:28px">상태</span><span style="flex:1"></span><span style="width:40px;text-align:right">전체</span><span style="width:40px;text-align:right">조리</span><span style="width:40px;text-align:right">포장</span></div>';
   sorted.forEach(o=>{
     const elMs=now-o.t;
-    const pct=Math.min(100,(elMs/tgtMs)*100);
     const allRem=tgtMs-elMs;
-    const cookRem=midMs-(elMs-cookStartMs);
-    const pkgRem=finMs-(elMs-pkgStartMs);
-    // 상태
+    const cookRem=cookStartMs-elMs;
+    const pkgRem=pkgStartMs-elMs;
     let st,bgCl;
     if(allRem<=0){st='초과';bgCl='#E74C3C';}
     else if(elMs>=pkgStartMs){st='포장';bgCl='#E74C3C';}
@@ -836,19 +839,11 @@ function updCkUI(){
     const allCl=st==='대기'?'#2ECC71':'#2ECC7155';
     const cookCl=st==='조리'?'#E67E22':'#E67E2255';
     const pkgCl=st==='포장'||st==='초과'?'#E74C3C':'#E74C3C55';
-    const kds=o.onKds?'':'<span style="color:#707088;font-size:8px">완료</span>';
+    const kds=o.onKds?'':'<span style="color:#707088;font-size:8px"> 완</span>';
     const op=o.onKds?'1':'0.4';
     const oDate=new Date(o.t);
-    const oTime=oDate.getHours()+':'+String(oDate.getMinutes()).padStart(2,'0');
-    h+=`<div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace;font-weight:bold;font-size:12px">
-      <span style="color:#E0E0EC">${o.num}번${kds}</span>
-      <span style="color:#9090A8;font-size:11px">${oTime}</span>
-      <span style="color:${bgCl};font-size:10px">${st}</span>
-      <span style="flex:1"></span>
-      <span style="color:${allCl}">${mmss(allRem)}</span>
-      <span style="color:${cookCl}">${mmss(cookRem)}</span>
-      <span style="color:${pkgCl}">${mmss(pkgRem)}</span>
-    </div>`;
+    const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
+    h+=`<div style="display:flex;align-items:center;gap:4px;padding:3px 4px;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace;font-weight:bold;font-size:12px"><span style="color:#E0E0EC;width:52px">${o.num}번${kds}</span><span style="color:#9090A8;font-size:10px;width:38px">${oTime}</span><span style="color:${bgCl};font-size:10px;width:28px">${st}</span><span style="flex:1"></span><span style="color:${allCl};width:40px;text-align:right">${mmss(allRem)}</span><span style="color:${cookCl};width:40px;text-align:right">${mmss(cookRem)}</span><span style="color:${pkgCl};width:40px;text-align:right">${mmss(pkgRem)}</span></div>`;
   });
   if(listEl)listEl.innerHTML=h;
   if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>`;
