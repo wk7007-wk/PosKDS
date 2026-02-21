@@ -49,6 +49,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <div id="pullInd" style="text-align:center;color:#707088;font-size:11px;height:0;overflow:hidden;transition:height .2s">&#8595; 새로고침</div>
 <div class="conn"><span class="dot dd" id="cD"></span> <span id="cT" style="color:#707088">...</span></div>
 <div class="alert" id="alertB"></div>
+<div class="alert" id="anomalyB"></div>
 
 <!-- ═══ 1. 모니터링 ═══ -->
 <div class="card">
@@ -104,10 +105,10 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   </div>
   <div class="row" style="justify-content:space-between;padding-top:4px">
     <span id="mLast" style="font-size:10px;color:#707088;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">마지막: --</span>
-    <div class="row" style="gap:3px" id="nativeMonBtns" style="display:none">
-      <button class="btn bs bb" onclick="nb('executeAd','BAEMIN_CHECK',0)">배민</button>
-      <button class="btn bs bcp" onclick="nb('executeAd','COUPANG_CHECK',0)">쿠팡</button>
-      <button class="btn bs bn" onclick="nb('refreshAndCorrect')">정정</button>
+    <div class="row" style="gap:3px">
+      <button class="btn bs bb" onclick="doCheck('baemin')">배민</button>
+      <button class="btn bs bcp" onclick="doCheck('coupang')">쿠팡</button>
+      <button class="btn bs bn" onclick="doCheck('refresh')">정정</button>
     </div>
   </div>
 </div>
@@ -254,7 +255,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   <button class="nbtn bn" onclick="nb('openAppSettings')">앱 정보 (제한해제)</button>
 </div>
 
-<div style="text-align:center;color:#707088;font-size:10px;padding:12px 0;">PosDelay Dashboard v3.3</div>
+<div style="text-align:center;color:#707088;font-size:10px;padding:12px 0;">PosDelay Dashboard v3.4</div>
 
 <script>
 const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -391,12 +392,12 @@ function updSyncItem(dotId,txtId,label,ts){
   else{d.className='dot dr';t.style.color='#E74C3C';}
 }
 function togSource(src){
+  // 즉시 UI 반영 (낙관적 업데이트)
+  const key=src+'_paused';
+  stS[key]=!stS[key];
+  updSyncStatus();
+  _localEditUntil=Date.now()+3000;
   if(isApp){
-    // 즉시 UI 반영 (낙관적 업데이트)
-    const key=src+'_paused';
-    stS[key]=!stS[key];
-    updSyncStatus();
-    _localEditUntil=Date.now()+3000; // 3초간 SSE 무시
     try{NativeBridge.toggleSource(src);}catch(e){}
     nb('trackUsage','toggle_'+src);
     setTimeout(()=>{try{
@@ -404,6 +405,8 @@ function togSource(src){
       stS.kds_paused=st.kds_paused;stS.mate_paused=st.mate_paused;stS.pc_paused=st.pc_paused;
       updSyncStatus();
     }catch(e){}},300);
+  }else{
+    sendCmd('TOGGLE_'+src.toUpperCase());
   }
 }
 
@@ -465,18 +468,45 @@ function updGauges(c){
   }
 }
 
+// === Firebase 명령 전송 (웹→Firebase→앱) ===
+function sendCmd(action,amount){
+  const cmd={action:action,amount:amount||0,time:Date.now(),source:'web'};
+  fetch(FB+'/posdelay/command.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cmd)})
+    .then(()=>toast(action.replace(/_/g,' ')+' 전송'))
+    .catch(()=>toast('전송 실패'));
+}
+function doCheck(what){
+  if(isApp){
+    if(what==='refresh')nb('refreshAndCorrect');
+    else if(what==='baemin')nb('executeAd','BAEMIN_CHECK',0);
+    else nb('executeAd','COUPANG_CHECK',0);
+  }else{
+    if(what==='refresh')sendCmd('REFRESH_CORRECT');
+    else if(what==='baemin')sendCmd('BAEMIN_CHECK');
+    else sendCmd('COUPANG_CHECK');
+  }
+}
+
 // === 실행 버튼 ===
 function exAd(platform,action){
-  if(!isApp)return;
-  nb('trackUsage','exec_'+platform+'_'+action);
-  if(platform==='coupang'){
-    if(action==='on')nb('executeAd','COUPANG_AD_ON',0);
-    else nb('executeAd','COUPANG_AD_OFF',0);
+  const ba=g(S,'baemin_amount',200),bma=g(S,'baemin_mid_amount',100),bra=g(S,'baemin_reduced_amount',50);
+  if(isApp){
+    nb('trackUsage','exec_'+platform+'_'+action);
+    if(platform==='coupang'){
+      if(action==='on')nb('executeAd','COUPANG_AD_ON',0);
+      else nb('executeAd','COUPANG_AD_OFF',0);
+    }else{
+      if(action==='max')nb('executeAd','BAEMIN_SET_AMOUNT',ba);
+      else if(action==='mid')nb('executeAd','BAEMIN_SET_AMOUNT',bma);
+      else nb('executeAd','BAEMIN_SET_AMOUNT',bra);
+    }
   }else{
-    const ba=g(S,'baemin_amount',200),bma=g(S,'baemin_mid_amount',100),bra=g(S,'baemin_reduced_amount',50);
-    if(action==='max')nb('executeAd','BAEMIN_SET_AMOUNT',ba);
-    else if(action==='mid')nb('executeAd','BAEMIN_SET_AMOUNT',bma);
-    else nb('executeAd','BAEMIN_SET_AMOUNT',bra);
+    if(platform==='coupang'){
+      sendCmd(action==='on'?'COUPANG_AD_ON':'COUPANG_AD_OFF');
+    }else{
+      const amounts={max:ba,mid:bma,min:bra};
+      sendCmd('BAEMIN_SET_AMOUNT',amounts[action]);
+    }
   }
 }
 
@@ -761,6 +791,20 @@ sse('/posdelay/ad_settings.json',hSet);
 sse('/posdelay/ad_state.json',hASt);
 sse('/posdelay/status.json',hStatus);
 sse('/kds_history.json',hHist);
+// 이상신호 SSE
+sse('/posdelay/alert.json',m=>{
+  const ab=document.getElementById('anomalyB');
+  if(!m.data||m.data==='null'){ab.className='alert';return;}
+  const d=m.path==='/'?m.data:null;
+  if(!d)return;
+  const ts=d.timestamp||0;
+  if(Date.now()-ts>10*60*1000){ab.className='alert';return;} // 10분 지난 알림 무시
+  ab.className='alert warn';
+  ab.innerHTML='&#9888; ['+d.type+'] '+d.message+' ('+d.time+')';
+  if('Notification'in window&&Notification.permission==='granted'){
+    new Notification('이상신호',{body:d.message,tag:'anomaly'});
+  }
+});
 fetch(FB+'/kds_log.json').then(r=>r.json()).then(d=>{document.getElementById('logC').textContent=typeof d==='string'?d:JSON.stringify(d,null,2);}).catch(()=>{});
 // 10초 폴링 (SSE 백업)
 let _sseOk=false;
