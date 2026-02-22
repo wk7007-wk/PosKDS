@@ -859,9 +859,10 @@ function updCkUI(){
   const tgtMs=tgtS*1000;const midMs=midS*1000;const finMs=finS*1000;
   const cookStartMs=tgtMs-midMs;const pkgStartMs=tgtMs-finMs;
   const now=Date.now();
-  const sorted=[...ckQ].sort((a,b)=>a.t-b.t);
+  const sorted=[...ckQ].sort((a,b)=>b.t-a.t);
   function mmss(ms){const neg=ms<0;const a=Math.abs(ms);const m=Math.floor(a/60000),s=Math.floor((a%60000)/1000);return(neg?'-':'')+m+':'+String(s).padStart(2,'0');}
-  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#2ECC71">전체</span><span style="min-width:50px;text-align:center;color:#E67E22">조리</span><span style="min-width:50px;text-align:center;color:#E74C3C">포장</span></div>';
+  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#2ECC71">전체</span><span style="min-width:50px;text-align:center;color:#E67E22">조리</span><span style="min-width:50px;text-align:center;color:#E74C3C">포장</span><span style="min-width:40px;text-align:center;color:#FF6B6B">지연</span></div>';
+  let maxDelayMin=0;
   sorted.forEach(o=>{
     const elMs=now-o.t;
     const allRem=tgtMs-elMs;
@@ -875,6 +876,7 @@ function updCkUI(){
     const allCl='#2ECC7188'; // 전체는 항상 반투명
     const cookCl='#E67E22'; // 조리는 항상 밝게 (가장 중요)
     const pkgCl=st==='포장'||st==='초과'?'#E74C3C':'#E74C3C55';
+    const exceedMs=allRem<=0?-allRem:0;const delayMin=exceedMs>0?Math.ceil(exceedMs/300000)*5:0;if(delayMin>maxDelayMin)maxDelayMin=delayMin;
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
     const op=o.onKds?'1':'0.4';
     const dying=o.delAt?' ck-dying':'';
@@ -887,10 +889,11 @@ function updCkUI(){
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${allCl}">${mmss(allRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>
+<span style="min-width:40px;text-align:center;font-size:12px;font-weight:bold;color:${delayMin>0?'#FF6B6B':'transparent'}">${delayMin>0?delayMin+'분':''}</span>
 </div>`;
   });
   if(listEl)listEl.innerHTML=h;
-  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>`;
+  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>`+(maxDelayMin>0?` <span style="color:#FF6B6B;font-weight:bold">지연필요 ${maxDelayMin}분</span>`:'');
 }
 
 function ckDisp(k){const e=document.getElementById('ck_'+k);const d=document.getElementById('ck_'+k+'_disp');if(!e||!d)return;const v=parseInt(e.value)||0;const m=Math.floor(v/60),s=v%60;d.textContent=m+':'+String(s).padStart(2,'0');}
