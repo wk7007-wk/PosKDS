@@ -811,6 +811,7 @@ function updCkQueue(){
   ckQ.forEach(o=>{o.onKds=orders.includes(o.num);});
 }
 
+let _lastCkCheck=0;
 function chkCkAlerts(){
   if(!ckOn)return;
   const tgtS=parseInt(document.getElementById('ck_target').value)||1500;
@@ -818,6 +819,10 @@ function chkCkAlerts(){
   const finS=parseInt(document.getElementById('ck_finish').value)||240;
   const tgtMs=tgtS*1000;const cookStartMs=tgtMs-midS*1000;const pkgStartMs=tgtMs-finS*1000;
   const now=Date.now();
+  // 백그라운드 복귀 감지: 간격 > 3초면 밀린 알림 무시 (네이티브가 처리)
+  const gap=_lastCkCheck>0?now-_lastCkCheck:0;
+  _lastCkCheck=now;
+  const skipAlerts=gap>3000;
   // 60분 후 자동 삭제 + 탭 삭제 예약 처리
   ckQ=ckQ.filter(o=>{
     if((now-o.t)>=3600000)return false; // 60분 초과 삭제
@@ -827,9 +832,9 @@ function chkCkAlerts(){
   ckQ.forEach(o=>{
     const elMs=now-o.t;
     if(isApp){
-      if(elMs>=cookStartMs&&!o.ma){o.ma=true;if(o.onKds){try{NativeBridge.speakCook(o.num+'번 조리');}catch(e){}}}
-      if(elMs>=pkgStartMs&&!o.fa){o.fa=true;try{NativeBridge.speakCook(o.num+'번 포장');}catch(e){}}
-      if(elMs>=tgtMs&&!o.da){o.da=true;try{NativeBridge.speakCook(o.num+'번 시간초과');}catch(e){}}
+      if(elMs>=cookStartMs&&!o.ma){o.ma=true;if(!skipAlerts&&o.onKds){try{NativeBridge.speakCook(o.num+'번 조리');}catch(e){}}}
+      if(elMs>=pkgStartMs&&!o.fa){o.fa=true;if(!skipAlerts){try{NativeBridge.speakCook(o.num+'번 포장');}catch(e){}}}
+      if(elMs>=tgtMs&&!o.da){o.da=true;if(!skipAlerts){try{NativeBridge.speakCook(o.num+'번 시간초과');}catch(e){}}}
     }
   });
   updCkUI();
@@ -898,7 +903,7 @@ function updCkUI(){
 
 function ckDisp(k){const e=document.getElementById('ck_'+k);const d=document.getElementById('ck_'+k+'_disp');if(!e||!d)return;const v=parseInt(e.value)||0;const m=Math.floor(v/60),s=v%60;d.textContent=m+':'+String(s).padStart(2,'0');}
 function adjCk(k,d){const e=document.getElementById('ck_'+k);if(!e)return;e.value=Math.max(10,parseInt(e.value||0)+d);ckDisp(k);saveCk();}
-function saveCk(){try{localStorage.setItem('ck',JSON.stringify({on:ckOn,t:parseInt(document.getElementById('ck_target').value)||1500,m:parseInt(document.getElementById('ck_mid').value)||1020,f:parseInt(document.getElementById('ck_finish').value)||240}));}catch(e){}}
+function saveCk(){try{const t=parseInt(document.getElementById('ck_target').value)||1500,m=parseInt(document.getElementById('ck_mid').value)||1020,f=parseInt(document.getElementById('ck_finish').value)||240;localStorage.setItem('ck',JSON.stringify({on:ckOn,t:t,m:m,f:f}));if(isApp)try{NativeBridge.syncCookSettings(ckOn,t,m,f);}catch(e){}}catch(e){}}
 function ckTapDel(num){const o=ckQ.find(x=>x.num===num);if(!o)return;if(o.delAt){o.delAt=null;}else{o.delAt=Date.now()+5000;}updCkUI();}
 function loadCk(){try{const s=JSON.parse(localStorage.getItem('ck'));if(s){ckOn=!!s.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');
   // 구버전 분단위(< 100) → 초단위 자동변환
