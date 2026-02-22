@@ -880,7 +880,7 @@ function updCkUI(){
     else{st='대기';bgCl='#2ECC71';}
     const allCl='#2ECC7188'; // 전체는 항상 반투명
     const cookCl='#E67E22'; // 조리는 항상 밝게 (가장 중요)
-    const pkgCl=st==='포장'||st==='초과'?'#E74C3C':'#E74C3C55';
+    const pkgCl='#E74C3C'; // 포장도 항상 밝게
     const exceedMs=allRem<=0?-allRem:0;const delayMin=exceedMs>0?Math.ceil(exceedMs/300000)*5:0;if(delayMin>maxDelayMin)maxDelayMin=delayMin;
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
     const op=o.onKds?'1':'0.4';
