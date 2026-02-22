@@ -883,9 +883,11 @@ function updCkUI(){
     else{st='대기';bgCl='#2ECC71';}
     const cookCl='#E67E22'; // 조리는 항상 밝게 (가장 중요)
     const pkgCl='#FF5555'; // 포장 항상 밝게
-    // 지연 계산: 신규 주문만 (초과/오래된건 지연불가)
+    // 지연 계산: 플랫폼 목표시간 기준 (신규 주문만, 초과/오래된건 지연불가)
     let delayMin=0;
-    if(o.onKds&&allRem>0&&avgInterval>0){const pos=posMap[o.num]??0;const waitMs=(pos+1)*avgInterval*60000;const predMs=Math.max(0,waitMs-allRem);delayMin=predMs>0?Math.ceil(predMs/300000)*5:0;}
+    const delayTgtMs=Math.min(g(S,'baemin_target_time',20),g(S,'coupang_target_time',20))*60000;
+    const delayRem=delayTgtMs-elMs;
+    if(o.onKds&&delayRem>0&&avgInterval>0){const pos=posMap[o.num]??0;const waitMs=(pos+1)*avgInterval*60000;const predMs=Math.max(0,waitMs-delayRem);delayMin=predMs>0?Math.ceil(predMs/300000)*5:0;}
     if(delayMin>maxDelayMin)maxDelayMin=delayMin;
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
     const op=o.onKds?'1':'0.4';
