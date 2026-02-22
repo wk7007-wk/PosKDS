@@ -882,24 +882,24 @@ function updCkUI(){
     else if(elMs>=cookStartMs){st='조리';bgCl='#E67E22';}
     else{st='대기';bgCl='#2ECC71';}
     const cookCl='#E67E22'; // 조리는 항상 밝게 (가장 중요)
-    const pkgCl='#E74C3C'; // 포장도 항상 밝게
-    // 지연 계산: 초과=실제, 미초과=큐위치×조리속도 기반 예측
-    let delayMin=0,delayPred=false;
-    if(allRem<=0){delayMin=Math.ceil((-allRem)/300000)*5;}
-    else if(o.onKds&&avgInterval>0){const pos=posMap[o.num]??0;const waitMs=(pos+1)*avgInterval*60000;const predMs=Math.max(0,waitMs-allRem);delayMin=predMs>0?Math.ceil(predMs/300000)*5:0;delayPred=true;}
+    const pkgCl='#FF5555'; // 포장 항상 밝게
+    // 지연 계산: 신규 주문만 (초과/오래된건 지연불가)
+    let delayMin=0;
+    if(o.onKds&&allRem>0&&avgInterval>0){const pos=posMap[o.num]??0;const waitMs=(pos+1)*avgInterval*60000;const predMs=Math.max(0,waitMs-allRem);delayMin=predMs>0?Math.ceil(predMs/300000)*5:0;}
     if(delayMin>maxDelayMin)maxDelayMin=delayMin;
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
     const op=o.onKds?'1':'0.4';
     const dying=o.delAt?' ck-dying':'';
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
-    h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace;cursor:pointer">
+    const rowBg=delayMin>0?'background:#FF6B6B22;':'';
+    h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace;cursor:pointer;${rowBg}">
 <span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번${kds}</span>
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>
-<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;${delayMin>0?'background:'+(delayPred?'#E67E2233':'#FF6B6B44')+';border-radius:4px;padding:1px 4px;':''}color:${delayMin>0?(delayPred?'#E67E22':'#FF6B6B'):'transparent'}">${delayMin>0?delayMin+'분':''}</span>
+<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;${delayMin>0?'background:#FF6B6B44;border-radius:4px;padding:1px 4px;':''}color:${delayMin>0?'#FF6B6B':'transparent'}">${delayMin>0?delayMin+'분':''}</span>
 </div>`;
   });
   if(listEl)listEl.innerHTML=h;
