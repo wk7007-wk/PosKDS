@@ -868,6 +868,9 @@ function updCkUI(){
   function mmss(ms){const neg=ms<0;const a=Math.abs(ms);const m=Math.floor(a/60000),s=Math.floor((a%60000)/1000);return(neg?'-':'')+m+':'+String(s).padStart(2,'0');}
   let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#2ECC71">전체</span><span style="min-width:50px;text-align:center;color:#E67E22">조리</span><span style="min-width:50px;text-align:center;color:#E74C3C">포장</span><span style="min-width:40px;text-align:center;color:#FF6B6B">지연</span></div>';
   let maxDelayMin=0;
+  // 큐 위치 계산 (활성 주문만, 오래된 순)
+  const activeOldest=sorted.filter(x=>x.onKds).slice().sort((a,b)=>a.t-b.t);
+  const posMap={};activeOldest.forEach((x,i)=>{posMap[x.num]=i;});
   sorted.forEach(o=>{
     const elMs=now-o.t;
     const allRem=tgtMs-elMs;
@@ -881,7 +884,11 @@ function updCkUI(){
     const allCl='#2ECC7188'; // 전체는 항상 반투명
     const cookCl='#E67E22'; // 조리는 항상 밝게 (가장 중요)
     const pkgCl='#E74C3C'; // 포장도 항상 밝게
-    const exceedMs=allRem<=0?-allRem:0;const delayMin=exceedMs>0?Math.ceil(exceedMs/300000)*5:0;if(delayMin>maxDelayMin)maxDelayMin=delayMin;
+    // 지연 계산: 초과=실제, 미초과=큐위치×조리속도 기반 예측
+    let delayMin=0,delayPred=false;
+    if(allRem<=0){delayMin=Math.ceil((-allRem)/300000)*5;}
+    else if(o.onKds&&avgInterval>0){const pos=posMap[o.num]??0;const waitMs=(pos+1)*avgInterval*60000;const predMs=Math.max(0,waitMs-allRem);delayMin=predMs>0?Math.ceil(predMs/300000)*5:0;delayPred=true;}
+    if(delayMin>maxDelayMin)maxDelayMin=delayMin;
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
     const op=o.onKds?'1':'0.4';
     const dying=o.delAt?' ck-dying':'';
@@ -894,7 +901,7 @@ function updCkUI(){
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${allCl}">${mmss(allRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>
-<span style="min-width:40px;text-align:center;font-size:12px;font-weight:bold;color:${delayMin>0?'#FF6B6B':'transparent'}">${delayMin>0?delayMin+'분':''}</span>
+<span style="min-width:40px;text-align:center;font-size:12px;font-weight:bold;color:${delayMin>0?(delayPred?'#E67E22':'#FF6B6B'):'transparent'}">${delayMin>0?delayMin+'분':''}</span>
 </div>`;
   });
   if(listEl)listEl.innerHTML=h;
