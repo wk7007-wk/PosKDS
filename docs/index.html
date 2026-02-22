@@ -866,7 +866,7 @@ function updCkUI(){
   const now=Date.now();
   const sorted=[...ckQ].sort((a,b)=>b.t-a.t);
   function mmss(ms){const neg=ms<0;const a=Math.abs(ms);const m=Math.floor(a/60000),s=Math.floor((a%60000)/1000);return(neg?'-':'')+m+':'+String(s).padStart(2,'0');}
-  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#2ECC71">전체</span><span style="min-width:50px;text-align:center;color:#E67E22">조리</span><span style="min-width:50px;text-align:center;color:#E74C3C">포장</span><span style="min-width:40px;text-align:center;color:#FF6B6B">지연</span></div>';
+  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#E67E22">조리</span><span style="min-width:50px;text-align:center;color:#E74C3C">포장</span><span style="min-width:52px;text-align:center;color:#FF6B6B">지연</span></div>';
   let maxDelayMin=0;
   // 큐 위치 계산 (활성 주문만, 오래된 순)
   const activeOldest=sorted.filter(x=>x.onKds).slice().sort((a,b)=>a.t-b.t);
@@ -881,7 +881,6 @@ function updCkUI(){
     else if(elMs>=pkgStartMs){st='포장';bgCl='#E74C3C';}
     else if(elMs>=cookStartMs){st='조리';bgCl='#E67E22';}
     else{st='대기';bgCl='#2ECC71';}
-    const allCl='#2ECC7188'; // 전체는 항상 반투명
     const cookCl='#E67E22'; // 조리는 항상 밝게 (가장 중요)
     const pkgCl='#E74C3C'; // 포장도 항상 밝게
     // 지연 계산: 초과=실제, 미초과=큐위치×조리속도 기반 예측
@@ -898,10 +897,9 @@ function updCkUI(){
 <span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번${kds}</span>
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
-<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${allCl}">${mmss(allRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>
-<span style="min-width:40px;text-align:center;font-size:12px;font-weight:bold;color:${delayMin>0?(delayPred?'#E67E22':'#FF6B6B'):'transparent'}">${delayMin>0?delayMin+'분':''}</span>
+<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;${delayMin>0?'background:'+(delayPred?'#E67E2233':'#FF6B6B44')+';border-radius:4px;padding:1px 4px;':''}color:${delayMin>0?(delayPred?'#E67E22':'#FF6B6B'):'transparent'}">${delayMin>0?delayMin+'분':''}</span>
 </div>`;
   });
   if(listEl)listEl.innerHTML=h;
