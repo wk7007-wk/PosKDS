@@ -837,6 +837,7 @@ function chkCkAlerts(){
       if(elMs>=tgtMs&&!o.da){o.da=true;if(!skipAlerts){try{NativeBridge.speakCook(o.num+'번 시간초과');}catch(e){}}}
     }
   });
+  updCkQueue(); // zero-stabilization 중에도 onKds 즉시 반영
   updCkUI();
 }
 
