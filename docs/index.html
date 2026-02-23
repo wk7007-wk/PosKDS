@@ -866,7 +866,7 @@ function updCkUI(){
   // 지연설정값 (분)
   const bTgt=g(S,'baemin_target_time',27),bCook=g(S,'baemin_fixed_cook_time',17);
   const cTgt=g(S,'coupang_target_time',22),cCook=g(S,'coupang_fixed_cook_time',15);
-  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#FFFFFF">조리</span><span style="min-width:50px;text-align:center;color:#FFFFFF">포장</span><span style="min-width:42px;text-align:center;color:#2AC1BC">배</span><span style="min-width:42px;text-align:center;color:#FFD700">쿠</span></div>';
+  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#FFFFFF">조리</span><span style="min-width:50px;text-align:center;color:#FFFFFF">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
   let maxBDelay=0,maxCDelay=0;
   // 큐 위치 계산 (활성 주문만, 오래된 순)
   const activeOldest=sorted.filter(x=>x.onKds).slice().sort((a,b)=>a.t-b.t);
@@ -907,12 +907,12 @@ function updCkUI(){
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>
-<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&bDelay>0)?'#2AC1BC':'transparent'}">${(!dimmed&&bDelay>0)?bDelay:''}</span>
-<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&cDelay>0)?'#FFD700':'transparent'}">${(!dimmed&&cDelay>0)?cDelay:''}</span>
+<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&bDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&bDelay>0)?bDelay:''}</span>
+<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&cDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&cDelay>0)?cDelay:''}</span>
 </div>`;
   });
   if(listEl)listEl.innerHTML=h;
-  const delayMsg=[];if(maxBDelay>0)delayMsg.push('<span style="color:#2AC1BC">배'+maxBDelay+'분</span>');if(maxCDelay>0)delayMsg.push('<span style="color:#FFD700">쿠'+maxCDelay+'분</span>');
+  const delayMsg=[];if(maxBDelay>0)delayMsg.push('<span style="color:#E74C3C">배'+maxBDelay+'분</span>');if(maxCDelay>0)delayMsg.push('<span style="color:#E74C3C">쿠'+maxCDelay+'분</span>');
   if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>`+(delayMsg.length>0?' <span style="font-weight:bold">지연 '+delayMsg.join(' ')+'</span>':'');
 }
 
