@@ -891,18 +891,19 @@ function updCkUI(){
     if(o.onKds&&delayRem>0&&avgInterval>0){const pos=posMap[o.num]??0;const waitMs=(pos+1)*avgInterval*60000;const predMs=Math.max(0,waitMs-delayRem);delayMin=predMs>0?Math.ceil(predMs/300000)*5:0;}
     if(delayMin>maxDelayMin)maxDelayMin=delayMin;
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
-    const op=o.onKds?'1':'0.4';
+    const dimmed=!o.onKds||o.delAt; // 음영 처리 대상
+    const op=dimmed?'0.4':'1';
     const dying=o.delAt?' ck-dying':'';
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
-    const rowBg=delayMin>0?'background:#FF6B6B22;':'';
+    const rowBg=(!dimmed&&delayMin>0)?'background:#FF6B6B22;':'';
     h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace;cursor:pointer;${rowBg}">
 <span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번${kds}</span>
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
-<span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
-<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
-<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>
-<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;${delayMin>0?'background:#FF6B6B44;border-radius:4px;padding:1px 4px;':''}color:${delayMin>0?'#FF6B6B':'transparent'}">${delayMin>0?delayMin+'분':''}</span>
+<span style="flex:1;font-size:11px;font-weight:bold;color:${dimmed?'#707088':bgCl}">${dimmed?'':''+st}</span>
+<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${dimmed?'':mmss(cookRem)}</span>
+<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${dimmed?'':mmss(pkgRem)}</span>
+<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;${(!dimmed&&delayMin>0)?'background:#FF6B6B44;border-radius:4px;padding:1px 4px;':''}color:${(!dimmed&&delayMin>0)?'#FF6B6B':'transparent'}">${(!dimmed&&delayMin>0)?delayMin+'분':''}</span>
 </div>`;
   });
   if(listEl)listEl.innerHTML=h;
