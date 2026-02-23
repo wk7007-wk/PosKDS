@@ -924,10 +924,7 @@ setInterval(chkCkAlerts,1000);
 
 // === 초기화 ===
 if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
-// HTTP 직접 조회 (SSE 도착 전 즉시 로드)
-fetch(FB+'/posdelay/ad_settings.json').then(r=>r.json()).then(d=>{
-  if(d&&typeof d==='object'){Object.assign(S,d);sseLoaded=true;updSetUI();updMonitor();}
-}).catch(()=>{});
+// 설정은 SSE로만 수신 (HTTP GET 안 함 — 새로고침 시 과거 데이터 방지)
 sse('/posdelay/order_tracking.json',m=>{
   if(!m.data||m.data==='null')return;
   if(m.path==='/')Object.assign(oT,m.data);else oT[m.path.slice(1)]=m.data;
@@ -960,13 +957,11 @@ function pollAll(){
     fetch(FB+'/kds_status.json').then(r=>r.json()),
     fetch(FB+'/posdelay/ad_state.json').then(r=>r.json()),
     fetch(FB+'/posdelay/status.json').then(r=>r.json()),
-    fetch(FB+'/posdelay/ad_settings.json').then(r=>r.json()),
-  ]).then(([k,a,st,s])=>{
+  ]).then(([k,a,st])=>{
     if(k)Object.assign(kS,k);
     if(a){Object.assign(aS,a);}
     if(st)Object.assign(stS,st);
-    if(s&&typeof s==='object'){Object.assign(S,s);sseLoaded=true;}
-    updSetUI();updSyncStatus();updMonitor();
+    updSyncStatus();updMonitor();
   }).catch(()=>{});
 }
 setInterval(pollAll,10000);
