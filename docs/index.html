@@ -872,7 +872,7 @@ function updCkUI(){
   const activeOldest=sorted.filter(x=>x.onKds).slice().sort((a,b)=>a.t-b.t);
   const posMap={};activeOldest.forEach((x,i)=>{posMap[x.num]=i;});
   function calcDelay(pos,ai,tgt,cook){if(ai<=0)return 0;const wait=(pos+1)*ai;const d=Math.max(0,wait+cook-tgt);return d>0?Math.ceil(d/5)*5:0;}
-  sorted.forEach(o=>{
+  sorted.slice(0,20).forEach(o=>{
     const elMs=now-o.t;
     const allRem=tgtMs-elMs;
     const cookRem=cookStartMs-elMs;
