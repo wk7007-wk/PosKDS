@@ -896,13 +896,13 @@ function updCkUI(){
     const hasDelay=bDelay>0||cDelay>0;
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
     const dimmed=!o.onKds||o.delAt;
-    const op=dimmed?'0.4':'1';
+    const numOp=dimmed?'0.4':'1';
     const dying=o.delAt?' ck-dying':'';
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
     const rowBg=(!dimmed&&hasDelay)?'background:#FF6B6B22;':'';
-    h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace;cursor:pointer;${rowBg}">
-<span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번${kds}</span>
+    h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer;${rowBg}">
+<span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC;opacity:${numOp}">${o.num}번${kds}</span>
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
