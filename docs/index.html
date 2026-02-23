@@ -360,7 +360,16 @@ function hKds(m){
 function hSet(m){
   if(!m.data||m.data==='null')return;
   if(Date.now()<_localEditUntil)return; // 로컬 변경 중 SSE 무시
-  if(m.path==='/')Object.assign(S,m.data);else S[m.path.slice(1)]=m.data;
+  if(m.path==='/'){
+    // 초기 로드: sseLoaded만 설정, S에 없는 키만 채움 (기존값 덮어쓰기 방지)
+    if(m.data&&typeof m.data==='object'){
+      Object.keys(m.data).forEach(k=>{if(!(k in S)||S[k]===undefined)S[k]=m.data[k];});
+    }
+    sseLoaded=true;updSetUI();updMonitor();
+    return;
+  }
+  // 부분 업데이트: 웹에서 명시적 변경 → 항상 적용
+  S[m.path.slice(1)]=m.data;
   sseLoaded=true;updSetUI();updMonitor();
 }
 function hASt(m){
@@ -632,15 +641,21 @@ function updSetUI(){
 // 설정 변경 → 즉시 Firebase 저장 + 게이지 갱신
 let _saveTimer=null;
 let _localEditUntil=0; // 로컬 변경 보호 타이머
+let _dirty=false; // 미저장 변경 있음
+function _flushSave(){
+  S._version=Date.now();S._updated_by='web';S._updated_at=new Date().toLocaleString('ko-KR');
+  _dirty=false;
+  fetch(FB+'/posdelay/ad_settings.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)});
+}
 function _autoSave(){
-  if(!sseLoaded)return; // SSE 수신 전 저장 차단
+  if(!sseLoaded)return;
   clearTimeout(_saveTimer);
   _localEditUntil=Date.now()+3000;
-  _saveTimer=setTimeout(()=>{
-    S._version=Date.now();S._updated_by='web';S._updated_at=new Date().toLocaleString('ko-KR');
-    fetch(FB+'/posdelay/ad_settings.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)});
-  },500);
+  _dirty=true;
+  _saveTimer=setTimeout(_flushSave,500);
 }
+// 새로고침/페이지 이탈 시 미저장 변경 즉시 전송
+window.addEventListener('beforeunload',()=>{if(_dirty){clearTimeout(_saveTimer);_flushSave();}});
 function adjS(k,d){const e=document.getElementById('set_'+k);if(!e)return;e.value=parseInt(e.value??0)+d;S[k]=parseInt(e.value);updMonitor();_autoSave();}
 function saveS(k,v){S[k]=isNaN(v)?v:parseInt(v);updMonitor();_autoSave();}
 function togS(k){S[k]=!S[k];const e=document.getElementById('tog_'+k);if(e)e.className='tog'+(S[k]?' on':'');if(k==='schedule_enabled'){const d=document.getElementById('schDot2');if(d)d.className='dot '+(S[k]?'dg':'dr');const t=document.getElementById('tog_schedule_enabled2');if(t)t.className='tog'+(S[k]?' on':'');}_autoSave();}
