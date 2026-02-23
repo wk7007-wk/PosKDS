@@ -863,11 +863,15 @@ function updCkUI(){
   const now=Date.now();
   const sorted=[...ckQ].sort((a,b)=>b.t-a.t);
   function mmss(ms){const neg=ms<0;const a=Math.abs(ms);const m=Math.floor(a/60000),s=Math.floor((a%60000)/1000);return(neg?'-':'')+m+':'+String(s).padStart(2,'0');}
-  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#E67E22">조리</span><span style="min-width:50px;text-align:center;color:#E74C3C">포장</span><span style="min-width:52px;text-align:center;color:#FF6B6B">지연</span></div>';
-  let maxDelayMin=0;
+  // 지연설정값 (분)
+  const bTgt=g(S,'baemin_target_time',27),bCook=g(S,'baemin_fixed_cook_time',17);
+  const cTgt=g(S,'coupang_target_time',22),cCook=g(S,'coupang_fixed_cook_time',15);
+  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#E67E22">조리</span><span style="min-width:50px;text-align:center;color:#E74C3C">포장</span><span style="min-width:42px;text-align:center;color:#2AC1BC">배</span><span style="min-width:42px;text-align:center;color:#FFD700">쿠</span></div>';
+  let maxBDelay=0,maxCDelay=0;
   // 큐 위치 계산 (활성 주문만, 오래된 순)
   const activeOldest=sorted.filter(x=>x.onKds).slice().sort((a,b)=>a.t-b.t);
   const posMap={};activeOldest.forEach((x,i)=>{posMap[x.num]=i;});
+  function calcDelay(pos,ai,tgt,cook){if(ai<=0)return 0;const wait=(pos+1)*ai;const d=Math.max(0,wait+cook-tgt);return d>0?Math.ceil(d/5)*5:0;}
   sorted.forEach(o=>{
     const elMs=now-o.t;
     const allRem=tgtMs-elMs;
@@ -878,32 +882,38 @@ function updCkUI(){
     else if(elMs>=pkgStartMs){st='포장';bgCl='#E74C3C';}
     else if(elMs>=cookStartMs){st='조리';bgCl='#E67E22';}
     else{st='대기';bgCl='#2ECC71';}
-    const cookCl='#E67E22'; // 조리는 항상 밝게 (가장 중요)
-    const pkgCl='#FF5555'; // 포장 항상 밝게
-    // 지연 계산: 플랫폼 목표시간 기준 (신규 주문만, 초과/오래된건 지연불가)
-    let delayMin=0;
-    const delayTgtMs=Math.min(g(S,'baemin_target_time',20),g(S,'coupang_target_time',20))*60000;
-    const delayRem=delayTgtMs-elMs;
-    if(o.onKds&&delayRem>0&&avgInterval>0){const pos=posMap[o.num]??0;const waitMs=(pos+1)*avgInterval*60000;const predMs=Math.max(0,waitMs-delayRem);delayMin=predMs>0?Math.ceil(predMs/300000)*5:0;}
-    if(delayMin>maxDelayMin)maxDelayMin=delayMin;
+    const cookCl='#E67E22';
+    const pkgCl='#FF5555';
+    // 지연 계산: 배민/쿠팡 별도 (지연설정값 기준)
+    let bDelay=0,cDelay=0;
+    if(o.onKds){
+      const pos=posMap[o.num]??0;
+      bDelay=calcDelay(pos,avgInterval,bTgt,bCook);
+      cDelay=calcDelay(pos,avgInterval,cTgt,cCook);
+    }
+    if(bDelay>maxBDelay)maxBDelay=bDelay;
+    if(cDelay>maxCDelay)maxCDelay=cDelay;
+    const hasDelay=bDelay>0||cDelay>0;
     const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
-    const dimmed=!o.onKds||o.delAt; // 음영 처리 대상
+    const dimmed=!o.onKds||o.delAt;
     const op=dimmed?'0.4':'1';
     const dying=o.delAt?' ck-dying':'';
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
-    const rowBg=(!dimmed&&delayMin>0)?'background:#FF6B6B22;':'';
+    const rowBg=(!dimmed&&hasDelay)?'background:#FF6B6B22;':'';
     h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;opacity:${op};font-family:monospace;cursor:pointer;${rowBg}">
 <span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번${kds}</span>
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>
-<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;${(!dimmed&&delayMin>0)?'background:#FF6B6B44;border-radius:4px;padding:1px 4px;':''}color:${(!dimmed&&delayMin>0)?'#FF6B6B':'transparent'}">${(!dimmed&&delayMin>0)?delayMin+'분':''}</span>
+<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&bDelay>0)?'#2AC1BC':'transparent'}">${(!dimmed&&bDelay>0)?bDelay:''}</span>
+<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&cDelay>0)?'#FFD700':'transparent'}">${(!dimmed&&cDelay>0)?cDelay:''}</span>
 </div>`;
   });
   if(listEl)listEl.innerHTML=h;
-  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>`+(maxDelayMin>0?` <span style="color:#FF6B6B;font-weight:bold">지연필요 ${maxDelayMin}분</span>`:'');
+  const delayMsg=[];if(maxBDelay>0)delayMsg.push('<span style="color:#2AC1BC">배'+maxBDelay+'분</span>');if(maxCDelay>0)delayMsg.push('<span style="color:#FFD700">쿠'+maxCDelay+'분</span>');
+  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>`+(delayMsg.length>0?' <span style="font-weight:bold">지연 '+delayMsg.join(' ')+'</span>':'');
 }
 
 function ckDisp(k){const e=document.getElementById('ck_'+k);const d=document.getElementById('ck_'+k+'_disp');if(!e||!d)return;const v=parseInt(e.value)||0;const m=Math.floor(v/60),s=v%60;d.textContent=m+':'+String(s).padStart(2,'0');}
