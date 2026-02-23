@@ -361,7 +361,7 @@ function hSet(m){
   if(!m.data||m.data==='null')return;
   if(Date.now()<_localEditUntil)return; // 로컬 변경 중 SSE 무시
   if(m.path==='/')Object.assign(S,m.data);else S[m.path.slice(1)]=m.data;
-  sseLoaded=true;try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}updSetUI();updMonitor();
+  sseLoaded=true;updSetUI();updMonitor();
 }
 function hASt(m){
   if(!m.data||m.data==='null')return;
@@ -471,7 +471,6 @@ function getZones(platform){
   const def=platform==='coupang'?CZ_DEF:BZ_DEF;
   let z=S[key];
   if(!z||!Array.isArray(z)||z.length!==11){
-    try{const b=JSON.parse(localStorage.getItem('ad_settings_backup'));if(b&&b[key]&&Array.isArray(b[key])&&b[key].length===11)return b[key].slice();}catch(e){}
     return def.slice();
   }
   return z.slice();
@@ -669,20 +668,16 @@ function updSchDisp(){
 function saveAll(){
   if(!sseLoaded||Object.keys(S).length<3){toast('데이터 미수신 - 저장 불가');return;}
   S._ck={on:ckOn,t:parseInt(document.getElementById('ck_target').value)||1500,m:parseInt(document.getElementById('ck_mid').value)||1020,f:parseInt(document.getElementById('ck_finish').value)||240};
-  try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}
   saveCk();
   S._version=Date.now();S._updated_by='web';S._updated_at=new Date().toLocaleString('ko-KR');
   fetch(FB+'/posdelay/ad_settings.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)}).then(()=>toast('저장 완료')).catch(()=>toast('저장 실패'));
 }
 function restoreAll(){
-  try{
-    const b=localStorage.getItem('ad_settings_backup');
-    if(!b){toast('백업 없음');return;}
-    const d=JSON.parse(b);Object.assign(S,d);sseLoaded=true;
-    if(d._ck){ckOn=!!d._ck.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');document.getElementById('ck_target').value=d._ck.t||1500;document.getElementById('ck_mid').value=d._ck.m||1020;document.getElementById('ck_finish').value=d._ck.f||240;ckDisp('target');ckDisp('mid');ckDisp('finish');saveCk();}
-    updSetUI();updMonitor();
-    fetch(FB+'/posdelay/ad_settings.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(S)}).then(()=>toast('복원 완료')).catch(()=>toast('복원 실패'));
-  }catch(e){toast('복원 실패');}
+  // Firebase에서 최신 설정 다시 불러오기
+  fetch(FB+'/posdelay/ad_settings.json').then(r=>r.json()).then(d=>{
+    if(d&&typeof d==='object'){Object.assign(S,d);sseLoaded=true;updSetUI();updMonitor();toast('복원 완료');}
+    else toast('데이터 없음');
+  }).catch(()=>toast('복원 실패'));
 }
 
 // === 알림 ===
@@ -933,11 +928,9 @@ setInterval(chkCkAlerts,1000);
 
 // === 초기화 ===
 if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
-// 즉시 localStorage 복원 시도
-try{const b=localStorage.getItem('ad_settings_backup');if(b){Object.assign(S,JSON.parse(b));updSetUI();updMonitor();}}catch(e){}
-// HTTP 직접 조회 (SSE 백업)
+// HTTP 직접 조회 (SSE 도착 전 즉시 로드)
 fetch(FB+'/posdelay/ad_settings.json').then(r=>r.json()).then(d=>{
-  if(d&&typeof d==='object'){Object.assign(S,d);sseLoaded=true;try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}updSetUI();updMonitor();}
+  if(d&&typeof d==='object'){Object.assign(S,d);sseLoaded=true;updSetUI();updMonitor();}
 }).catch(()=>{});
 sse('/posdelay/order_tracking.json',m=>{
   if(!m.data||m.data==='null')return;
@@ -976,7 +969,7 @@ function pollAll(){
     if(k)Object.assign(kS,k);
     if(a){Object.assign(aS,a);}
     if(st)Object.assign(stS,st);
-    if(s&&typeof s==='object'){Object.assign(S,s);sseLoaded=true;try{localStorage.setItem('ad_settings_backup',JSON.stringify(S));}catch(e){}}
+    if(s&&typeof s==='object'){Object.assign(S,s);sseLoaded=true;}
     updSetUI();updSyncStatus();updMonitor();
   }).catch(()=>{});
 }
