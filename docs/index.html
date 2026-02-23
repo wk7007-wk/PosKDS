@@ -882,8 +882,8 @@ function updCkUI(){
     else if(elMs>=pkgStartMs){st='포장';bgCl='#E74C3C';}
     else if(elMs>=cookStartMs){st='조리';bgCl='#E67E22';}
     else{st='대기';bgCl='#2ECC71';}
-    const cookCl=cookRem>=0?'#FFFFFF':'#E74C3C';
-    const pkgCl=pkgRem>=0?'#FFFFFF':'#E74C3C';
+    const cookCl=cookRem<0?'#E74C3C':cookRem<60000?'#E67E22':'#FFFFFF';
+    const pkgCl=pkgRem<0?'#E74C3C':pkgRem<60000?'#E67E22':'#FFFFFF';
     // 지연 계산: 배민/쿠팡 별도 (지연설정값 기준)
     let bDelay=0,cDelay=0;
     if(o.onKds){
