@@ -637,7 +637,8 @@ function _autoSave(){
   if(!isApp)return; // PC 브라우저에서는 무시
   // 변경된 키만 NativeBridge로 전달
   _lastSaveKeys.forEach(k=>{
-    try{NativeBridge.setSetting(k,String(S[k]));}catch(e){}
+    const v=S[k];
+    try{NativeBridge.setSetting(k,typeof v==='object'?JSON.stringify(v):String(v));}catch(e){}
   });
   _lastSaveKeys=[];
 }
