@@ -30,9 +30,17 @@ curl -s https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/k
 - 웹 대시보드 수정 시 앱 재설치 불필요 (GitHub Pages 자동 반영)
 
 ## KDS 데이터 신뢰도
-- **탭 건수(조리중 N) 신뢰**: KDS `count` 값은 탭 헤더에서 추출 — 정확함
+- **탭 건수(조리중 N) 신뢰**: KDS `count` 값은 탭 헤더에서 추출 — 가장 정확한 소스
 - **orders 배열 불안정**: `rootInActiveWindow`가 systemui 반환 시 orders=[] (주문번호 추출 실패)
 - **count>0 + orders=[] → 0 보정 금지**: 탭 건수가 정확, orders 빈배열은 추출 실패일 뿐
+- **추출 실패 시 이전 값 유지**: count=null + orders=[] → UI 전환 중 일시적 실패. 절대 0으로 강제하지 않음
 - `orders` 없이 `count`만 올 때 → 30분간 건수 변동 없으면 0으로 강제 보정 (수신 측)
 - `orders` 있을 때 → 25분 초과 개별 주문 차감 (기존 필터)
 - **0 안정화**: 양수→0 전환 시 90초 대기 (KDS 하트비트 3회분, 오탐 방지)
+
+## KDS rootInActiveWindow 문제 (핵심 버그 패턴)
+- **증상**: KDS가 조리중 건수를 감지했다가 수초 내 0으로 되돌림
+- **원인**: `rootInActiveWindow`가 KDS 앱이 아닌 systemui/잠금화면 반환 → 추출 실패
+- **해결 (KDS 측)**: `findKdsRoot()` — 패키지명으로 윈도우 탐색 (`windows` API + `flagRetrieveInteractiveWindows`)
+- **해결 (수신 측)**: count>0+orders=[] 신뢰, 0 안정화 90초, 추출 실패 시 이전 값 유지
+- **교훈**: 접근성 서비스에서 `rootInActiveWindow`는 항상 대상 앱 윈도우를 반환하지 않음. 교차검증으로 0을 강제하면 오히려 정확한 값을 덮어씀
