@@ -309,11 +309,14 @@ if(isApp){
   }catch(e){}},3000);
 }
 
-// === SSE ===
+// === SSE (generation counter로 백그라운드 복귀 시 중복 방지) ===
+let _sseConns=[],_sseGen=0;
 function sse(path,cb){
+  const gen=_sseGen;
   const es=new EventSource(FB+path);
+  _sseConns.push({es,path,cb,gen});
   es.onopen=()=>updC(true);
-  es.onerror=()=>{updC(false);setTimeout(()=>{es.close();sse(path,cb);},10000);};
+  es.onerror=()=>{updC(false);es.close();_sseConns=_sseConns.filter(s=>s.es!==es);if(gen===_sseGen)setTimeout(()=>{if(gen===_sseGen)sse(path,cb);},10000);};
   es.addEventListener('put',e=>cb(JSON.parse(e.data)));
   es.addEventListener('patch',e=>cb(JSON.parse(e.data)));
 }
@@ -1004,6 +1007,22 @@ setInterval(()=>{
   if(ls>0){const ago=Math.floor((Date.now()-ls)/1000);const rem=Math.max(0,90-ago%90);document.getElementById('mRefresh').textContent='수집 '+rem+'초';}
 },1000);
 window.addEventListener('resize',drawChart);
+// 백그라운드→포그라운드 전환: SSE 즉시 재연결 + 조리큐 재동기
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden){
+    // SSE 전부 닫고 재연결 (stale connection 방지)
+    _sseGen++;
+    const prev=_sseConns.map(s=>({path:s.path,cb:s.cb}));
+    _sseConns.forEach(s=>{try{s.es.close();}catch(e){}});
+    _sseConns=[];
+    _sseOk=false;
+    prev.forEach(s=>sse(s.path,s.cb));
+    // 조리큐 즉시 갱신 + 알림 갭 리셋
+    if(ckOn){_lastCkCheck=0;updCkQueue();updCkUI();}
+    // 폴링 즉시 (SSE 연결 전 빠른 데이터 확보)
+    setTimeout(pollAll,500);
+  }
+});
 </script>
 </body>
 </html>
