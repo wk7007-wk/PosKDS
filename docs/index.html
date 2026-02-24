@@ -386,12 +386,11 @@ function hHist(m){
 
 // === 건수: 소스 우선순위 ===
 function getActiveCount(){
-  const kds=(!stS.kds_paused&&kS.count!=null)?kS.count:null;
-  const app=(stS.order_count!=null)?stS.order_count:null;
-  // 앱 건수가 KDS보다 높으면 앱 우선 (알림/MATE 감지분 보호)
-  if(app!=null&&kds!=null)return Math.max(kds,app);
-  if(kds!=null)return kds;
-  if(app!=null)return app;
+  // KDS 활성+데이터 있으면 KDS 직접값
+  if(!stS.kds_paused&&kS.count!=null)return kS.count;
+  // 아니면 앱 통합 건수 (MATE/PC 포함)
+  if(stS.order_count!=null)return stS.order_count;
+  // 최후: KDS 마지막값
   return kS.count;
 }
 
