@@ -44,6 +44,7 @@ class KdsAccessibilityService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private var lastCount = -1
     private var lastOrders = listOf<Int>()
+    private var lastCompleted = -1
     private var lastUploadTime = 0L
     private val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.KOREA)
     private var eventCount = 0
@@ -52,23 +53,26 @@ class KdsAccessibilityService : AccessibilityService() {
 
     private val heartbeatRunnable = object : Runnable {
         override fun run() {
-            // 하트비트마다 건수 재추출 (stale 방지)
-            val root = try { rootInActiveWindow } catch (_: Exception) { null }
+            // 하트비트마다 KDS 윈도우에서 건수 재추출
+            val root = findKdsRoot()
             if (root != null) {
                 try {
                     var count = extractCookingCount(root)
                     val orders = extractOrderNumbers(root)
-                    // 교차 검증: count null이면 주문번호 기반 보정
-                    if (count == null && orders.isEmpty() && lastCount > 0) {
-                        count = 0
-                        log("하트비트 건수 추출 실패 → 주문 없음 → 0건 보정")
-                    } else if (count == null && orders.isNotEmpty()) {
+                    val completed = extractCompletedCount(root)
+
+                    // count null 보정 (KDS 윈도우 확인됨)
+                    if (count == null && orders.isNotEmpty()) {
                         count = orders.size
                         log("하트비트 건수 추출 실패 → 주문 ${orders.size}건 보정")
-                    } else if (count != null && count > 0 && orders.isEmpty() && lastOrders.isEmpty()) {
-                        log("하트비트 건수=$count 이지만 주문 없음 → 0건 보정")
+                    } else if (count == null && completed != null) {
+                        // 완료 탭 보이지만 조리중 숫자 없음 → 0건
                         count = 0
+                        log("하트비트 조리중 없음, 완료=$completed → 0건")
                     }
+                    // count still null → 조리중/완료 둘 다 못 찾음 → 건수 유지
+                    // 탭 건수(조리중 N) 신뢰 — 주문번호 비어도 0으로 강제하지 않음
+
                     if (count != null && count != lastCount) {
                         log("하트비트 건수 보정: $lastCount → $count")
                         lastCount = count
@@ -79,14 +83,20 @@ class KdsAccessibilityService : AccessibilityService() {
                         log("하트비트 주문번호 보정: $lastOrders → $orders")
                         lastOrders = orders
                     }
+                    if (completed != null && completed != lastCompleted) {
+                        log("하트비트 완료건수: $lastCompleted → $completed")
+                        lastCompleted = completed
+                    }
                 } catch (_: Exception) {}
                 root.recycle()
+            } else {
+                // KDS 윈도우 미발견 (systemui 등) — 건수 변경 없이 유지
             }
 
             val now = System.currentTimeMillis()
             if (now - lastUploadTime >= HEARTBEAT_MS && lastCount >= 0) {
-                log("하트비트 업로드 (건수=$lastCount, 주문=$lastOrders)")
-                FirebaseUploader.upload(prefs, lastCount, lastOrders)
+                log("하트비트 업로드 (건수=$lastCount, 주문=$lastOrders, 완료=$lastCompleted)")
+                FirebaseUploader.upload(prefs, lastCount, lastOrders, lastCompleted)
                 lastUploadTime = now
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, now).apply()
             }
@@ -146,9 +156,9 @@ class KdsAccessibilityService : AccessibilityService() {
         if (kdsPackage.isEmpty()) return
         if (packageName != kdsPackage) return
 
-        val root = try { rootInActiveWindow } catch (_: Exception) { null }
+        val root = findKdsRoot()
         if (root == null) {
-            log("root 노드 없음 (패키지=$packageName)")
+            log("KDS 윈도우 없음 (이벤트=$packageName)")
             return
         }
 
@@ -156,24 +166,22 @@ class KdsAccessibilityService : AccessibilityService() {
             // 건수 + 주문번호 추출
             var count = extractCookingCount(root)
             val orders = extractOrderNumbers(root)
+            val completed = extractCompletedCount(root)
 
-            // 교차 검증: count 추출 실패 시 주문번호 기반 보정
+            // 교차 검증: count 추출 실패 시 보정
             if (count == null) {
                 if (orders.isEmpty() && lastOrders.isNotEmpty()) {
-                    // 주문번호가 전부 사라졌으면 0건
                     count = 0
                     log("건수 추출 실패 → 주문번호 기반 보정: 0건")
                 } else if (orders.isNotEmpty() && orders.size != lastCount) {
-                    // 주문번호 수로 보정
                     count = orders.size
                     log("건수 추출 실패 → 주문번호 수 기반 보정: ${orders.size}건")
+                } else if (orders.isEmpty() && completed != null) {
+                    count = 0
+                    log("건수 추출 실패, 완료=$completed → 0건")
                 }
-            } else if (count > 0 && orders.isEmpty() && lastOrders.isEmpty()) {
-                // 탭에 숫자 있지만 실제 주문번호가 없으면 0건일 가능성
-                // (KDS UI 갱신 지연 — 탭 숫자가 늦게 바뀌는 경우)
-                log("건수=$count 이지만 주문번호 없음 → 0건 보정")
-                count = 0
             }
+            // 탭 건수(조리중 N) 신뢰 — 주문번호 비어도 0으로 강제하지 않음
 
             val countChanged = count != null && count != lastCount
             val ordersChanged = orders != lastOrders
@@ -190,8 +198,12 @@ class KdsAccessibilityService : AccessibilityService() {
                     log("주문번호 변경: $lastOrders → $orders")
                     lastOrders = orders
                 }
+                if (completed != null && completed != lastCompleted) {
+                    log("완료건수 변경: $lastCompleted → $completed")
+                    lastCompleted = completed
+                }
 
-                FirebaseUploader.upload(prefs, lastCount, lastOrders)
+                FirebaseUploader.upload(prefs, lastCount, lastOrders, lastCompleted)
                 lastUploadTime = System.currentTimeMillis()
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, lastUploadTime).apply()
             }
@@ -220,6 +232,50 @@ class KdsAccessibilityService : AccessibilityService() {
         } finally {
             root.recycle()
         }
+    }
+
+    /** KDS 패키지의 윈도우 루트 노드 반환 (active window가 아닌 경우 windows에서 탐색) */
+    private fun findKdsRoot(): AccessibilityNodeInfo? {
+        val kdsPackage = prefs.getString(KEY_KDS_PACKAGE, "") ?: ""
+        if (kdsPackage.isEmpty()) return null
+
+        // 1. Active window 시도
+        val activeRoot = try { rootInActiveWindow } catch (_: Exception) { null }
+        if (activeRoot != null) {
+            if (activeRoot.packageName?.toString() == kdsPackage) return activeRoot
+            activeRoot.recycle()
+        }
+
+        // 2. 모든 윈도우 탐색 (flagRetrieveInteractiveWindows 필요)
+        try {
+            for (window in windows) {
+                val root = window.root ?: continue
+                if (root.packageName?.toString() == kdsPackage) return root
+                root.recycle()
+            }
+        } catch (_: Exception) {}
+
+        return null
+    }
+
+    /** KDS "완료" 탭에서 완료 건수 추출 (조리완료 버튼과 구분) */
+    private fun extractCompletedCount(root: AccessibilityNodeInfo): Int? {
+        val nodes = root.findAccessibilityNodeInfosByText("완료")
+        if (nodes != null && nodes.isNotEmpty()) {
+            for (node in nodes) {
+                val text = node.text?.toString() ?: ""
+                val desc = node.contentDescription?.toString() ?: ""
+                // "완료 35", "완료\n35" 패턴 (탭 헤더) — "조리완료" 버튼은 숫자 없으므로 제외
+                val match = Regex("(?<!조리)완료[\\s\\n]*(\\d+)").find(text)
+                    ?: Regex("(?<!조리)완료[\\s\\n]*(\\d+)").find(desc)
+                if (match != null) {
+                    return match.groupValues[1].toIntOrNull()
+                }
+            }
+            // "조리완료" 버튼만 찾았을 수 있음 → null (탭 확인 불가)
+            return null
+        }
+        return null
     }
 
     private fun extractCookingCount(root: AccessibilityNodeInfo): Int? {

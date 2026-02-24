@@ -20,7 +20,7 @@ object FirebaseUploader {
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA)
     private val logTimeFormat = SimpleDateFormat("HH:mm:ss", Locale.KOREA)
 
-    fun upload(prefs: SharedPreferences, count: Int, orders: List<Int> = emptyList()) {
+    fun upload(prefs: SharedPreferences, count: Int, orders: List<Int> = emptyList(), completed: Int = -1) {
         kotlin.concurrent.thread {
             try {
                 val now = dateFormat.format(Date())
@@ -33,6 +33,7 @@ object FirebaseUploader {
                     put("time", now)
                     put("source", "kds")
                     put("orders", ordersArr)
+                    if (completed >= 0) put("completed", completed)
                 }.toString()
                 firebasePut("$FIREBASE_BASE/kds_status.json", statusJson)
 
