@@ -189,6 +189,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
     <div class="sr"><span class="sl" style="color:#E67E22">중간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_mid_amount',-50)">-</button><input type="number" id="set_baemin_mid_amount" style="width:65px" readonly><button class="btn bs bn" onclick="adjS('baemin_mid_amount',50)">+</button></div></div>
     <div class="sr"><span class="sl" style="color:#E74C3C">최소</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_reduced_amount',-50)">-</button><input type="number" id="set_baemin_reduced_amount" style="width:65px" readonly><button class="btn bs bn" onclick="adjS('baemin_reduced_amount',50)">+</button></div></div>
     <div class="sec">토글</div>
+    <div class="sr"><span class="sl" style="font-weight:bold;color:#FFD700">영업</span><div class="tog" id="tog_kds_open" onclick="togKdsOpen()"></div></div>
     <div class="sr"><span class="sl">광고 마스터</span><div class="tog" id="tog_ad_enabled" onclick="togS('ad_enabled')"></div></div>
     <div class="sr"><span class="sl">건수 자동</span><div class="tog" id="tog_order_auto_off_enabled" onclick="togS('order_auto_off_enabled')"></div></div>
     <div class="sr"><span class="sl">쿠팡 자동</span><div class="tog" id="tog_coupang_auto_enabled" onclick="togS('coupang_auto_enabled')"></div></div>
@@ -626,6 +627,7 @@ function updSetUI(){
   });
   const se2=document.getElementById('tog_schedule_enabled2');if(se2)se2.className='tog'+(S.schedule_enabled?' on':'');
   const sd2=document.getElementById('schDot2');if(sd2)sd2.className='dot '+(S.schedule_enabled?'dg':'dr');
+  const ko=document.getElementById('tog_kds_open');if(ko)ko.className='tog'+(stS.kds_paused?'':' on');
   updGauges(getActiveCount());
 }
 
@@ -645,6 +647,15 @@ function _autoSave(){
 function adjS(k,d){const e=document.getElementById('set_'+k);if(!e)return;e.value=parseInt(e.value??0)+d;S[k]=parseInt(e.value);_lastSaveKeys=[k];updMonitor();_autoSave();}
 function saveS(k,v){S[k]=isNaN(v)?v:parseInt(v);_lastSaveKeys=[k];updMonitor();_autoSave();}
 function togS(k){S[k]=!S[k];const e=document.getElementById('tog_'+k);if(e)e.className='tog'+(S[k]?' on':'');if(k==='schedule_enabled'){const d=document.getElementById('schDot2');if(d)d.className='dot '+(S[k]?'dg':'dr');const t=document.getElementById('tog_schedule_enabled2');if(t)t.className='tog'+(S[k]?' on':'');}_lastSaveKeys=[k];_autoSave();}
+function togKdsOpen(){
+  const paused=!stS.kds_paused;
+  stS.kds_paused=paused;
+  const e=document.getElementById('tog_kds_open');
+  if(e)e.className='tog'+(paused?'':' on');
+  if(isApp){try{NativeBridge.setSetting('kds_paused',String(paused));}catch(ex){}}
+  updSyncStatus();
+  toast(paused?'영업 종료 (모니터링 중지)':'영업 시작');
+}
 
 // === 스케줄 시간 ===
 let _pickTarget='';
