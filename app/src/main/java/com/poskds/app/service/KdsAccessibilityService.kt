@@ -168,20 +168,13 @@ class KdsAccessibilityService : AccessibilityService() {
             val orders = extractOrderNumbers(root)
             val completed = extractCompletedCount(root)
 
-            // 교차 검증: count 추출 실패 시 보정
-            if (count == null) {
-                if (orders.isEmpty() && lastOrders.isNotEmpty()) {
-                    count = 0
-                    log("건수 추출 실패 → 주문번호 기반 보정: 0건")
-                } else if (orders.isNotEmpty() && orders.size != lastCount) {
-                    count = orders.size
-                    log("건수 추출 실패 → 주문번호 수 기반 보정: ${orders.size}건")
-                } else if (orders.isEmpty() && completed != null) {
-                    count = 0
-                    log("건수 추출 실패, 완료=$completed → 0건")
-                }
+            // 추출 실패 시: orders 있으면 orders 수로 보정, 둘 다 없으면 이전 값 유지
+            // (UI 전환 중 일시적 추출 실패 → 0으로 강제하면 안 됨)
+            if (count == null && orders.isNotEmpty()) {
+                count = orders.size
+                log("건수 추출 실패 → 주문번호 수 기반 보정: ${orders.size}건")
             }
-            // 탭 건수(조리중 N) 신뢰 — 주문번호 비어도 0으로 강제하지 않음
+            // count=null && orders=[] → 일시적 추출 실패, 건수 변경 없음
 
             val countChanged = count != null && count != lastCount
             val ordersChanged = orders != lastOrders
