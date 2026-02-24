@@ -330,15 +330,15 @@ function updC(ok){
 function hKds(m){
   if(!m.data||m.data==='null')return;
   if(m.path==='/')Object.assign(kS,m.data);else kS[m.path.slice(1)]=m.data;
-  // 교차검증: count>0 + orders가 빈배열[]일 때만 0 보정
-  if(kS.count>0&&Array.isArray(kS.orders)&&kS.orders.length===0)kS.count=0;
+  // 탭건수(조리중 N) 신뢰 — orders 빈배열이어도 주문번호 추출 실패일 수 있음
+  // (KDS rootInActiveWindow가 systemui 반환 시 orders 빈배열)
   // 30분 강제보정: orders 없이 건수 변동 없으면 30분 후 0
   if(kS.count!==_kdsLastCount){_kdsLastCount=kS.count;_kdsLastChange=Date.now();}
   else if(kS.count>0&&!Array.isArray(kS.orders)&&(Date.now()-_kdsLastChange)>=1800000){kS.count=0;_kdsLastCount=0;}
   // 교차 보정: Firebase 0 + Gist 양수 → Gist 값 신뢰
   const gAge=Date.now()-_gistKdsTime;
   if(kS.count===0&&_gistKdsCount>0&&gAge<120000){kS.count=_gistKdsCount;}
-  // 0 안정화: 양수→즉시 반영, 0→30초 대기 (SSE 재연결 시 0↔N 급변동 방지)
+  // 0 안정화: 양수→즉시 반영, 0→90초 대기 (KDS 하트비트 3회분)
   const rawC=kS.count;
   if(rawC>0){
     if(_kdsZeroTimer){clearTimeout(_kdsZeroTimer);_kdsZeroTimer=null;}
@@ -349,12 +349,12 @@ function hKds(m){
     kS.count=_kdsStableCount;
     if(!_kdsZeroTimer){
       _kdsZeroTimer=setTimeout(()=>{
-        // 30초 후에도 Gist가 양수면 Gist 값 사용
+        // 90초 후에도 Gist가 양수면 Gist 값 사용
         if(_gistKdsCount>0&&(Date.now()-_gistKdsTime)<120000){
           _kdsStableCount=_gistKdsCount;kS.count=_gistKdsCount;
         }else{_kdsStableCount=0;kS.count=0;}
         _kdsZeroTimer=null;updMonitor();
-      },30000);
+      },90000);
     }
   } else {
     _kdsStableCount=rawC;

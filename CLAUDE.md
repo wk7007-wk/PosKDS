@@ -30,6 +30,9 @@ curl -s https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/k
 - 웹 대시보드 수정 시 앱 재설치 불필요 (GitHub Pages 자동 반영)
 
 ## KDS 데이터 신뢰도
-- KDS가 `orders` 배열을 보내지 않는 구버전일 수 있음
+- **탭 건수(조리중 N) 신뢰**: KDS `count` 값은 탭 헤더에서 추출 — 정확함
+- **orders 배열 불안정**: `rootInActiveWindow`가 systemui 반환 시 orders=[] (주문번호 추출 실패)
+- **count>0 + orders=[] → 0 보정 금지**: 탭 건수가 정확, orders 빈배열은 추출 실패일 뿐
 - `orders` 없이 `count`만 올 때 → 30분간 건수 변동 없으면 0으로 강제 보정 (수신 측)
 - `orders` 있을 때 → 25분 초과 개별 주문 차감 (기존 필터)
+- **0 안정화**: 양수→0 전환 시 90초 대기 (KDS 하트비트 3회분, 오탐 방지)
