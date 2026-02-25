@@ -270,8 +270,6 @@ const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app
 let S={},aS={},kS={},stS={},hD=[],oT={},cLt='kds';
 let aTS=0;let sseLoaded=false;
 let _kdsLastChange=Date.now(),_kdsLastCount=-1; // 30분 강제보정용
-let _kdsStableCount=-1,_kdsZeroTimer=null; // 0 안정화용
-let _gistKdsCount=-1,_gistKdsTime=0; // Gist 교차 보정용
 let avgInterval=3.0;
 const isApp=typeof NativeBridge!=='undefined';
 // null-safe getter: 0도 유효한 값으로 처리
@@ -324,36 +322,11 @@ function updC(ok){
 function hKds(m){
   if(!m.data||m.data==='null')return;
   if(m.path==='/')Object.assign(kS,m.data);else kS[m.path.slice(1)]=m.data;
-  // 탭건수(조리중 N) 신뢰 — orders 빈배열이어도 주문번호 추출 실패일 수 있음
-  // (KDS rootInActiveWindow가 systemui 반환 시 orders 빈배열)
   // 30분 강제보정: orders 없이 건수 변동 없으면 30분 후 0
   if(kS.count!==_kdsLastCount){_kdsLastCount=kS.count;_kdsLastChange=Date.now();}
   else if(kS.count>0&&!Array.isArray(kS.orders)&&(Date.now()-_kdsLastChange)>=1800000){kS.count=0;_kdsLastCount=0;}
-  // 교차 보정: Firebase 0 + Gist 양수 → Gist 값 신뢰
-  const gAge=Date.now()-_gistKdsTime;
-  if(kS.count===0&&_gistKdsCount>0&&gAge<120000){kS.count=_gistKdsCount;}
-  // 0 안정화: 양수→즉시 반영, 0→90초 대기 (KDS 하트비트 3회분)
-  const rawC=kS.count;
-  if(rawC>0){
-    if(_kdsZeroTimer){clearTimeout(_kdsZeroTimer);_kdsZeroTimer=null;}
-    _kdsStableCount=rawC;
-    kS.count=rawC;
-    updMonitor();
-  } else if(rawC===0&&_kdsStableCount>0){
-    kS.count=_kdsStableCount;
-    if(!_kdsZeroTimer){
-      _kdsZeroTimer=setTimeout(()=>{
-        // 90초 후에도 Gist가 양수면 Gist 값 사용
-        if(_gistKdsCount>0&&(Date.now()-_gistKdsTime)<120000){
-          _kdsStableCount=_gistKdsCount;kS.count=_gistKdsCount;
-        }else{_kdsStableCount=0;kS.count=0;}
-        _kdsZeroTimer=null;updMonitor();
-      },90000);
-    }
-  } else {
-    _kdsStableCount=rawC;
-    updMonitor();
-  }
+  // KDS 건수 즉시 반영 (교차보정/안정화 없음)
+  updMonitor();
 }
 function hSet(m){
   if(!m.data||m.data==='null')return;
@@ -378,13 +351,10 @@ function hHist(m){
   calcAvgInterval();drawChart();updDelayPred();
 }
 
-// === 건수: 소스 우선순위 ===
+// === 건수: KDS 단일 소스 ===
 function getActiveCount(){
-  // KDS 활성+데이터 있으면 KDS 직접값
   if(!stS.kds_paused&&kS.count!=null)return kS.count;
-  // 아니면 앱 통합 건수 (MATE/PC 포함)
   if(stS.order_count!=null)return stS.order_count;
-  // 최후: KDS 마지막값
   return kS.count;
 }
 
@@ -979,18 +949,7 @@ function pollAll(){
 }
 setInterval(pollAll,10000);
 setTimeout(pollAll,2000); // 2초 후 첫 폴링
-// Gist KDS 보조 채널 폴링 (60초, 교차 보정용)
-function pollGistKds(){
-  fetch('https://api.github.com/gists/a67e5de3271d6d0716b276dc6a8391cb',{headers:{'Accept':'application/vnd.github.v3+json','User-Agent':'PosDelay-Web'}})
-  .then(r=>r.json()).then(d=>{
-    const f=d.files;if(!f||!f['kds_status.json'])return;
-    const c=JSON.parse(f['kds_status.json'].content);
-    const t=c.time?new Date(c.time.replace(/-/g,'/')).getTime():0;
-    if(t>0&&(Date.now()-t)<120000){_gistKdsCount=c.count;_gistKdsTime=t;}
-  }).catch(()=>{});
-}
-setInterval(pollGistKds,60000);
-setTimeout(pollGistKds,5000);
+// Gist 교차보정 삭제 — KDS Firebase SSE 단일 소스
 setInterval(()=>{
   const ls=stS.kds_sync??0;
   if(ls>0){const ago=Math.floor((Date.now()-ls)/1000);const rem=Math.max(0,90-ago%90);document.getElementById('mRefresh').textContent='수집 '+rem+'초';}
