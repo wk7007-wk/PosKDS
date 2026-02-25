@@ -307,15 +307,15 @@ function sse(path,cb){
   const gen=_sseGen;
   const es=new EventSource(FB+path);
   _sseConns.push({es,path,cb,gen});
-  es.onopen=()=>updC(true);
+  es.onopen=()=>{document.getElementById('cD').className='dot dg';const t=document.getElementById('cT');t.textContent='실시간';t.style.color='#2ECC71';}; // UI만 갱신, _sseOk는 데이터 도착 시
   es.onerror=()=>{updC(false);es.close();_sseConns=_sseConns.filter(s=>s.es!==es);if(gen===_sseGen)setTimeout(()=>{if(gen===_sseGen)sse(path,cb);},10000);};
-  es.addEventListener('put',e=>cb(JSON.parse(e.data)));
-  es.addEventListener('patch',e=>cb(JSON.parse(e.data)));
+  es.addEventListener('put',e=>{_sseOk=true;cb(JSON.parse(e.data));});
+  es.addEventListener('patch',e=>{_sseOk=true;cb(JSON.parse(e.data));});
 }
 function updC(ok){
   document.getElementById('cD').className='dot '+(ok?'dg':'dr');
   const t=document.getElementById('cT');t.textContent=ok?'실시간':'폴링';t.style.color=ok?'#2ECC71':'#E67E22';
-  if(ok)_sseOk=true;else _sseOk=false;
+  if(!ok)_sseOk=false; // 에러 시만 해제, true는 데이터 도착 시 설정
 }
 
 // === Data Handlers ===
@@ -520,7 +520,7 @@ function doForceRefresh(){
   if(isApp){nb('forceRefresh');}
   else{
     // 웹에서는 SSE 재연결 + 전체 데이터 새로 가져오기
-    _sseOk=false;pollAll();toast('새로고침...');
+    _sseOk=false;pollAll(true);toast('새로고침...');
   }
 }
 
@@ -934,8 +934,8 @@ sse('/posdelay/alert.json',m=>{
 fetch(FB+'/kds_log.json').then(r=>r.json()).then(d=>{document.getElementById('logC').textContent=typeof d==='string'?d:JSON.stringify(d,null,2);}).catch(()=>{});
 // 10초 폴링 (SSE 백업)
 let _sseOk=false;
-function pollAll(){
-  if(_sseOk)return; // SSE 정상이면 폴링 안 함
+function pollAll(force){
+  if(!force&&_sseOk)return; // SSE 정상+강제아님 → 스킵
   Promise.all([
     fetch(FB+'/kds_status.json').then(r=>r.json()),
     fetch(FB+'/posdelay/ad_state.json').then(r=>r.json()),
@@ -967,8 +967,8 @@ document.addEventListener('visibilitychange',()=>{
     prev.forEach(s=>sse(s.path,s.cb));
     // 조리큐 즉시 갱신 + 알림 갭 리셋
     if(ckOn){_lastCkCheck=0;updCkQueue();updCkUI();}
-    // 폴링 즉시 (SSE 연결 전 빠른 데이터 확보)
-    setTimeout(pollAll,500);
+    // 강제 폴링 (SSE 연결 후 데이터 도착 전 갭 메우기)
+    setTimeout(()=>pollAll(true),500);
   }
 });
 </script>
