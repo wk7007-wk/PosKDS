@@ -178,8 +178,9 @@ class KdsAccessibilityService : AccessibilityService() {
 
             val countChanged = count != null && count != lastCount
             val ordersChanged = orders != lastOrders
+            val completedChanged = completed != null && completed != lastCompleted
 
-            if (countChanged || ordersChanged) {
+            if (countChanged || ordersChanged || completedChanged) {
                 if (countChanged) {
                     val prevCount = lastCount
                     log("조리중 건수 변경: $prevCount → $count")
@@ -191,9 +192,9 @@ class KdsAccessibilityService : AccessibilityService() {
                     log("주문번호 변경: $lastOrders → $orders")
                     lastOrders = orders
                 }
-                if (completed != null && completed != lastCompleted) {
-                    log("완료건수 변경: $lastCompleted → $completed")
-                    lastCompleted = completed
+                if (completedChanged) {
+                    log("완료건수 변경: $lastCompleted → $completed (조리완료 버튼 감지)")
+                    lastCompleted = completed!!
                 }
 
                 FirebaseUploader.upload(prefs, lastCount, lastOrders, lastCompleted)
@@ -253,6 +254,7 @@ class KdsAccessibilityService : AccessibilityService() {
 
     /** KDS "완료" 탭에서 완료 건수 추출 (조리완료 버튼과 구분) */
     private fun extractCompletedCount(root: AccessibilityNodeInfo): Int? {
+        // 방법1: findAccessibilityNodeInfosByText
         val nodes = root.findAccessibilityNodeInfosByText("완료")
         if (nodes != null && nodes.isNotEmpty()) {
             for (node in nodes) {
@@ -265,8 +267,25 @@ class KdsAccessibilityService : AccessibilityService() {
                     return match.groupValues[1].toIntOrNull()
                 }
             }
-            // "조리완료" 버튼만 찾았을 수 있음 → null (탭 확인 불가)
-            return null
+        }
+        // 방법2: 전체 트리 탐색 (contentDescription만 있는 노드 대응)
+        return findCompletedCountInTree(root)
+    }
+
+    /** 전체 접근성 트리에서 "완료 N" 패턴 탐색 (contentDescription 포함) */
+    private fun findCompletedCountInTree(node: AccessibilityNodeInfo, depth: Int = 0): Int? {
+        if (depth > 15) return null
+        val text = node.text?.toString() ?: ""
+        val desc = node.contentDescription?.toString() ?: ""
+        val combined = "$text $desc"
+        // "완료 35", "완료\n1" — "조리완료" 제외
+        val match = Regex("(?<!조리)완료[\\s\\n]*(\\d+)").find(combined)
+        if (match != null) return match.groupValues[1].toIntOrNull()
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val result = findCompletedCountInTree(child, depth + 1)
+            child.recycle()
+            if (result != null) return result
         }
         return null
     }
