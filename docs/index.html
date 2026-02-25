@@ -78,15 +78,9 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   <div style="padding:4px 0;border-bottom:1px solid #2A2A45">
     <div class="sync-row">
       <div class="sync-item"><span class="dot dd" id="sKd"></span><span id="sKt" style="color:#707088">KDS --</span></div>
-      <span style="color:#2A2A45">|</span>
-      <div class="sync-item"><span class="dot dd" id="sMd"></span><span id="sMt" style="color:#707088">MATE --</span></div>
-      <span style="color:#2A2A45">|</span>
-      <div class="sync-item"><span class="dot dd" id="sPd"></span><span id="sPt" style="color:#707088">PC --</span></div>
     </div>
     <div class="row" style="gap:4px;margin-top:4px">
       <button class="tbtn on" id="tK" onclick="togSource('kds')">K가동</button>
-      <button class="tbtn off" id="tM" onclick="togSource('mate')">M정지</button>
-      <button class="tbtn on" id="tP" onclick="togSource('pc')">PC가동</button>
       <span style="flex:1"></span>
       <span id="mRefresh" style="font-size:10px;color:#707088">수집 --</span>
     </div>
@@ -421,13 +415,9 @@ function updMonitor(){
 // === 동기화 상태 ===
 function updSyncStatus(){
   updSyncItem('sKd','sKt','KDS',stS.kds_sync);
-  updSyncItem('sMd','sMt','MATE',stS.mate_sync);
-  updSyncItem('sPd','sPt','PC',stS.pc_sync);
-  const tK=document.getElementById('tK'),tM=document.getElementById('tM'),tP=document.getElementById('tP');
-  const kp=stS.kds_paused,mp=stS.mate_paused,pp=stS.pc_paused;
+  const tK=document.getElementById('tK');
+  const kp=stS.kds_paused;
   tK.className='tbtn '+(kp?'off':'on');tK.textContent=kp?'K정지':'K가동';
-  tM.className='tbtn '+(mp?'off':'on');tM.textContent=mp?'M정지':'M가동';
-  tP.className='tbtn '+(pp?'off':'on');tP.textContent=pp?'PC정지':'PC가동';
 }
 function updSyncItem(dotId,txtId,label,ts){
   const d=document.getElementById(dotId),t=document.getElementById(txtId);
@@ -442,7 +432,6 @@ function updSyncItem(dotId,txtId,label,ts){
   else{d.className='dot dr';t.style.color='#E74C3C';}
 }
 function togSource(src){
-  // 즉시 UI 반영 (낙관적 업데이트)
   const key=src+'_paused';
   stS[key]=!stS[key];
   updSyncStatus();
@@ -452,7 +441,7 @@ function togSource(src){
     nb('trackUsage','toggle_'+src);
     setTimeout(()=>{try{
       const st=JSON.parse(NativeBridge.getSourceStatus());
-      stS.kds_paused=st.kds_paused;stS.mate_paused=st.mate_paused;stS.pc_paused=st.pc_paused;
+      stS.kds_paused=st.kds_paused;
       updSyncStatus();
     }catch(e){}},300);
   }else{
@@ -1003,7 +992,7 @@ function pollGistKds(){
 setInterval(pollGistKds,60000);
 setTimeout(pollGistKds,5000);
 setInterval(()=>{
-  const ls=stS.mate_sync??stS.pc_sync??0;
+  const ls=stS.kds_sync??0;
   if(ls>0){const ago=Math.floor((Date.now()-ls)/1000);const rem=Math.max(0,90-ago%90);document.getElementById('mRefresh').textContent='수집 '+rem+'초';}
 },1000);
 window.addEventListener('resize',drawChart);
