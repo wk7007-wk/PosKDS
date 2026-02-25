@@ -5,7 +5,7 @@
 
 ## Firebase 구조
 - **DB**: `poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app`
-- **건수 업로드**: `/kds_status.json` — count, time, orders 배열
+- **건수 업로드**: `/kds_status.json` — count, completed, time, orders 배열, source
 - **로그**: `/kds_log.json`
 - **원격 업데이트**: `/app_update/poskds.json` — version, url
 
@@ -34,9 +34,10 @@ curl -s https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/k
 - **orders 배열 불안정**: `rootInActiveWindow`가 systemui 반환 시 orders=[] (주문번호 추출 실패)
 - **count>0 + orders=[] → 0 보정 금지**: 탭 건수가 정확, orders 빈배열은 추출 실패일 뿐
 - **추출 실패 시 이전 값 유지**: count=null + orders=[] → UI 전환 중 일시적 실패. 절대 0으로 강제하지 않음
-- `orders` 없이 `count`만 올 때 → 30분간 건수 변동 없으면 0으로 강제 보정 (수신 측)
+- `orders` 없이 `count`만 올 때 → 30분간 건수 변동 없으면 0으로 강제 보정 (웹 대시보드)
 - `orders` 있을 때 → 25분 초과 개별 주문 차감 (기존 필터)
-- **0 안정화**: 양수→0 전환 시 90초 대기 (KDS 하트비트 3회분, 오탐 방지)
+- **KDS 건수 즉시 반영**: 안정화 지연 삭제됨 — PosDelay/웹 모두 즉시 적용
+- **completed 필드**: 완료탭 건수 추출 (트리탐색 fallback), 조리완료 버튼 누를 때 증가
 
 ## KDS rootInActiveWindow 문제 (핵심 버그 패턴)
 - **증상**: KDS가 조리중 건수를 감지했다가 수초 내 0으로 되돌림
