@@ -44,6 +44,9 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 .tbtn.off{border-color:#E74C3C;color:#E74C3C;}
 .ck-row{transition:opacity 0.3s;}
 .ck-dying{opacity:0.3 !important;text-decoration:line-through;}
+.cd-ring{position:relative;width:28px;height:28px;flex-shrink:0;}
+.cd-ring svg{transform:rotate(-90deg);}
+.cd-ring .cd-txt{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#FFF;}
 </style>
 </head>
 <body>
@@ -68,8 +71,10 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
       <span style="color:#2AC1BC;font-size:12px;font-weight:600">배민</span>
       <span class="dot dd" id="mBd"></span>
       <span id="mBv" style="font-size:12px;font-weight:600;color:#2AC1BC">-</span>
+      <div class="cd-ring" id="cdBaemin" style="display:none"><svg viewBox="0 0 28 28" width="28" height="28"><circle cx="14" cy="14" r="11" fill="none" stroke="#2A2A45" stroke-width="3"/><circle id="cdBaeminArc" cx="14" cy="14" r="11" fill="none" stroke="#2AC1BC" stroke-width="3" stroke-linecap="round" stroke-dasharray="69.1" stroke-dashoffset="69.1"/></svg><div class="cd-txt" id="cdBaeminTxt"></div></div>
     </div>
     <div class="row" style="gap:4px">
+      <div class="cd-ring" id="cdCoupang" style="display:none"><svg viewBox="0 0 28 28" width="28" height="28"><circle cx="14" cy="14" r="11" fill="none" stroke="#2A2A45" stroke-width="3"/><circle id="cdCoupangArc" cx="14" cy="14" r="11" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" stroke-dasharray="69.1" stroke-dashoffset="69.1"/></svg><div class="cd-txt" id="cdCoupangTxt"></div></div>
       <span style="color:#FFD700;font-size:12px;font-weight:600">쿠팡</span>
       <span class="dot dd" id="mCd"></span>
       <span id="mCv" style="font-size:12px;font-weight:600;color:#FFD700">-</span>
@@ -379,8 +384,35 @@ function updMonitor(){
   document.getElementById('mCv').textContent=co2===true?'ON':co2===false?'OFF':'-';
   document.getElementById('mCd').className='dot '+(co2===true?'dg':co2===false?'dr':'dd');
   document.getElementById('mLast').textContent='마지막: '+(aS.last_ad_action??'--');
+  updCooldown();
   updCkQueue();updGauges(c);updDelayPred();chkAlert(c);
 }
+
+// === 쿨타임 게이지 ===
+const CD_TOTAL=300000; // 5분
+function updCooldown(){
+  const now=Date.now();
+  // 배민: 마지막 금액 변경 쿨다운
+  const bEnd=aS.cooldown_end_baemin||0;
+  _updRing('cdBaemin','cdBaeminArc','cdBaeminTxt',bEnd,now);
+  // 쿠팡: ON/OFF 중 더 늦게 끝나는 쿨다운
+  const cOnEnd=aS.cooldown_end_coupang_on||0;
+  const cOffEnd=aS.cooldown_end_coupang_off||0;
+  const cEnd=Math.max(cOnEnd,cOffEnd);
+  _updRing('cdCoupang','cdCoupangArc','cdCoupangTxt',cEnd,now);
+}
+function _updRing(wrId,arcId,txtId,endMs,now){
+  const wr=document.getElementById(wrId);
+  const remain=endMs-now;
+  if(!endMs||remain<=0){wr.style.display='none';return;}
+  wr.style.display='';
+  const ratio=Math.min(remain/CD_TOTAL,1);
+  const circ=69.1; // 2*PI*11
+  document.getElementById(arcId).setAttribute('stroke-dashoffset',circ*(1-ratio));
+  const sec=Math.ceil(remain/1000);
+  document.getElementById(txtId).textContent=sec>=60?Math.floor(sec/60)+':'+(('0'+(sec%60)).slice(-2)):sec+'s';
+}
+setInterval(updCooldown,1000);
 
 // === 동기화 상태 ===
 function updSyncStatus(){
