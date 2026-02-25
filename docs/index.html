@@ -794,13 +794,13 @@ function chkCkAlerts(){
   const prevLen=ckQ.length;
   ckQ=ckQ.filter(o=>{
     if((now-o.t)>=3600000)return false; // 60분 초과 삭제
-    if(o.delAt&&now>=o.delAt)return false; // 탭 5초 후 삭제
+    if(o.delAt&&now>=o.delAt)return false; // 탭 2초 후 삭제
     return true;
   });
   if(ckQ.length!==prevLen)saveCk(); // 리스트 변동 시 저장
   ckQ.forEach(o=>{
     const elMs=now-o.t;
-    if(isApp){
+    if(isApp&&!o.delAt){
       if(elMs>=cookStartMs&&!o.ma){o.ma=true;if(!skipAlerts&&o.onKds){try{NativeBridge.speakCook(o.num+'번 조리');}catch(e){}}}
       if(elMs>=pkgStartMs&&!o.fa){o.fa=true;if(!skipAlerts){try{NativeBridge.speakCook(o.num+'번 포장');}catch(e){}}}
       if(elMs>=tgtMs&&!o.da){o.da=true;if(!skipAlerts){try{NativeBridge.speakCook(o.num+'번 시간초과');}catch(e){}}}
@@ -839,7 +839,7 @@ function updCkUI(){
   // 지연설정값 (분)
   const bTgt=g(S,'baemin_target_time',27),bCook=g(S,'baemin_fixed_cook_time',17);
   const cTgt=g(S,'coupang_target_time',22),cCook=g(S,'coupang_fixed_cook_time',15);
-  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#FFFFFF">조리</span><span style="min-width:50px;text-align:center;color:#FFFFFF">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
+  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="min-width:42px;text-align:center;color:#2ECC71">경과</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#FFFFFF">조리</span><span style="min-width:50px;text-align:center;color:#FFFFFF">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
   let maxBDelay=0,maxCDelay=0;
   // 큐 위치 계산 (활성 주문만, 오래된 순)
   const activeOldest=sorted.filter(x=>x.onKds).slice().sort((a,b)=>a.t-b.t);
@@ -874,9 +874,11 @@ function updCkUI(){
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
     const rowBg=(!dimmed&&hasDelay)?'background:#FF6B6B22;':'';
+    const elSec=Math.floor(elMs/1000);const elMin=Math.floor(elSec/60);const elS=elSec%60;const elStr=elMin+':'+String(elS).padStart(2,'0');
     h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer;${rowBg}">
 <span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC;opacity:${numOp}">${o.num}번${kds}</span>
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
+<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:#2ECC71">${elStr}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>
@@ -892,7 +894,7 @@ function updCkUI(){
 function ckDisp(k){const e=document.getElementById('ck_'+k);const d=document.getElementById('ck_'+k+'_disp');if(!e||!d)return;const v=parseInt(e.value)||0;const m=Math.floor(v/60),s=v%60;d.textContent=m+':'+String(s).padStart(2,'0');}
 function adjCk(k,d){const e=document.getElementById('ck_'+k);if(!e)return;e.value=Math.max(10,parseInt(e.value||0)+d);ckDisp(k);saveCk();}
 function saveCk(){try{const t=parseInt(document.getElementById('ck_target').value)||1500,m=parseInt(document.getElementById('ck_mid').value)||1020,f=parseInt(document.getElementById('ck_finish').value)||240;localStorage.setItem('ck',JSON.stringify({on:ckOn,t:t,m:m,f:f,q:ckQ}));if(isApp)try{NativeBridge.syncCookSettings(ckOn,t,m,f);}catch(e){}}catch(e){}}
-function ckTapDel(num){const o=ckQ.find(x=>x.num===num);if(!o)return;if(o.delAt){o.delAt=null;}else{o.delAt=Date.now()+5000;}updCkUI();saveCk();}
+function ckTapDel(num){const o=ckQ.find(x=>x.num===num);if(!o)return;if(o.delAt){o.delAt=null;}else{o.delAt=Date.now()+2000;}updCkUI();saveCk();}
 function loadCk(){try{const s=JSON.parse(localStorage.getItem('ck'));if(s){ckOn=!!s.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');
   // 구버전 분단위(< 100) → 초단위 자동변환
   const t=s.t||1500;const m=s.m||1020;const f=s.f||240;
