@@ -41,7 +41,7 @@ object FirebaseUploader {
                 GistUploader.upload(count, orders)
 
                 // 1-c. FCM push 전송 (PosDelay에 OS 레벨 push)
-                FcmSender.send(count, if (completed >= 0) completed else 0, now)
+                FcmSender.send(count, if (completed >= 0) completed else 0, now, orders)
 
                 // 2. 로그 업로드 (최근 100줄)
                 val logContent = try {

@@ -56,16 +56,19 @@ object FcmSender {
     @Volatile private var cachedToken: String? = null
     @Volatile private var tokenExpiry = 0L
 
-    // 마지막 전송 건수 (동일 건수 중복 전송 방지)
+    // 마지막 전송값 (동일 데이터 중복 전송 방지)
     @Volatile private var lastSentCount = -1
+    @Volatile private var lastSentOrdersHash = 0
 
     /**
      * FCM data message 전송 (건수 변경 시 호출).
-     * 동일 건수 중복 전송 방지. 백그라운드 스레드에서 호출해야 함.
+     * count 또는 orders 변경 시 전송. 백그라운드 스레드에서 호출해야 함.
      */
-    fun send(count: Int, completed: Int, time: String) {
-        if (count == lastSentCount) return // 동일 건수 스킵
+    fun send(count: Int, completed: Int, time: String, orders: List<Int> = emptyList()) {
+        val ordersHash = orders.hashCode()
+        if (count == lastSentCount && ordersHash == lastSentOrdersHash) return // 동일 데이터 스킵
         lastSentCount = count
+        lastSentOrdersHash = ordersHash
 
         try {
             val token = getAccessToken() ?: run {
@@ -80,6 +83,7 @@ object FcmSender {
                         put("count", count.toString())
                         put("completed", completed.toString())
                         put("time", time)
+                        put("orders", orders.joinToString(","))
                         put("source", "fcm")
                     })
                     // Android: high priority for Doze delivery
