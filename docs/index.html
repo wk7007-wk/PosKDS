@@ -331,6 +331,8 @@ function updC(ok){
 function hKds(m){
   if(!m.data||m.data==='null')return;
   if(m.path==='/')Object.assign(kS,m.data);else kS[m.path.slice(1)]=m.data;
+  // Firebase RTDB는 빈 배열 []을 저장 안 함 → orders 필드 누락 시 빈 배열로 초기화
+  if(!Array.isArray(kS.orders))kS.orders=[];
   // 30분 강제보정: orders 없이 건수 변동 없으면 30분 후 0
   if(kS.count!==_kdsLastCount){_kdsLastCount=kS.count;_kdsLastChange=Date.now();}
   else if(kS.count>0&&!Array.isArray(kS.orders)&&(Date.now()-_kdsLastChange)>=1800000){kS.count=0;_kdsLastCount=0;}
