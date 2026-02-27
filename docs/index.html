@@ -55,16 +55,18 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 </head>
 <body>
 
-<div style="position:sticky;top:0;z-index:10;background:linear-gradient(180deg,#1A1A30,#121225);padding:4px 10px 2px;margin:-10px -10px 0;display:flex;align-items:center;justify-content:space-between">
-  <div class="conn" style="margin:0"><span class="dot dd" id="cD"></span> <span id="cT" style="color:#707088">...</span><span id="appVer" style="font-size:9px;color:#555;margin-left:6px"></span></div>
-  <div style="display:flex;gap:6px;align-items:center">
-    <span onclick="if(window.NativeBridge)NativeBridge.captureScreen()" style="color:#707088;font-size:14px;cursor:pointer">&#128247;</span>
-    <button onclick="location.reload()" style="background:#2A2A45;border:1px solid #2E2E52;border-radius:4px;color:#9090A8;font-size:11px;padding:3px 8px;cursor:pointer">&#8635;</button>
+<div style="position:sticky;top:0;z-index:10;background:linear-gradient(180deg,#1A1A30,#121225);padding:4px 10px 2px;margin:-10px -10px 0">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div class="conn" style="margin:0"><span class="dot dd" id="cD"></span> <span id="cT" style="color:#707088">...</span><span id="appVer" style="font-size:9px;color:#555;margin-left:6px"></span></div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span onclick="if(window.NativeBridge)NativeBridge.captureScreen()" style="color:#707088;font-size:14px;cursor:pointer">&#128247;</span>
+      <button onclick="location.reload()" style="background:#2A2A45;border:1px solid #2E2E52;border-radius:4px;color:#9090A8;font-size:11px;padding:3px 8px;cursor:pointer">&#8635;</button>
+    </div>
   </div>
+  <div id="pullInd" style="text-align:center;color:#707088;font-size:11px;height:0;overflow:hidden;transition:height .2s">&#8595; 새로고침</div>
+  <div class="alert" id="alertB"></div>
+  <div class="alert" id="anomalyB"></div>
 </div>
-<div id="pullInd" style="text-align:center;color:#707088;font-size:11px;height:0;overflow:hidden;transition:height .2s">&#8595; 새로고침</div>
-<div class="alert" id="alertB"></div>
-<div class="alert" id="anomalyB"></div>
 
 <!-- ═══ 1. 모니터링 ═══ -->
 <div class="card">
