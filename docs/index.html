@@ -916,7 +916,7 @@ function updCkUI(){
   // 지연설정값 (분)
   const bTgt=g(S,'baemin_target_time',27),bCook=g(S,'baemin_fixed_cook_time',17);
   const cTgt=g(S,'coupang_target_time',22),cCook=g(S,'coupang_fixed_cook_time',15);
-  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="min-width:42px;text-align:center;color:#2ECC71">경과</span><span style="flex:1"></span><span style="min-width:50px;text-align:center;color:#FFFFFF">조리</span><span style="min-width:50px;text-align:center;color:#FFFFFF">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
+  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="min-width:42px;text-align:center;color:#2ECC71">경과</span><span style="flex:1"></span><span style="min-width:52px;text-align:center;color:#E67E22;background:#E67E2218;border-radius:3px;padding:1px 0">조리</span><span style="min-width:52px;text-align:center;color:#E74C3C;background:#E74C3C18;border-radius:3px;padding:1px 0">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
   let maxBDelay=0,maxCDelay=0;
   // 큐 위치 계산 (활성 주문만, 오래된 순)
   const activeOldest=sorted.filter(x=>x.onKds).slice().sort((a,b)=>a.t-b.t);
@@ -960,10 +960,10 @@ function updCkUI(){
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${elCl}">${elStr}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>${o.doneAt?
-`<span style="min-width:50px;text-align:center;font-size:12px;color:#2AC1BC">${mmss(o.cookDur)}</span>
-<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>`:
-`<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
-<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>`}
+`<span style="min-width:52px;text-align:center;font-size:12px;color:#2AC1BC;background:#E67E2215;border-radius:3px;padding:2px 0">${mmss(o.cookDur)}</span>
+<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl};background:#E74C3C15;border-radius:3px;padding:2px 0">${mmss(pkgRem)}</span>`:
+`<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl};background:#E67E2215;border-radius:3px;padding:2px 0">${mmss(cookRem)}</span>
+<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl};background:#E74C3C15;border-radius:3px;padding:2px 0">${mmss(pkgRem)}</span>`}
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&bDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&bDelay>0)?bDelay:''}</span>
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&cDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&cDelay>0)?cDelay:''}</span>
 </div>`;
