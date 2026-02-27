@@ -935,22 +935,27 @@ function updCkUI(){
   const bTgt=g(S,'baemin_target_time',27),bCook=g(S,'baemin_fixed_cook_time',17);
   const cTgt=g(S,'coupang_target_time',22),cCook=g(S,'coupang_fixed_cook_time',15);
   let h='';
-  if(activeOrders>0||pkgOrders.length===0){
-    h+='<div style="padding:4px 8px;font-size:11px;font-weight:bold;color:#E67E22;border-bottom:1px solid #2A2A45;background:#E67E2208">조리중 '+activeOrders+'건</div>';
-    h+='<div style="display:flex;align-items:center;padding:3px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="min-width:42px;text-align:center;color:#2ECC71">경과</span><span style="flex:1"></span><span style="min-width:52px;text-align:center;color:#E67E22;background:#E67E2218;border-radius:3px;padding:1px 0">조리</span><span style="min-width:52px;text-align:center;color:#E74C3C;background:#E74C3C18;border-radius:3px;padding:1px 0">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
-  }
-  // 긴급 상황 분석 (조리중만)
+  // === 통합 긴급 배너 (조리+포장 모두) ===
   const urgOver=[],urgPkg=[],urgCook=[];
   cookOrders.forEach(o=>{const el=now-o.t;if(el>=tgtMs)urgOver.push(o.num);else if(el>=pkgStartMs)urgPkg.push(o.num);else if(el>=cookStartMs)urgCook.push(o.num);});
+  const pkgOverdue=pkgOrders.filter(o=>(now-o.t)>=tgtMs);
   const cookFocus=urgCook.length>0&&urgPkg.length===0&&urgOver.length===0;
   const busyCookFocus=activeOrders>2&&urgCook.length>0&&urgOver.length===0;
-  if(urgOver.length+urgPkg.length+urgCook.length>0){
-    h+='<div style="padding:5px 8px;font-size:13px;font-weight:bold;border-radius:5px;margin:2px 0;'+(urgOver.length||urgPkg.length?'background:#E74C3C22':'background:#E67E2218')+'">';
-    if(urgOver.length)h+=`<span style="color:#E74C3C">초과 ${urgOver.map(n=>n+'번').join(' ')}</span> `;
+  const hasUrgent=urgOver.length+urgPkg.length+urgCook.length+pkgOverdue.length>0;
+  if(hasUrgent){
+    const isRed=urgOver.length||urgPkg.length||pkgOverdue.length;
+    h+='<div style="padding:5px 8px;font-size:13px;font-weight:bold;border-radius:5px;margin:2px 0;'+(isRed?'background:#E74C3C22':'background:#E67E2218')+'">';
+    if(urgOver.length)h+=`<span style="color:#E74C3C">조리초과 ${urgOver.map(n=>n+'번').join(' ')}</span> `;
+    if(pkgOverdue.length)h+=`<span style="color:#E74C3C">포장초과 ${pkgOverdue.map(n=>n.num+'번').join(' ')}</span> `;
     if(urgPkg.length)h+=`<span style="color:#E74C3C">포장급함 ${urgPkg.map(n=>n+'번').join(' ')}</span> `;
     if(cookFocus||busyCookFocus)h+=`<span style="color:#E67E22">조리집중 ${urgCook.map(n=>n+'번').join(' ')}</span>`;
     else if(urgCook.length&&!cookFocus)h+=`<span style="color:#E67E22">조리중 ${urgCook.map(n=>n+'번').join(' ')}</span>`;
     h+='</div>';
+  }
+  // === 조리중 섹션 ===
+  if(activeOrders>0||pkgOrders.length===0){
+    h+='<div style="padding:4px 8px;font-size:11px;font-weight:bold;color:#E67E22;border-bottom:1px solid #2A2A45;background:#E67E2208">조리중 '+activeOrders+'건</div>';
+    h+='<div style="display:flex;align-items:center;padding:3px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="min-width:42px;text-align:center;color:#2ECC71">경과</span><span style="flex:1"></span><span style="min-width:52px;text-align:center;color:#E67E22;background:#E67E2218;border-radius:3px;padding:1px 0">조리</span><span style="min-width:52px;text-align:center;color:#E74C3C;background:#E74C3C18;border-radius:3px;padding:1px 0">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
   }
   let maxBDelay=0,maxCDelay=0;
   const activeOldest=sortedCook.slice().sort((a,b)=>a.t-b.t);
