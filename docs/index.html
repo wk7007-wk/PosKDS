@@ -976,17 +976,18 @@ function updCkUI(){
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
     const rowBg=(!dimmed&&hasDelay)?'background:#FF6B6B22;':'';
-    // 경과시간: 항상 라이브 (접수~현재)
-    const elSec=Math.floor(elMs/1000);const elMin=Math.floor(elSec/60);const elS=elSec%60;const elStr=elMin+':'+String(elS).padStart(2,'0');
+    // 경과시간: 완료=조리시간(고정), 활성=라이브
+    const dispMs=o.doneAt?(o.cookDur||(o.doneAt-o.t)):elMs;
+    const dSec=Math.floor(dispMs/1000);const dMin=Math.floor(dSec/60);const dS=dSec%60;const elStr=dMin+':'+String(dS).padStart(2,'0');
     const elCl=o.doneAt?'#2AC1BC':'#2ECC71';
-    // 완료 주문: 번호 옆에 "완" 표시
     const kds=o.onKds?'':`<span style="color:#2AC1BC;font-size:9px"> 완</span>`;
-    h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer;${rowBg}">
-<span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC;opacity:${numOp}">${o.num}번${kds}</span>
-<span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
-<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${elCl}">${elStr}</span>
-<span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>${o.doneAt?
-`<span style="min-width:104px;text-align:center;font-size:18px;font-weight:bold;color:${pkgCl};background:#E74C3C15;border-radius:4px;padding:3px 0">포장 ${mmss(pkgRem)}</span>`:
+    const isDone=!!o.doneAt;
+    h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer;${rowBg}${isDone?'opacity:0.5;':''}">
+<span style="min-width:48px;font-size:${isDone?12:14}px;font-weight:bold;color:#E0E0EC;opacity:${numOp}">${o.num}번${kds}</span>
+<span style="min-width:42px;font-size:${isDone?10:11}px;color:#9090A8">${oTime}</span>
+<span style="min-width:42px;text-align:center;font-size:${isDone?11:13}px;font-weight:bold;color:${elCl}">${elStr}</span>
+<span style="flex:1;font-size:${isDone?10:11}px;font-weight:bold;color:${bgCl}">${st}</span>${isDone?
+`<span style="min-width:104px;text-align:center;font-size:13px;font-weight:bold;color:#2AC1BC;background:#2AC1BC15;border-radius:3px;padding:2px 0">조리 ${elStr}</span>`:
 `<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl};background:#E67E2215;border-radius:3px;padding:2px 0">${mmss(cookRem)}</span>
 <span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl};background:#E74C3C15;border-radius:3px;padding:2px 0">${mmss(pkgRem)}</span>`}
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&bDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&bDelay>0)?bDelay:''}</span>
