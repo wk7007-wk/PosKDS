@@ -56,7 +56,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <body>
 
 <div id="pullInd" style="text-align:center;color:#707088;font-size:11px;height:0;overflow:hidden;transition:height .2s">&#8595; 새로고침</div>
-<div class="conn"><span class="dot dd" id="cD"></span> <span id="cT" style="color:#707088">...</span> <span onclick="if(window.NativeBridge)NativeBridge.captureScreen()" style="color:#707088;font-size:14px;cursor:pointer;margin-left:8px">&#128247;</span></div>
+<div class="conn"><span class="dot dd" id="cD"></span> <span id="cT" style="color:#707088">...</span> <span onclick="if(window.NativeBridge)NativeBridge.captureScreen()" style="color:#707088;font-size:14px;cursor:pointer;margin-left:8px">&#128247;</span><span id="appVer" style="font-size:9px;color:#555;margin-left:8px"></span></div>
 <div class="alert" id="alertB"></div>
 <div class="alert" id="anomalyB"></div>
 
@@ -949,6 +949,7 @@ function loadCk(){try{const s=JSON.parse(localStorage.getItem('ck'));if(s){ckOn=
   if(s.q&&Array.isArray(s.q)&&s.q.length>0){ckQ=s.q.filter(o=>o&&o.num&&o.t);updCkUI();}
   }ckDisp('target');ckDisp('mid');ckDisp('finish');}catch(e){}}
 loadCk();
+try{const v=NativeBridge.getAppVersion();if(v)document.getElementById('appVer').textContent='v'+v;}catch(e){}
 setInterval(chkCkAlerts,1000);
 
 // === 초기화 ===
