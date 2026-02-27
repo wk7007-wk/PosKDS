@@ -923,17 +923,15 @@ function updCkUI(){
   const posMap={};activeOldest.forEach((x,i)=>{posMap[x.num]=i;});
   function calcDelay(pos,ai,tgt,cook){if(ai<=0)return 0;const wait=(pos+1)*ai;const d=Math.max(0,wait+cook-tgt);return d>0?Math.ceil(d/5)*5:0;}
   sorted.slice(0,20).forEach(o=>{
-    // 완료된 주문: 실제 소요시간 고정, 진행중: 현재까지 경과시간
-    const realEl=o.doneAt?o.cookDur:(now-o.t);
     const elMs=now-o.t;
-    const allRem=tgtMs-realEl;
-    const cookRem=cookStartMs-realEl;
-    const pkgRem=pkgStartMs-realEl;
+    const allRem=tgtMs-elMs;
+    const cookRem=cookStartMs-elMs;
+    const pkgRem=pkgStartMs-elMs;
     let st,bgCl;
     if(!o.onKds&&o.doneAt){st='완료';bgCl='#2AC1BC';}
     else if(allRem<=0){st='초과';bgCl='#E74C3C';}
-    else if(realEl>=pkgStartMs){st='포장';bgCl='#E74C3C';}
-    else if(realEl>=cookStartMs){st='조리';bgCl='#E67E22';}
+    else if(elMs>=pkgStartMs){st='포장';bgCl='#E74C3C';}
+    else if(elMs>=cookStartMs){st='조리';bgCl='#E67E22';}
     else{st='대기';bgCl='#2ECC71';}
     const cookCl=cookRem<0?'#E74C3C':cookRem<60000?'#E67E22':'#FFFFFF';
     const pkgCl=pkgRem<0?'#E74C3C':pkgRem<60000?'#E67E22':'#FFFFFF';
@@ -952,13 +950,9 @@ function updCkUI(){
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
     const rowBg=(!dimmed&&hasDelay)?'background:#FF6B6B22;':'';
-    // 경과시간: 진행중=현재까지, 완료=접수~완료 전체시간
-    const dispEl=o.doneAt?o.cookDur:elMs;
-    const elSec=Math.floor(dispEl/1000);const elMin=Math.floor(elSec/60);const elS=elSec%60;const elStr=elMin+':'+String(elS).padStart(2,'0');
+    // 경과시간: 항상 라이브 (접수~현재)
+    const elSec=Math.floor(elMs/1000);const elMin=Math.floor(elSec/60);const elS=elSec%60;const elStr=elMin+':'+String(elS).padStart(2,'0');
     const elCl=o.doneAt?'#2AC1BC':'#2ECC71';
-    // 완료 후 경과: 완료 시점부터 지금까지
-    const sinceMs=o.doneAt?(now-o.doneAt):0;
-    const sinceStr=o.doneAt?mmss(sinceMs):'';
     // 완료 주문: 번호 옆에 "완" 표시
     const kds=o.onKds?'':`<span style="color:#2AC1BC;font-size:9px"> 완</span>`;
     h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer;${rowBg}">
@@ -967,7 +961,7 @@ function updCkUI(){
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${elCl}">${elStr}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>${o.doneAt?
 `<span style="min-width:50px;text-align:center;font-size:12px;color:#2AC1BC">${mmss(o.cookDur)}</span>
-<span style="min-width:50px;text-align:center;font-size:12px;color:#9090A8">+${sinceStr}</span>`:
+<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>`:
 `<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
 <span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>`}
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&bDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&bDelay>0)?bDelay:''}</span>
