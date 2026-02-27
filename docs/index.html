@@ -875,10 +875,11 @@ function chkCkAlerts(){
   const gap=_lastCkCheck>0?now-_lastCkCheck:0;
   _lastCkCheck=now;
   const skipAlerts=gap>3000;
-  // 60분 후 자동 삭제 + 탭 삭제 예약 처리
+  // 자동 삭제: 완료 후 25분 / 미완료 60분 안전장치 + 탭 삭제 예약
   const prevLen=ckQ.length;
   ckQ=ckQ.filter(o=>{
-    if((now-o.t)>=3600000)return false; // 60분 초과 삭제
+    if(o.doneAt&&(now-o.doneAt)>=1500000)return false; // 완료 후 25분 삭제
+    if(!o.doneAt&&(now-o.t)>=3600000)return false; // 미완료 60분 안전장치
     if(o.delAt&&now>=o.delAt)return false; // 탭 2초 후 삭제
     return true;
   });
