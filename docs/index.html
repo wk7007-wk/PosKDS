@@ -946,26 +946,30 @@ function updCkUI(){
     if(bDelay>maxBDelay)maxBDelay=bDelay;
     if(cDelay>maxCDelay)maxCDelay=cDelay;
     const hasDelay=bDelay>0||cDelay>0;
-    // 완료: "완 N:SS" (실제 소요시간), 진행중: 빈칸
-    const durStr=o.doneAt?mmss(o.cookDur):'';
-    const kds=o.onKds?'':`<span style="color:#2AC1BC;font-size:9px"> 완${durStr?' '+durStr:''}</span>`;
     const dimmed=!o.onKds||o.delAt;
     const numOp=dimmed?'0.4':'1';
     const dying=o.delAt?' ck-dying':'';
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
     const rowBg=(!dimmed&&hasDelay)?'background:#FF6B6B22;':'';
-    // 완료된 주문: cookDur 고정, 진행중: 현재 경과
+    // 경과시간: 진행중=현재까지, 완료=접수~완료 전체시간
     const dispEl=o.doneAt?o.cookDur:elMs;
     const elSec=Math.floor(dispEl/1000);const elMin=Math.floor(elSec/60);const elS=elSec%60;const elStr=elMin+':'+String(elS).padStart(2,'0');
     const elCl=o.doneAt?'#2AC1BC':'#2ECC71';
+    // 완료 후 경과: 완료 시점부터 지금까지
+    const sinceMs=o.doneAt?(now-o.doneAt):0;
+    const sinceStr=o.doneAt?mmss(sinceMs):'';
+    // 완료 주문: 번호 옆에 "완" 표시
+    const kds=o.onKds?'':`<span style="color:#2AC1BC;font-size:9px"> 완</span>`;
     h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer;${rowBg}">
 <span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC;opacity:${numOp}">${o.num}번${kds}</span>
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${elCl}">${elStr}</span>
-<span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
-<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${o.doneAt?'':mmss(cookRem)}</span>
-<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${o.doneAt?'':mmss(pkgRem)}</span>
+<span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>${o.doneAt?
+`<span style="min-width:50px;text-align:center;font-size:12px;color:#2AC1BC">${mmss(o.cookDur)}</span>
+<span style="min-width:50px;text-align:center;font-size:12px;color:#9090A8">+${sinceStr}</span>`:
+`<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
+<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>`}
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&bDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&bDelay>0)?bDelay:''}</span>
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&cDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&cDelay>0)?cDelay:''}</span>
 </div>`;
