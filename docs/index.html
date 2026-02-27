@@ -911,12 +911,29 @@ function updCkUI(){
   const tgtMs=tgtS*1000;const midMs=midS*1000;const finMs=finS*1000;
   const cookStartMs=tgtMs-midMs;const pkgStartMs=tgtMs-finMs;
   const now=Date.now();
-  const sorted=[...ckQ].sort((a,b)=>b.t-a.t);
+  // 급한 순 정렬: 초과→포장→조리→대기→완료, 같은 단계 내 오래된순
+  const urg=o=>{if(!o.onKds&&o.doneAt)return 99;const e=now-o.t;return e>=tgtMs?0:e>=pkgStartMs?1:e>=cookStartMs?2:3;};
+  const sorted=[...ckQ].sort((a,b)=>{const ua=urg(a),ub=urg(b);return ua!==ub?ua-ub:a.t-b.t;});
   function mmss(ms){const neg=ms<0;const a=Math.abs(ms);const m=Math.floor(a/60000),s=Math.floor((a%60000)/1000);return(neg?'-':'')+m+':'+String(s).padStart(2,'0');}
   // 지연설정값 (분)
   const bTgt=g(S,'baemin_target_time',27),bCook=g(S,'baemin_fixed_cook_time',17);
   const cTgt=g(S,'coupang_target_time',22),cCook=g(S,'coupang_fixed_cook_time',15);
   let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="min-width:42px;text-align:center;color:#2ECC71">경과</span><span style="flex:1"></span><span style="min-width:52px;text-align:center;color:#E67E22;background:#E67E2218;border-radius:3px;padding:1px 0">조리</span><span style="min-width:52px;text-align:center;color:#E74C3C;background:#E74C3C18;border-radius:3px;padding:1px 0">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
+  // 긴급 상황 분석
+  const urgOver=[],urgPkg=[],urgCook=[];
+  ckQ.filter(o=>o.onKds).forEach(o=>{const el=now-o.t;if(el>=tgtMs)urgOver.push(o.num);else if(el>=pkgStartMs)urgPkg.push(o.num);else if(el>=cookStartMs)urgCook.push(o.num);});
+  // 조리집중 판단: 조리단계 있고 + 포장급한건 없으면 → 조리집중 (포장 여유)
+  // 또는 대기줄 뒷편 지연예상 (activeOrders > 2 && 조리단계 있음) → 조리집중
+  const cookFocus=urgCook.length>0&&urgPkg.length===0&&urgOver.length===0;
+  const busyCookFocus=activeOrders>2&&urgCook.length>0&&urgOver.length===0;
+  if(urgOver.length+urgPkg.length+urgCook.length>0){
+    h+='<div style="padding:5px 8px;font-size:13px;font-weight:bold;border-radius:5px;margin:2px 0;'+(urgOver.length||urgPkg.length?'background:#E74C3C22':'background:#E67E2218')+'">';
+    if(urgOver.length)h+=`<span style="color:#E74C3C">초과 ${urgOver.map(n=>n+'번').join(' ')}</span> `;
+    if(urgPkg.length)h+=`<span style="color:#E74C3C">포장급함 ${urgPkg.map(n=>n+'번').join(' ')}</span> `;
+    if(cookFocus||busyCookFocus)h+=`<span style="color:#E67E22">조리집중 ${urgCook.map(n=>n+'번').join(' ')}</span>`;
+    else if(urgCook.length&&!cookFocus)h+=`<span style="color:#E67E22">조리중 ${urgCook.map(n=>n+'번').join(' ')}</span>`;
+    h+='</div>';
+  }
   let maxBDelay=0,maxCDelay=0;
   // 큐 위치 계산 (활성 주문만, 오래된 순)
   const activeOldest=sorted.filter(x=>x.onKds).slice().sort((a,b)=>a.t-b.t);
@@ -970,7 +987,11 @@ function updCkUI(){
   if(listEl)listEl.innerHTML=h;
   const delayMsg=[];if(maxBDelay>0)delayMsg.push('<span style="color:#E74C3C">배'+maxBDelay+'분</span>');if(maxCDelay>0)delayMsg.push('<span style="color:#E74C3C">쿠'+maxCDelay+'분</span>');
   const avgStr=avgCookDur>0?` <span style="color:#2AC1BC;font-size:10px">평균 ${mmss(avgCookDur)}</span>`:'';
-  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>${avgStr}`+(delayMsg.length>0?' <span style="font-weight:bold">지연 '+delayMsg.join(' ')+'</span>':'');
+  let focusMsg='';
+  if(urgOver.length)focusMsg=` <span style="color:#E74C3C;font-weight:bold">초과${urgOver.length}</span>`;
+  else if(urgPkg.length)focusMsg=` <span style="color:#E74C3C;font-weight:bold">포장급함${urgPkg.length}</span>`;
+  else if(cookFocus||busyCookFocus)focusMsg=` <span style="color:#E67E22;font-weight:bold">조리집중</span>`;
+  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건</span>${focusMsg}${avgStr}`+(delayMsg.length>0?' <span style="font-weight:bold">지연 '+delayMsg.join(' ')+'</span>':'');
 }
 
 function ckDisp(k){const e=document.getElementById('ck_'+k);const d=document.getElementById('ck_'+k+'_disp');if(!e||!d)return;const v=parseInt(e.value)||0;const m=Math.floor(v/60),s=v%60;d.textContent=m+':'+String(s).padStart(2,'0');}
