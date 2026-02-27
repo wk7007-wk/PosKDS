@@ -279,7 +279,8 @@ const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app
 let S={},aS={},kS={},stS={},hD=[],oT={},cLt='kds';
 let aTS=0;let sseLoaded=false;
 let _kdsLastChange=Date.now(),_kdsLastCount=-1; // 30분 강제보정용
-let avgInterval=3.0;
+let avgInterval=3.0,avgCookDur=0; // avgCookDur: 실제 완료 기록 기반 평균 조리시간(ms)
+let cookLog=[]; // 완료 기록: {num, t, doneAt, cookDur}
 const isApp=typeof NativeBridge!=='undefined';
 // null-safe getter: 0도 유효한 값으로 처리
 function g(obj,key,def){const v=obj[key];return v!=null?v:def;}
@@ -537,7 +538,8 @@ function updGauges(c){
   if(lgEl){
     if(ckOn&&ckMidIdx>=0){
       lgEl.style.display='flex';
-      lgEl.innerHTML=`<span style="color:#2ECC71;font-size:9px">대기 0~${ckMidIdx-1}</span><span style="color:#E67E22;font-size:9px">조리 ${ckMidIdx}~${ckFinIdx-1}</span><span style="color:#E74C3C;font-size:9px">포장 ${ckFinIdx}+</span><span style="color:#707088;font-size:9px">(${avgInterval.toFixed(1)}분/건)</span>`;
+      const avgDurStr=avgCookDur>0?` 평균${Math.floor(avgCookDur/60000)}:${String(Math.floor((avgCookDur%60000)/1000)).padStart(2,'0')}`:'';
+      lgEl.innerHTML=`<span style="color:#2ECC71;font-size:9px">대기 0~${ckMidIdx-1}</span><span style="color:#E67E22;font-size:9px">조리 ${ckMidIdx}~${ckFinIdx-1}</span><span style="color:#E74C3C;font-size:9px">포장 ${ckFinIdx}+</span><span style="color:#707088;font-size:9px">(${avgInterval.toFixed(1)}분/건)</span><span style="color:#2AC1BC;font-size:9px">${avgDurStr}</span>`;
     }else{lgEl.style.display='none';}
   }
 }
@@ -602,6 +604,27 @@ function calcAvgInterval(){
     }
   }
   if(ct.length>=2){const r=ct.slice(-10);avgInterval=r.reduce((a,b)=>a+b,0)/r.length;}
+}
+
+// === 실제 완료 기록 기반 조리속도 ===
+function calcCookSpeed(){
+  if(cookLog.length<1)return;
+  // 평균 조리시간 (최근 10건)
+  const recent=cookLog.slice(-10);
+  avgCookDur=recent.reduce((s,o)=>s+o.cookDur,0)/recent.length;
+  // 완료 간격 기반 avgInterval 대체 (2건 이상)
+  if(cookLog.length>=2){
+    const sorted=[...cookLog].sort((a,b)=>a.doneAt-b.doneAt);
+    const intervals=[];
+    for(let i=1;i<sorted.length;i++){
+      const d=(sorted[i].doneAt-sorted[i-1].doneAt)/60000;
+      if(d>0.3&&d<10)intervals.push(d); // 0.3~10분 범위만
+    }
+    if(intervals.length>=2){
+      const r=intervals.slice(-10);
+      avgInterval=r.reduce((a,b)=>a+b,0)/r.length;
+    }
+  }
 }
 
 // === 지연 예측 ===
@@ -817,9 +840,19 @@ function updCkQueue(){
       if(fbTime && existing.t!==fbTime) existing.t=fbTime;
     }
   });
-  // KDS에서 사라진 주문 표시 (제거하지 않음, onKds만 false)
-  ckQ.forEach(o=>{const was=o.onKds;o.onKds=orders.includes(o.num);if(was!==o.onKds)changed=true;});
-  if(changed)saveCk();
+  // KDS에서 사라진 주문 = 완료. 실제 완료 시점 기록
+  ckQ.forEach(o=>{
+    const was=o.onKds;
+    o.onKds=orders.includes(o.num);
+    if(was && !o.onKds && !o.doneAt){
+      o.doneAt=Date.now();
+      o.cookDur=o.doneAt-o.t;
+      cookLog.push({num:o.num,t:o.t,doneAt:o.doneAt,cookDur:o.cookDur});
+      if(cookLog.length>50)cookLog=cookLog.slice(-30); // 최근 30건 유지
+      changed=true;
+    } else if(was!==o.onKds) changed=true;
+  });
+  if(changed){saveCk();calcCookSpeed();}
 }
 
 let _lastCkCheck=0;
@@ -890,18 +923,20 @@ function updCkUI(){
   const posMap={};activeOldest.forEach((x,i)=>{posMap[x.num]=i;});
   function calcDelay(pos,ai,tgt,cook){if(ai<=0)return 0;const wait=(pos+1)*ai;const d=Math.max(0,wait+cook-tgt);return d>0?Math.ceil(d/5)*5:0;}
   sorted.slice(0,20).forEach(o=>{
+    // 완료된 주문: 실제 소요시간 고정, 진행중: 현재까지 경과시간
+    const realEl=o.doneAt?o.cookDur:(now-o.t);
     const elMs=now-o.t;
-    const allRem=tgtMs-elMs;
-    const cookRem=cookStartMs-elMs;
-    const pkgRem=pkgStartMs-elMs;
+    const allRem=tgtMs-realEl;
+    const cookRem=cookStartMs-realEl;
+    const pkgRem=pkgStartMs-realEl;
     let st,bgCl;
-    if(allRem<=0){st='초과';bgCl='#E74C3C';}
-    else if(elMs>=pkgStartMs){st='포장';bgCl='#E74C3C';}
-    else if(elMs>=cookStartMs){st='조리';bgCl='#E67E22';}
+    if(!o.onKds&&o.doneAt){st='완료';bgCl='#2AC1BC';}
+    else if(allRem<=0){st='초과';bgCl='#E74C3C';}
+    else if(realEl>=pkgStartMs){st='포장';bgCl='#E74C3C';}
+    else if(realEl>=cookStartMs){st='조리';bgCl='#E67E22';}
     else{st='대기';bgCl='#2ECC71';}
     const cookCl=cookRem<0?'#E74C3C':cookRem<60000?'#E67E22':'#FFFFFF';
     const pkgCl=pkgRem<0?'#E74C3C':pkgRem<60000?'#E67E22':'#FFFFFF';
-    // 지연 계산: 배민/쿠팡 별도 (지연설정값 기준)
     let bDelay=0,cDelay=0;
     if(o.onKds){
       const pos=posMap[o.num]??0;
@@ -911,33 +946,39 @@ function updCkUI(){
     if(bDelay>maxBDelay)maxBDelay=bDelay;
     if(cDelay>maxCDelay)maxCDelay=cDelay;
     const hasDelay=bDelay>0||cDelay>0;
-    const kds=o.onKds?'':'<span style="color:#707088;font-size:9px"> 완</span>';
+    // 완료: "완 N:SS" (실제 소요시간), 진행중: 빈칸
+    const durStr=o.doneAt?mmss(o.cookDur):'';
+    const kds=o.onKds?'':`<span style="color:#2AC1BC;font-size:9px"> 완${durStr?' '+durStr:''}</span>`;
     const dimmed=!o.onKds||o.delAt;
     const numOp=dimmed?'0.4':'1';
     const dying=o.delAt?' ck-dying':'';
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
     const rowBg=(!dimmed&&hasDelay)?'background:#FF6B6B22;':'';
-    const elSec=Math.floor(elMs/1000);const elMin=Math.floor(elSec/60);const elS=elSec%60;const elStr=elMin+':'+String(elS).padStart(2,'0');
+    // 완료된 주문: cookDur 고정, 진행중: 현재 경과
+    const dispEl=o.doneAt?o.cookDur:elMs;
+    const elSec=Math.floor(dispEl/1000);const elMin=Math.floor(elSec/60);const elS=elSec%60;const elStr=elMin+':'+String(elS).padStart(2,'0');
+    const elCl=o.doneAt?'#2AC1BC':'#2ECC71';
     h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer;${rowBg}">
 <span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC;opacity:${numOp}">${o.num}번${kds}</span>
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
-<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:#2ECC71">${elStr}</span>
+<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${elCl}">${elStr}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
-<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${mmss(cookRem)}</span>
-<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${mmss(pkgRem)}</span>
+<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl}">${o.doneAt?'':mmss(cookRem)}</span>
+<span style="min-width:50px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl}">${o.doneAt?'':mmss(pkgRem)}</span>
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&bDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&bDelay>0)?bDelay:''}</span>
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&cDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&cDelay>0)?cDelay:''}</span>
 </div>`;
   });
   if(listEl)listEl.innerHTML=h;
   const delayMsg=[];if(maxBDelay>0)delayMsg.push('<span style="color:#E74C3C">배'+maxBDelay+'분</span>');if(maxCDelay>0)delayMsg.push('<span style="color:#E74C3C">쿠'+maxCDelay+'분</span>');
-  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>`+(delayMsg.length>0?' <span style="font-weight:bold">지연 '+delayMsg.join(' ')+'</span>':'');
+  const avgStr=avgCookDur>0?` <span style="color:#2AC1BC;font-size:10px">평균 ${mmss(avgCookDur)}</span>`:'';
+  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건 조리중</span>${avgStr}`+(delayMsg.length>0?' <span style="font-weight:bold">지연 '+delayMsg.join(' ')+'</span>':'');
 }
 
 function ckDisp(k){const e=document.getElementById('ck_'+k);const d=document.getElementById('ck_'+k+'_disp');if(!e||!d)return;const v=parseInt(e.value)||0;const m=Math.floor(v/60),s=v%60;d.textContent=m+':'+String(s).padStart(2,'0');}
 function adjCk(k,d){const e=document.getElementById('ck_'+k);if(!e)return;e.value=Math.max(10,parseInt(e.value||0)+d);ckDisp(k);saveCk();}
-function saveCk(){try{const t=parseInt(document.getElementById('ck_target').value)||1500,m=parseInt(document.getElementById('ck_mid').value)||1020,f=parseInt(document.getElementById('ck_finish').value)||240;localStorage.setItem('ck',JSON.stringify({on:ckOn,t:t,m:m,f:f,q:ckQ}));if(isApp)try{NativeBridge.syncCookSettings(ckOn,t,m,f);}catch(e){}}catch(e){}}
+function saveCk(){try{const t=parseInt(document.getElementById('ck_target').value)||1500,m=parseInt(document.getElementById('ck_mid').value)||1020,f=parseInt(document.getElementById('ck_finish').value)||240;localStorage.setItem('ck',JSON.stringify({on:ckOn,t:t,m:m,f:f,q:ckQ,cl:cookLog}));if(isApp)try{NativeBridge.syncCookSettings(ckOn,t,m,f);}catch(e){}}catch(e){}}
 function ckTapDel(num){const o=ckQ.find(x=>x.num===num);if(!o)return;if(o.delAt){o.delAt=null;}else{o.delAt=Date.now()+2000;}updCkUI();saveCk();}
 function loadCk(){try{const s=JSON.parse(localStorage.getItem('ck'));if(s){ckOn=!!s.on;document.getElementById('tog_cook_mode').className='tog'+(ckOn?' on':'');
   // 구버전 분단위(< 100) → 초단위 자동변환
@@ -945,8 +986,10 @@ function loadCk(){try{const s=JSON.parse(localStorage.getItem('ck'));if(s){ckOn=
   document.getElementById('ck_target').value=t<100?t*60:t;
   document.getElementById('ck_mid').value=m<100?m*60:m;
   document.getElementById('ck_finish').value=f<100?f*60:f;
+  // 완료 기록 복원
+  if(s.cl&&Array.isArray(s.cl))cookLog=s.cl.slice(-30);
   // 조리 리스트 복원
-  if(s.q&&Array.isArray(s.q)&&s.q.length>0){ckQ=s.q.filter(o=>o&&o.num&&o.t);updCkUI();}
+  if(s.q&&Array.isArray(s.q)&&s.q.length>0){ckQ=s.q.filter(o=>o&&o.num&&o.t);calcCookSpeed();updCkUI();}
   }ckDisp('target');ckDisp('mid');ckDisp('finish');}catch(e){}}
 loadCk();
 try{const v=NativeBridge.getAppVersion();if(v)document.getElementById('appVer').textContent='v'+v;}catch(e){}
