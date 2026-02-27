@@ -901,11 +901,19 @@ function updCkUI(){
   const listEl=document.getElementById('cookList');
   const settingsEl=document.getElementById('cookQ');
   const ckStEl=document.getElementById('ckStatus');
-  const activeOrders=ckQ.filter(o=>o.onKds).length;
+  const cookOrders=ckQ.filter(o=>o.onKds);
+  const pkgOrders=ckQ.filter(o=>!o.onKds&&o.doneAt).sort((a,b)=>a.doneAt-b.doneAt);
+  const activeOrders=cookOrders.length;
   if(ckStEl){
     if(!ckOn){ckStEl.textContent='';ckStEl.style.color='#707088';}
-    else if(activeOrders===0){ckStEl.textContent='대기';ckStEl.style.color='#9090A8';}
-    else{ckStEl.textContent=activeOrders+'건';ckStEl.style.color=activeOrders>3?'#E74C3C':activeOrders>1?'#E67E22':'#2ECC71';}
+    else if(activeOrders===0&&pkgOrders.length===0){ckStEl.textContent='대기';ckStEl.style.color='#9090A8';}
+    else{
+      let st=[];
+      if(activeOrders>0)st.push('조리'+activeOrders);
+      if(pkgOrders.length>0)st.push('포장'+pkgOrders.length);
+      ckStEl.textContent=st.join(' ');
+      ckStEl.style.color=activeOrders>3?'#E74C3C':activeOrders>1?'#E67E22':'#2ECC71';
+    }
   }
   if(!ckOn||ckQ.length===0){
     if(listArea)listArea.style.display=ckOn?'block':'none';
@@ -920,19 +928,20 @@ function updCkUI(){
   const tgtMs=tgtS*1000;const midMs=midS*1000;const finMs=finS*1000;
   const cookStartMs=tgtMs-midMs;const pkgStartMs=tgtMs-finMs;
   const now=Date.now();
-  // 급한 순 정렬: 초과→포장→조리→대기→완료, 같은 단계 내 오래된순
-  const urg=o=>{if(!o.onKds&&o.doneAt)return 99;const e=now-o.t;return e>=tgtMs?0:e>=pkgStartMs?1:e>=cookStartMs?2:3;};
-  const sorted=[...ckQ].sort((a,b)=>{const ua=urg(a),ub=urg(b);return ua!==ub?ua-ub:a.t-b.t;});
   function mmss(ms){const neg=ms<0;const a=Math.abs(ms);const m=Math.floor(a/60000),s=Math.floor((a%60000)/1000);return(neg?'-':'')+m+':'+String(s).padStart(2,'0');}
-  // 지연설정값 (분)
+  // === 조리중 섹션 ===
+  const urg=o=>{const e=now-o.t;return e>=tgtMs?0:e>=pkgStartMs?1:e>=cookStartMs?2:3;};
+  const sortedCook=[...cookOrders].sort((a,b)=>{const ua=urg(a),ub=urg(b);return ua!==ub?ua-ub:a.t-b.t;});
   const bTgt=g(S,'baemin_target_time',27),bCook=g(S,'baemin_fixed_cook_time',17);
   const cTgt=g(S,'coupang_target_time',22),cCook=g(S,'coupang_fixed_cook_time',15);
-  let h='<div style="display:flex;align-items:center;padding:4px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="min-width:42px;text-align:center;color:#2ECC71">경과</span><span style="flex:1"></span><span style="min-width:52px;text-align:center;color:#E67E22;background:#E67E2218;border-radius:3px;padding:1px 0">조리</span><span style="min-width:52px;text-align:center;color:#E74C3C;background:#E74C3C18;border-radius:3px;padding:1px 0">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
-  // 긴급 상황 분석
+  let h='';
+  if(activeOrders>0||pkgOrders.length===0){
+    h+='<div style="padding:4px 8px;font-size:11px;font-weight:bold;color:#E67E22;border-bottom:1px solid #2A2A45;background:#E67E2208">조리중 '+activeOrders+'건</div>';
+    h+='<div style="display:flex;align-items:center;padding:3px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="min-width:42px;text-align:center;color:#2ECC71">경과</span><span style="flex:1"></span><span style="min-width:52px;text-align:center;color:#E67E22;background:#E67E2218;border-radius:3px;padding:1px 0">조리</span><span style="min-width:52px;text-align:center;color:#E74C3C;background:#E74C3C18;border-radius:3px;padding:1px 0">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
+  }
+  // 긴급 상황 분석 (조리중만)
   const urgOver=[],urgPkg=[],urgCook=[];
-  ckQ.filter(o=>o.onKds).forEach(o=>{const el=now-o.t;if(el>=tgtMs)urgOver.push(o.num);else if(el>=pkgStartMs)urgPkg.push(o.num);else if(el>=cookStartMs)urgCook.push(o.num);});
-  // 조리집중 판단: 조리단계 있고 + 포장급한건 없으면 → 조리집중 (포장 여유)
-  // 또는 대기줄 뒷편 지연예상 (activeOrders > 2 && 조리단계 있음) → 조리집중
+  cookOrders.forEach(o=>{const el=now-o.t;if(el>=tgtMs)urgOver.push(o.num);else if(el>=pkgStartMs)urgPkg.push(o.num);else if(el>=cookStartMs)urgCook.push(o.num);});
   const cookFocus=urgCook.length>0&&urgPkg.length===0&&urgOver.length===0;
   const busyCookFocus=activeOrders>2&&urgCook.length>0&&urgOver.length===0;
   if(urgOver.length+urgPkg.length+urgCook.length>0){
@@ -944,56 +953,65 @@ function updCkUI(){
     h+='</div>';
   }
   let maxBDelay=0,maxCDelay=0;
-  // 큐 위치 계산 (활성 주문만, 오래된 순)
-  const activeOldest=sorted.filter(x=>x.onKds).slice().sort((a,b)=>a.t-b.t);
+  const activeOldest=sortedCook.slice().sort((a,b)=>a.t-b.t);
   const posMap={};activeOldest.forEach((x,i)=>{posMap[x.num]=i;});
   function calcDelay(pos,ai,tgt,cook){if(ai<=0)return 0;const wait=(pos+1)*ai;const d=Math.max(0,wait+cook-tgt);return d>0?Math.ceil(d/5)*5:0;}
-  sorted.slice(0,20).forEach(o=>{
+  sortedCook.slice(0,15).forEach(o=>{
     const elMs=now-o.t;
-    const allRem=tgtMs-elMs;
     const cookRem=cookStartMs-elMs;
     const pkgRem=pkgStartMs-elMs;
     let st,bgCl;
-    if(!o.onKds&&o.doneAt){st='완료';bgCl='#2AC1BC';}
-    else if(allRem<=0){st='초과';bgCl='#E74C3C';}
+    if(elMs>=tgtMs){st='초과';bgCl='#E74C3C';}
     else if(elMs>=pkgStartMs){st='포장';bgCl='#E74C3C';}
     else if(elMs>=cookStartMs){st='조리';bgCl='#E67E22';}
     else{st='대기';bgCl='#2ECC71';}
     const cookCl=cookRem<0?'#E74C3C':cookRem<60000?'#E67E22':'#FFFFFF';
     const pkgCl=pkgRem<0?'#E74C3C':pkgRem<60000?'#E67E22':'#FFFFFF';
-    let bDelay=0,cDelay=0;
-    if(o.onKds){
-      const pos=posMap[o.num]??0;
-      bDelay=calcDelay(pos,avgInterval,bTgt,bCook);
-      cDelay=calcDelay(pos,avgInterval,cTgt,cCook);
-    }
+    const pos=posMap[o.num]??0;
+    const bDelay=calcDelay(pos,avgInterval,bTgt,bCook);
+    const cDelay=calcDelay(pos,avgInterval,cTgt,cCook);
     if(bDelay>maxBDelay)maxBDelay=bDelay;
     if(cDelay>maxCDelay)maxCDelay=cDelay;
     const hasDelay=bDelay>0||cDelay>0;
-    const dimmed=!o.onKds||o.delAt;
-    const numOp=dimmed?'0.4':'1';
     const dying=o.delAt?' ck-dying':'';
     const oDate=new Date(o.t);
     const oTime=String(oDate.getHours()).padStart(2,'0')+':'+String(oDate.getMinutes()).padStart(2,'0');
-    const rowBg=(!dimmed&&hasDelay)?'background:#FF6B6B22;':'';
-    // 경과시간: 완료=조리시간(고정), 활성=라이브
-    const dispMs=o.doneAt?(o.cookDur||(o.doneAt-o.t)):elMs;
-    const dSec=Math.floor(dispMs/1000);const dMin=Math.floor(dSec/60);const dS=dSec%60;const elStr=dMin+':'+String(dS).padStart(2,'0');
-    const elCl=o.doneAt?'#2AC1BC':'#2ECC71';
-    const kds=o.onKds?'':`<span style="color:#2AC1BC;font-size:9px"> 완</span>`;
-    const isDone=!!o.doneAt;
-    h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer;${rowBg}${isDone?'opacity:0.5;':''}">
-<span style="min-width:48px;font-size:${isDone?12:14}px;font-weight:bold;color:#E0E0EC;opacity:${numOp}">${o.num}번${kds}</span>
-<span style="min-width:42px;font-size:${isDone?10:11}px;color:#9090A8">${oTime}</span>
-<span style="min-width:42px;text-align:center;font-size:${isDone?11:13}px;font-weight:bold;color:${elCl}">${elStr}</span>
-<span style="flex:1;font-size:${isDone?10:11}px;font-weight:bold;color:${bgCl}">${st}</span>${isDone?
-`<span style="min-width:104px;text-align:center;font-size:13px;font-weight:bold;color:#2AC1BC;background:#2AC1BC15;border-radius:3px;padding:2px 0">조리 ${elStr}</span>`:
-`<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl};background:#E67E2215;border-radius:3px;padding:2px 0">${mmss(cookRem)}</span>
-<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl};background:#E74C3C15;border-radius:3px;padding:2px 0">${mmss(pkgRem)}</span>`}
-<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&bDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&bDelay>0)?bDelay:''}</span>
-<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&cDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&cDelay>0)?cDelay:''}</span>
+    const rowBg=hasDelay?'background:#FF6B6B22;':'';
+    const elSec=Math.floor(elMs/1000);const elMin=Math.floor(elSec/60);const elS=elSec%60;const elStr=elMin+':'+String(elS).padStart(2,'0');
+    h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer;${rowBg}">
+<span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번</span>
+<span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
+<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:#2ECC71">${elStr}</span>
+<span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
+<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl};background:#E67E2215;border-radius:3px;padding:2px 0">${mmss(cookRem)}</span>
+<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl};background:#E74C3C15;border-radius:3px;padding:2px 0">${mmss(pkgRem)}</span>
+<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${bDelay>0?'#E74C3C':'transparent'}">${bDelay>0?bDelay:''}</span>
+<span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${cDelay>0?'#E74C3C':'transparent'}">${cDelay>0?cDelay:''}</span>
 </div>`;
   });
+  if(activeOrders===0&&pkgOrders.length>0){h+='<div style="text-align:center;color:#707088;font-size:11px;padding:6px">조리 대기중</div>';}
+  // === 포장중 섹션 ===
+  if(pkgOrders.length>0){
+    // 포장 긴급 분석: 전체목표 초과 여부
+    const pkgUrgent=pkgOrders.filter(o=>(now-o.t)>=tgtMs);
+    h+='<div style="padding:4px 8px;font-size:11px;font-weight:bold;color:#E74C3C;border-top:2px solid #E74C3C33;border-bottom:1px solid #2A2A45;margin-top:2px;background:#E74C3C08">포장중 '+pkgOrders.length+'건'+(pkgUrgent.length>0?' <span style="color:#E74C3C">초과'+pkgUrgent.length+'</span>':'')+'</div>';
+    h+='<div style="display:flex;align-items:center;padding:3px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:48px">완료</span><span style="min-width:52px;text-align:center">포장경과</span><span style="flex:1"></span><span style="min-width:70px;text-align:center;color:#E74C3C">남은시간</span></div>';
+    pkgOrders.forEach(o=>{
+      const pkgElMs=now-o.doneAt;
+      const overallRem=(o.t+tgtMs)-now;
+      const doneDate=new Date(o.doneAt);
+      const doneTime=String(doneDate.getHours()).padStart(2,'0')+':'+String(doneDate.getMinutes()).padStart(2,'0');
+      const remCl=overallRem<=0?'#E74C3C':overallRem<120000?'#E67E22':'#2ECC71';
+      const dying=o.delAt?' ck-dying':'';
+      h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer">
+<span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번</span>
+<span style="min-width:48px;font-size:11px;color:#2AC1BC">${doneTime}</span>
+<span style="min-width:52px;text-align:center;font-size:13px;font-weight:bold;color:#9090A8">${mmss(pkgElMs)}</span>
+<span style="flex:1"></span>
+<span style="min-width:70px;text-align:center;font-size:16px;font-weight:bold;color:${remCl};background:${remCl}15;border-radius:4px;padding:2px 0">${mmss(overallRem)}</span>
+</div>`;
+    });
+  }
   if(listEl)listEl.innerHTML=h;
   const delayMsg=[];if(maxBDelay>0)delayMsg.push('<span style="color:#E74C3C">배'+maxBDelay+'분</span>');if(maxCDelay>0)delayMsg.push('<span style="color:#E74C3C">쿠'+maxCDelay+'분</span>');
   const avgStr=avgCookDur>0?` <span style="color:#2AC1BC;font-size:10px">평균 ${mmss(avgCookDur)}</span>`:'';
@@ -1001,7 +1019,7 @@ function updCkUI(){
   if(urgOver.length)focusMsg=` <span style="color:#E74C3C;font-weight:bold">초과${urgOver.length}</span>`;
   else if(urgPkg.length)focusMsg=` <span style="color:#E74C3C;font-weight:bold">포장급함${urgPkg.length}</span>`;
   else if(cookFocus||busyCookFocus)focusMsg=` <span style="color:#E67E22;font-weight:bold">조리집중</span>`;
-  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건</span>${focusMsg}${avgStr}`+(delayMsg.length>0?' <span style="font-weight:bold">지연 '+delayMsg.join(' ')+'</span>':'');
+  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건</span>`+(pkgOrders.length>0?` <span style="color:#E74C3C">포장${pkgOrders.length}</span>`:'')+`${focusMsg}${avgStr}`+(delayMsg.length>0?' <span style="font-weight:bold">지연 '+delayMsg.join(' ')+'</span>':'');
 }
 
 function ckDisp(k){const e=document.getElementById('ck_'+k);const d=document.getElementById('ck_'+k+'_disp');if(!e||!d)return;const v=parseInt(e.value)||0;const m=Math.floor(v/60),s=v%60;d.textContent=m+':'+String(s).padStart(2,'0');}
