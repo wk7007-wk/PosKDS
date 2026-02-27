@@ -617,16 +617,19 @@ function calcAvgInterval(){
 // === 실제 완료 기록 기반 조리속도 ===
 function calcCookSpeed(){
   if(cookLog.length<1)return;
-  // 평균 조리시간 (최근 10건)
-  const recent=cookLog.slice(-10);
-  avgCookDur=recent.reduce((s,o)=>s+o.cookDur,0)/recent.length;
-  // 완료 간격 기반 avgInterval 대체 (2건 이상)
+  // 평균 조리시간 (1.5~5분만 유효, 나머지 오차 무시)
+  const valid=cookLog.filter(o=>o.cookDur>=90000&&o.cookDur<=300000);
+  if(valid.length>0){
+    const recent=valid.slice(-10);
+    avgCookDur=recent.reduce((s,o)=>s+o.cookDur,0)/recent.length;
+  }
+  // 완료 간격 기반 avgInterval (1.5~5분만 유효)
   if(cookLog.length>=2){
     const sorted=[...cookLog].sort((a,b)=>a.doneAt-b.doneAt);
     const intervals=[];
     for(let i=1;i<sorted.length;i++){
       const d=(sorted[i].doneAt-sorted[i-1].doneAt)/60000;
-      if(d>0.3&&d<10)intervals.push(d); // 0.3~10분 범위만
+      if(d>=1.5&&d<=5)intervals.push(d);
     }
     if(intervals.length>=2){
       const r=intervals.slice(-10);
