@@ -960,8 +960,7 @@ function updCkUI(){
 <span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${elCl}">${elStr}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>${o.doneAt?
-`<span style="min-width:52px;text-align:center;font-size:12px;color:#2AC1BC;background:#E67E2215;border-radius:3px;padding:2px 0">${mmss(o.cookDur)}</span>
-<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl};background:#E74C3C15;border-radius:3px;padding:2px 0">${mmss(pkgRem)}</span>`:
+`<span style="min-width:104px;text-align:center;font-size:18px;font-weight:bold;color:${pkgCl};background:#E74C3C15;border-radius:4px;padding:3px 0">포장 ${mmss(pkgRem)}</span>`:
 `<span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl};background:#E67E2215;border-radius:3px;padding:2px 0">${mmss(cookRem)}</span>
 <span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${pkgCl};background:#E74C3C15;border-radius:3px;padding:2px 0">${mmss(pkgRem)}</span>`}
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${(!dimmed&&bDelay>0)?'#E74C3C':'transparent'}">${(!dimmed&&bDelay>0)?bDelay:''}</span>
