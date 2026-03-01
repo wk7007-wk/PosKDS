@@ -11,26 +11,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .row{display:flex;align-items:center;gap:6px;}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
 .dg{background:#2ECC71;}.do{background:#E67E22;}.dr{background:#E74C3C;}.dd{background:#707088;}
-.gauge{display:flex;gap:1px;height:26px;margin-bottom:2px;}
-.gc{flex:1;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:bold;color:#FFF;border-radius:2px;opacity:.7;cursor:pointer;}
+.gauge{display:flex;gap:1px;height:36px;margin-bottom:2px;}
+.gc{flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:#FFF;border-radius:2px;opacity:.85;cursor:pointer;}
 .gc.act{opacity:1;box-shadow:inset 0 0 0 2px #FFF;}
 .btn{padding:3px 10px;border-radius:5px;border:none;font-size:12px;font-weight:600;cursor:pointer;color:#FFF;touch-action:manipulation;}
-.bs{padding:2px 6px;font-size:11px;}
+.bs{padding:10px 14px;font-size:11px;}
 .bg{background:#2ECC71;}.bred{background:#E74C3C;}.bor{background:#E67E22;}.bn{background:#2A2A45;color:#E0E0EC;}.bb{background:#2AC1BC;}.bcp{background:#FFD700;color:#1A1A30;}
 .sr{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2A2A45;}
 .sr:last-child{border-bottom:none;}
-.sl{font-size:12px;color:#9090A8;}
+.sl{font-size:12px;color:#A0A0BC;}
 .sv{display:flex;align-items:center;gap:4px;}
 input[type=number]{width:48px;background:#1A1A30;border:1px solid #2E2E52;border-radius:4px;color:#FFF;padding:4px 4px;text-align:center;font-size:14px;font-weight:bold;-moz-appearance:textfield;}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=time]{background:#2A2A45;border:1px solid #2E2E52;color:#FFF;padding:3px 6px;border-radius:4px;font-size:12px;}
-.tog{width:38px;height:20px;border-radius:10px;background:#E74C3C;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
-.tog.on{background:#2ECC71;}.tog::after{content:'';width:16px;height:16px;border-radius:50%;background:#FFF;position:absolute;top:2px;left:2px;transition:left .2s;}.tog.on::after{left:20px;}
+.tog{width:44px;height:28px;border-radius:14px;background:#E74C3C;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.tog.on{background:#2ECC71;}.tog::after{content:'';width:22px;height:22px;border-radius:50%;background:#FFF;position:absolute;top:3px;left:3px;transition:left .2s;}.tog.on::after{left:19px;}
 .ch{cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
 .cb{display:none;}.cb.open{display:block;}
-.logbox{background:#1A1A30;border:1px solid #2A2A45;border-radius:6px;padding:6px;max-height:180px;overflow-y:auto;font-family:monospace;font-size:10px;color:#707088;white-space:pre-wrap;word-break:break-all;}
+.logbox{background:#1A1A30;border:1px solid #2A2A45;border-radius:6px;padding:6px;max-height:180px;overflow-y:auto;font-family:monospace;font-size:10px;color:#9898B0;white-space:pre-wrap;word-break:break-all;}
 canvas{width:100%;height:100px;display:block;margin-top:6px;}
 .tabs{display:flex;gap:3px;margin-bottom:6px;}
-.tab{padding:3px 10px;border-radius:5px;font-size:11px;cursor:pointer;background:#2A2A45;color:#9090A8;}.tab.active{background:#2AC1BC;color:#FFF;}
+.tab{padding:8px 12px;border-radius:5px;font-size:11px;cursor:pointer;background:#2A2A45;color:#A0A0BC;}.tab.active{background:#2AC1BC;color:#FFF;}
 .sec{font-size:12px;font-weight:600;padding:5px 0;border-bottom:1px solid #2A2A45;margin-top:6px;}
 .nbtn{width:100%;padding:8px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;color:#FFF;margin-top:6px;touch-action:manipulation;}
 .alert{padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;margin-bottom:8px;display:none;}
@@ -39,17 +39,17 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 .conn{font-size:10px;text-align:right;margin-bottom:4px;}
 .sync-row{display:flex;gap:4px;font-size:10px;flex-wrap:wrap;}
 .sync-item{display:flex;align-items:center;gap:2px;}
-.tbtn{padding:2px 8px;border-radius:4px;border:1px solid #2E2E52;font-size:10px;font-weight:600;cursor:pointer;background:#2A2A45;color:#E0E0EC;touch-action:manipulation;}
+.tbtn{padding:8px 12px;border-radius:4px;border:1px solid #2E2E52;font-size:10px;font-weight:600;cursor:pointer;background:#2A2A45;color:#E0E0EC;touch-action:manipulation;}
 .tbtn.on{border-color:#2ECC71;color:#2ECC71;}
 .tbtn.off{border-color:#E74C3C;color:#E74C3C;}
 .ck-row{transition:opacity 0.3s;}
 .ck-dying{opacity:0.3 !important;text-decoration:line-through;}
 .cd-wrap{display:flex;align-items:center;gap:2px;flex-shrink:0;}
-.cd-wrap .cd-label{font-size:8px;font-weight:700;color:#707088;writing-mode:vertical-rl;letter-spacing:-1px;}
+.cd-wrap .cd-label{font-size:8px;font-weight:700;color:#9898B0;writing-mode:vertical-rl;letter-spacing:-1px;}
 .cd-wrap.active .cd-label{color:#E0E0EC;}
-.cd-ring{position:relative;width:32px;height:32px;flex-shrink:0;}
+.cd-ring{position:relative;width:44px;height:44px;flex-shrink:0;}
 .cd-ring svg{transform:rotate(-90deg);}
-.cd-ring .cd-txt{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#707088;}
+.cd-ring .cd-txt{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#9898B0;}
 .cd-wrap.active .cd-txt{color:#FFF;}
 </style>
 </head>
@@ -57,13 +57,13 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 
 <div style="position:sticky;top:0;z-index:10;background:linear-gradient(180deg,#1A1A30,#121225);padding:4px 10px 2px;margin:-10px -10px 0">
   <div style="display:flex;align-items:center;justify-content:space-between">
-    <div class="conn" style="margin:0"><span class="dot dd" id="cD"></span> <span id="cT" style="color:#707088">...</span><span id="appVer" style="font-size:9px;color:#555;margin-left:6px"></span></div>
+    <div class="conn" style="margin:0"><span class="dot dd" id="cD"></span> <span id="cT" style="color:#9898B0">...</span><span id="appVer" style="font-size:9px;color:#888;margin-left:6px"></span></div>
     <div style="display:flex;gap:6px;align-items:center">
-      <span onclick="if(window.NativeBridge)NativeBridge.captureScreen()" style="color:#707088;font-size:14px;cursor:pointer">&#128247;</span>
-      <button onclick="location.reload()" style="background:#2A2A45;border:1px solid #2E2E52;border-radius:4px;color:#9090A8;font-size:11px;padding:3px 8px;cursor:pointer">&#8635;</button>
+      <span onclick="doCapture()" style="color:#9898B0;font-size:18px;padding:8px;cursor:pointer">&#128247;</span>
+      <button onclick="location.reload()" style="background:#2A2A45;border:1px solid #2E2E52;border-radius:4px;color:#A0A0BC;font-size:12px;padding:8px 12px;cursor:pointer">&#8635;</button>
     </div>
   </div>
-  <div id="pullInd" style="text-align:center;color:#707088;font-size:11px;height:0;overflow:hidden;transition:height .2s">&#8595; 새로고침</div>
+  <div id="pullInd" style="text-align:center;color:#9898B0;font-size:11px;height:0;overflow:hidden;transition:height .2s">&#8595; 새로고침</div>
   <div class="alert" id="alertB"></div>
   <div class="alert" id="anomalyB"></div>
 </div>
@@ -72,9 +72,9 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <div class="card">
   <div class="row" style="justify-content:space-between;margin-bottom:6px">
     <div class="row" style="gap:8px">
-      <span style="color:#9090A8;font-size:12px">처리중</span>
+      <span style="color:#A0A0BC;font-size:12px">처리중</span>
       <span id="mCount" style="font-size:30px;font-weight:bold;color:#FFF">--</span>
-      <span style="color:#9090A8;font-size:12px">건</span>
+      <span style="color:#A0A0BC;font-size:12px">건</span>
     </div>
     <span id="mStatus" style="font-size:14px;font-weight:600;color:#2ECC71">정상</span>
   </div>
@@ -83,10 +83,10 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
       <span style="color:#2AC1BC;font-size:12px;font-weight:600">배민</span>
       <span class="dot dd" id="mBd"></span>
       <span id="mBv" style="font-size:12px;font-weight:600;color:#2AC1BC">-</span>
-      <div class="cd-wrap" id="cdBaemin"><span class="cd-label">배</span><div class="cd-ring"><svg viewBox="0 0 32 32" width="32" height="32"><circle cx="16" cy="16" r="12" fill="none" stroke="#2A2A45" stroke-width="3"/><circle id="cdBaeminArc" cx="16" cy="16" r="12" fill="none" stroke="#2AC1BC" stroke-width="3" stroke-linecap="round" stroke-dasharray="75.4" stroke-dashoffset="75.4"/></svg><div class="cd-txt" id="cdBaeminTxt">--</div></div></div>
+      <div class="cd-wrap" id="cdBaemin"><span class="cd-label">배</span><div class="cd-ring"><svg viewBox="0 0 44 44" width="44" height="44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2A2A45" stroke-width="4"/><circle id="cdBaeminArc" cx="22" cy="22" r="17" fill="none" stroke="#2AC1BC" stroke-width="4" stroke-linecap="round" stroke-dasharray="106.8" stroke-dashoffset="106.8"/></svg><div class="cd-txt" id="cdBaeminTxt">--</div></div></div>
     </div>
     <div class="row" style="gap:4px">
-      <div class="cd-wrap" id="cdCoupang"><div class="cd-ring"><svg viewBox="0 0 32 32" width="32" height="32"><circle cx="16" cy="16" r="12" fill="none" stroke="#2A2A45" stroke-width="3"/><circle id="cdCoupangArc" cx="16" cy="16" r="12" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" stroke-dasharray="75.4" stroke-dashoffset="75.4"/></svg><div class="cd-txt" id="cdCoupangTxt">--</div></div><span class="cd-label">쿠</span></div>
+      <div class="cd-wrap" id="cdCoupang"><div class="cd-ring"><svg viewBox="0 0 44 44" width="44" height="44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2A2A45" stroke-width="4"/><circle id="cdCoupangArc" cx="22" cy="22" r="17" fill="none" stroke="#FFD700" stroke-width="4" stroke-linecap="round" stroke-dasharray="106.8" stroke-dashoffset="106.8"/></svg><div class="cd-txt" id="cdCoupangTxt">--</div></div><span class="cd-label">쿠</span></div>
       <span style="color:#FFD700;font-size:12px;font-weight:600">쿠팡</span>
       <span class="dot dd" id="mCd"></span>
       <span id="mCv" style="font-size:12px;font-weight:600;color:#FFD700">-</span>
@@ -94,17 +94,17 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   </div>
   <div style="padding:4px 0;border-bottom:1px solid #2A2A45">
     <div class="sync-row">
-      <div class="sync-item"><span class="dot dd" id="sKd"></span><span id="sKt" style="color:#707088">KDS --</span></div>
+      <div class="sync-item"><span class="dot dd" id="sKd"></span><span id="sKt" style="color:#9898B0">KDS --</span></div>
     </div>
     <div class="row" style="gap:4px;margin-top:4px">
       <button class="tbtn on" id="tK" onclick="togSource('kds')">K가동</button>
       <span style="flex:1"></span>
-      <span id="mRefresh" style="font-size:10px;color:#707088">수집 --</span>
+      <span id="mRefresh" style="font-size:10px;color:#9898B0">수집 --</span>
     </div>
   </div>
   <div id="delayPred" style="padding:4px 0;border-bottom:1px solid #2A2A45;display:none">
     <div class="row" style="justify-content:space-between">
-      <span style="font-size:11px;color:#9090A8">조리속도</span>
+      <span style="font-size:11px;color:#A0A0BC">조리속도</span>
       <span id="dpSpeed" style="font-size:11px;color:#FFF;font-weight:600">-</span>
     </div>
     <div class="row" style="justify-content:space-between">
@@ -117,12 +117,12 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
     </div>
   </div>
   <div class="row" style="justify-content:space-between;padding-top:4px">
-    <span id="mLast" style="font-size:10px;color:#707088;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">마지막: --</span>
+    <span id="mLast" style="font-size:10px;color:#9898B0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">마지막: --</span>
     <div class="row" style="gap:3px">
       <button class="btn bs bb" onclick="doCheck('baemin')">배민</button>
       <button class="btn bs bcp" onclick="doCheck('coupang')">쿠팡</button>
       <button class="btn bs bn" onclick="doCheck('refresh')">정정</button>
-      <button class="btn bs bg" onclick="doForceRefresh()" style="font-size:10px">&#8635;</button>
+      <button class="btn bs bg" onclick="doForceRefresh()" style="font-size:12px">&#8635;</button>
     </div>
   </div>
 </div>
@@ -131,18 +131,18 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <div class="card" id="cookCard">
   <div class="ch" onclick="togSec('ckB')">
     <div class="row" style="gap:6px">
-      <span style="font-size:13px;font-weight:600;color:#9090A8">조리모드</span>
+      <span style="font-size:13px;font-weight:600;color:#A0A0BC">조리모드</span>
       <div class="tog" id="tog_cook_mode" onclick="event.stopPropagation();togCookMode()"></div>
       <span id="ckStatus" style="font-size:11px;font-weight:600;color:#2ECC71"></span>
     </div>
-    <span id="ckA" style="color:#9090A8">&#9660;</span>
+    <span id="ckA" style="color:#A0A0BC">&#9660;</span>
   </div>
   <div class="cb open" id="ckB">
     <div class="sr"><span class="sl" style="color:#2ECC71">전체</span><div class="sv"><button class="btn bs bn" onclick="adjCk('target',-10)">-</button><span id="ck_target_disp" style="color:#FFF;font-size:13px;font-weight:bold;min-width:44px;text-align:center">25:00</span><button class="btn bs bn" onclick="adjCk('target',10)">+</button></div></div>
     <div class="sr"><span class="sl" style="color:#E67E22">조리</span><div class="sv"><button class="btn bs bn" onclick="adjCk('mid',-10)">-</button><span id="ck_mid_disp" style="color:#FFF;font-size:13px;font-weight:bold;min-width:44px;text-align:center">17:00</span><button class="btn bs bn" onclick="adjCk('mid',10)">+</button></div></div>
     <div class="sr"><span class="sl" style="color:#E74C3C">포장</span><div class="sv"><button class="btn bs bn" onclick="adjCk('finish',-10)">-</button><span id="ck_finish_disp" style="color:#FFF;font-size:13px;font-weight:bold;min-width:44px;text-align:center">4:00</span><button class="btn bs bn" onclick="adjCk('finish',10)">+</button></div></div>
     <input type="hidden" id="ck_target" value="1500"><input type="hidden" id="ck_mid" value="1020"><input type="hidden" id="ck_finish" value="240">
-    <div id="cookQ" style="margin-top:6px;font-size:12px;color:#707088">대기중</div>
+    <div id="cookQ" style="margin-top:6px;font-size:12px;color:#9898B0">대기중</div>
   </div>
   <!-- 실시간 리스트 (설정 접힘과 무관하게 항상 표시) -->
   <div id="cookListArea" style="display:none;margin-top:6px;border-top:1px solid #2A2A45;padding-top:6px">
@@ -186,12 +186,12 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <div class="card">
   <div class="row" style="justify-content:space-between;margin-bottom:6px">
     <div class="ch" onclick="togSec('adB')" style="flex:1">
-      <span style="font-size:13px;font-weight:600;color:#9090A8">광고 설정</span>
-      <span id="adA" style="color:#9090A8">&#9660;</span>
+      <span style="font-size:13px;font-weight:600;color:#A0A0BC">광고 설정</span>
+      <span id="adA" style="color:#A0A0BC">&#9660;</span>
     </div>
     <div class="row" style="gap:3px">
-      <button class="btn bs bg" onclick="saveAll()" style="font-size:10px;padding:2px 8px">저장</button>
-      <button class="btn bs bn" onclick="restoreAll()" style="font-size:10px;padding:2px 8px">복원</button>
+      <button class="btn bs bg" onclick="saveAll()" style="font-size:12px;padding:8px 12px">저장</button>
+      <button class="btn bs bn" onclick="restoreAll()" style="font-size:12px;padding:8px 12px">복원</button>
     </div>
   </div>
   <div class="cb open" id="adB">
@@ -213,7 +213,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
       </div>
       <div class="row" style="gap:4px">
         <span id="schOnDisp" style="font-size:14px;font-weight:bold;color:#FFF;cursor:pointer" onclick="pickTime('on')">--:--</span>
-        <span style="color:#707088;font-size:12px">~</span>
+        <span style="color:#9898B0;font-size:12px">~</span>
         <span id="schOffDisp" style="font-size:14px;font-weight:bold;color:#FFF;cursor:pointer" onclick="pickTime('off')">--:--</span>
       </div>
     </div>
@@ -224,27 +224,27 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <!-- ═══ 4. 지연 설정 ═══ -->
 <div class="card">
   <div class="ch" onclick="togSec('dlB')">
-    <span style="font-size:13px;font-weight:600;color:#9090A8">지연 설정</span>
-    <span id="dlA" style="color:#9090A8">&#9660;</span>
+    <span style="font-size:13px;font-weight:600;color:#A0A0BC">지연 설정</span>
+    <span id="dlA" style="color:#A0A0BC">&#9660;</span>
   </div>
   <div class="cb open" id="dlB">
-    <div style="font-size:10px;color:#707088;padding:4px 0">지연 = max(0, 건수 × 완료간격 + 고정조리 - 목표)</div>
+    <div style="font-size:10px;color:#9898B0;padding:4px 0">지연 = max(0, 건수 × 완료간격 + 고정조리 - 목표)</div>
     <div class="sec" style="color:#2AC1BC">배민</div>
-    <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_target_time',-1)">-</button><input type="number" id="set_baemin_target_time" min="15" max="30" readonly><button class="btn bs bn" onclick="adjS('baemin_target_time',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
-    <div class="sr"><span class="sl">고정조리</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_fixed_cook_time',-1)">-</button><input type="number" id="set_baemin_fixed_cook_time" min="0" max="20" readonly><button class="btn bs bn" onclick="adjS('baemin_fixed_cook_time',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
-    <div class="sr"><span class="sl">임계값</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_delay_threshold',-1)">-</button><input type="number" id="set_baemin_delay_threshold" min="1" max="10" readonly><button class="btn bs bn" onclick="adjS('baemin_delay_threshold',1)">+</button><span style="color:#707088;font-size:10px">건</span></div></div>
+    <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_target_time',-1)">-</button><input type="number" id="set_baemin_target_time" min="15" max="30" readonly><button class="btn bs bn" onclick="adjS('baemin_target_time',1)">+</button><span style="color:#9898B0;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl">고정조리</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_fixed_cook_time',-1)">-</button><input type="number" id="set_baemin_fixed_cook_time" min="0" max="20" readonly><button class="btn bs bn" onclick="adjS('baemin_fixed_cook_time',1)">+</button><span style="color:#9898B0;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl">임계값</span><div class="sv"><button class="btn bs bn" onclick="adjS('baemin_delay_threshold',-1)">-</button><input type="number" id="set_baemin_delay_threshold" min="1" max="10" readonly><button class="btn bs bn" onclick="adjS('baemin_delay_threshold',1)">+</button><span style="color:#9898B0;font-size:10px">건</span></div></div>
     <div class="sec" style="color:#FFD700">쿠팡</div>
-    <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_target_time',-1)">-</button><input type="number" id="set_coupang_target_time" min="15" max="30" readonly><button class="btn bs bn" onclick="adjS('coupang_target_time',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
-    <div class="sr"><span class="sl">고정조리</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_fixed_cook_time',-1)">-</button><input type="number" id="set_coupang_fixed_cook_time" min="0" max="20" readonly><button class="btn bs bn" onclick="adjS('coupang_fixed_cook_time',1)">+</button><span style="color:#707088;font-size:10px">분</span></div></div>
-    <div class="sr"><span class="sl">임계값</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_delay_threshold',-1)">-</button><input type="number" id="set_coupang_delay_threshold" min="1" max="10" readonly><button class="btn bs bn" onclick="adjS('coupang_delay_threshold',1)">+</button><span style="color:#707088;font-size:10px">건</span></div></div>
+    <div class="sr"><span class="sl">목표시간</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_target_time',-1)">-</button><input type="number" id="set_coupang_target_time" min="15" max="30" readonly><button class="btn bs bn" onclick="adjS('coupang_target_time',1)">+</button><span style="color:#9898B0;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl">고정조리</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_fixed_cook_time',-1)">-</button><input type="number" id="set_coupang_fixed_cook_time" min="0" max="20" readonly><button class="btn bs bn" onclick="adjS('coupang_fixed_cook_time',1)">+</button><span style="color:#9898B0;font-size:10px">분</span></div></div>
+    <div class="sr"><span class="sl">임계값</span><div class="sv"><button class="btn bs bn" onclick="adjS('coupang_delay_threshold',-1)">-</button><input type="number" id="set_coupang_delay_threshold" min="1" max="10" readonly><button class="btn bs bn" onclick="adjS('coupang_delay_threshold',1)">+</button><span style="color:#9898B0;font-size:10px">건</span></div></div>
   </div>
 </div>
 
 <!-- ═══ 5. 차트 ═══ -->
 <div class="card">
   <div class="ch" onclick="togSec('chB')">
-    <span style="font-size:13px;font-weight:600;color:#9090A8">건수 변동 (2시간)</span>
-    <span id="chA" style="color:#9090A8">&#9660;</span>
+    <span style="font-size:13px;font-weight:600;color:#A0A0BC">건수 변동 (2시간)</span>
+    <span id="chA" style="color:#A0A0BC">&#9660;</span>
   </div>
   <div class="cb open" id="chB"><canvas id="hChart"></canvas></div>
 </div>
@@ -252,8 +252,8 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 <!-- ═══ 6. 로그 ═══ -->
 <div class="card">
   <div class="ch" onclick="togSec('lgB')">
-    <span style="font-size:13px;font-weight:600;color:#9090A8">로그</span>
-    <span id="lgA" style="color:#9090A8">&#9660;</span>
+    <span style="font-size:13px;font-weight:600;color:#A0A0BC">로그</span>
+    <span id="lgA" style="color:#A0A0BC">&#9660;</span>
   </div>
   <div class="cb open" id="lgB">
     <div class="tabs">
@@ -267,7 +267,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
 
 <!-- ═══ 7. 권한 ═══ -->
 <div class="card" id="permCard" style="display:none">
-  <div style="font-size:13px;font-weight:600;color:#9090A8;margin-bottom:6px">권한 / 앱 설정</div>
+  <div style="font-size:13px;font-weight:600;color:#A0A0BC;margin-bottom:6px">권한 / 앱 설정</div>
   <div class="sr"><div class="row"><span class="dot dd" id="pdD"></span><span class="sl" style="margin-left:4px">지연 접근성</span></div><button class="btn bs bb" onclick="nb('openAccessibilitySettings')">설정</button></div>
   <div class="sr"><div class="row"><span class="dot dd" id="pkD"></span><span class="sl" style="margin-left:4px">KDS 접근성</span></div><button class="btn bs bb" onclick="nb('openAccessibilitySettings')">설정</button></div>
   <div class="sr"><div class="row"><span class="dot dd" id="pnD"></span><span class="sl" style="margin-left:4px">알림 리스너</span></div><button class="btn bs bb" onclick="nb('openNotificationSettings')">설정</button></div>
@@ -280,7 +280,7 @@ canvas{width:100%;height:100px;display:block;margin-top:6px;}
   <button class="nbtn bn" onclick="nb('openAppSettings')">앱 정보 (제한해제)</button>
 </div>
 
-<div style="text-align:center;color:#707088;font-size:10px;padding:12px 0;">PosDelay Dashboard v3.4</div>
+<div style="text-align:center;color:#9898B0;font-size:10px;padding:12px 0;">PosDelay Dashboard v3.4</div>
 
 <script>
 const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app';
@@ -293,6 +293,8 @@ let cookLog=[]; // 완료 기록: {num, t, doneAt, cookDur}
 const isApp=typeof NativeBridge!=='undefined';
 // null-safe getter: 0도 유효한 값으로 처리
 function g(obj,key,def){const v=obj[key];return v!=null?v:def;}
+
+function doCapture(){if(!window.NativeBridge)return;var h=Math.min(document.body.scrollHeight,4096);try{NativeBridge.captureScreen(h);}catch(e){try{NativeBridge.captureScreen();}catch(e2){}}}
 
 function nb(fn,...args){
   if(!isApp)return;
@@ -393,7 +395,7 @@ function updMonitor(){
     if(cState===2||bState===3){st.textContent='끄기/최소';st.style.color='#E74C3C';}
     else if(bState===2){st.textContent='중간';st.style.color='#E67E22';}
     else if(cState===1||bState===1){st.textContent='정상';st.style.color='#2ECC71';}
-    else{st.textContent='유지';st.style.color='#9090A8';}
+    else{st.textContent='유지';st.style.color='#A0A0BC';}
   }
   const b=aS.baemin_current_bid;
   document.getElementById('mBv').textContent=b!=null&&b>0?b+'원':'-';
@@ -422,7 +424,7 @@ function updCooldown(){
 function _updRing(wrId,arcId,txtId,endMs,now){
   const wr=document.getElementById(wrId);
   const remain=endMs-now;
-  const circ=75.4; // 2*PI*12
+  const circ=106.8; // 2*PI*17
   if(!endMs||remain<=0){
     // 쿨다운 없음 = 비활성 상태 (상시표시)
     wr.classList.remove('active');
@@ -447,7 +449,7 @@ function updSyncStatus(){
 }
 function updSyncItem(dotId,txtId,label,ts){
   const d=document.getElementById(dotId),t=document.getElementById(txtId);
-  if(!ts||ts===0){d.className='dot dd';t.textContent=label+' --';t.style.color='#707088';return;}
+  if(!ts||ts===0){d.className='dot dd';t.textContent=label+' --';t.style.color='#9898B0';return;}
   const ago=Math.floor((Date.now()-ts)/1000);
   const agoStr=ago<60?ago+'초':ago<3600?Math.floor(ago/60)+'분':Math.floor(ago/3600)+'시간';
   const tm=new Date(ts);
@@ -532,7 +534,7 @@ function updGauges(c){
   document.getElementById('cG').innerHTML=h;
   if(c!=null){
     const cs=cz[c];
-    document.getElementById('cSt').innerHTML=cs===2?'<span style="color:#E74C3C">OFF</span>':cs===1?'<span style="color:#2ECC71">ON</span>':'<span style="color:#9090A8">유지</span>';
+    document.getElementById('cSt').innerHTML=cs===2?'<span style="color:#E74C3C">OFF</span>':cs===1?'<span style="color:#2ECC71">ON</span>':'<span style="color:#A0A0BC">유지</span>';
   }
   h='';
   for(let i=0;i<=10;i++){
@@ -542,7 +544,7 @@ function updGauges(c){
   const ba=g(S,'baemin_amount',200),bma=g(S,'baemin_mid_amount',100),bra=g(S,'baemin_reduced_amount',50);
   if(c!=null){
     const bs2=bz[c];
-    document.getElementById('bSt').innerHTML=bs2===3?`<span style="color:#E74C3C">최소 ${bra}원</span>`:bs2===2?`<span style="color:#E67E22">중간 ${bma}원</span>`:bs2===1?`<span style="color:#2ECC71">최대 ${ba}원</span>`:'<span style="color:#9090A8">유지</span>';
+    document.getElementById('bSt').innerHTML=bs2===3?`<span style="color:#E74C3C">최소 ${bra}원</span>`:bs2===2?`<span style="color:#E67E22">중간 ${bma}원</span>`:bs2===1?`<span style="color:#2ECC71">최대 ${ba}원</span>`:'<span style="color:#A0A0BC">유지</span>';
   }
   // 게이지 아래 조리구간 범례
   const lgEl=document.getElementById('gaugeLegend');
@@ -550,7 +552,7 @@ function updGauges(c){
     if(ckOn&&ckMidIdx>=0){
       lgEl.style.display='flex';
       const avgDurStr=avgCookDur>0?` 평균${Math.floor(avgCookDur/60000)}:${String(Math.floor((avgCookDur%60000)/1000)).padStart(2,'0')}`:'';
-      lgEl.innerHTML=`<span style="color:#2ECC71;font-size:9px">대기 0~${ckMidIdx-1}</span><span style="color:#E67E22;font-size:9px">조리 ${ckMidIdx}~${ckFinIdx-1}</span><span style="color:#E74C3C;font-size:9px">포장 ${ckFinIdx}+</span><span style="color:#707088;font-size:9px">(${avgInterval.toFixed(1)}분/건)</span><span style="color:#2AC1BC;font-size:9px">${avgDurStr}</span>`;
+      lgEl.innerHTML=`<span style="color:#2ECC71;font-size:9px">대기 0~${ckMidIdx-1}</span><span style="color:#E67E22;font-size:9px">조리 ${ckMidIdx}~${ckFinIdx-1}</span><span style="color:#E74C3C;font-size:9px">포장 ${ckFinIdx}+</span><span style="color:#9898B0;font-size:9px">(${avgInterval.toFixed(1)}분/건)</span><span style="color:#2AC1BC;font-size:9px">${avgDurStr}</span>`;
     }else{lgEl.style.display='none';}
   }
 }
@@ -788,7 +790,7 @@ function drawChart(){
   const mT=data[0].time,xT=data[data.length-1].time,mC=Math.max(...data.map(d=>d.count),5);
   const x=t=>p.l+((t-mT)/(xT-mT||1))*cw,y=c2=>p.t+ch-(c2/mC)*ch;
   ctx.strokeStyle='#2A2A45';ctx.lineWidth=1;
-  for(let i=0;i<=4;i++){const gy=p.t+(ch/4)*i;ctx.beginPath();ctx.moveTo(p.l,gy);ctx.lineTo(W-p.r,gy);ctx.stroke();ctx.fillStyle='#707088';ctx.font='16px sans-serif';ctx.textAlign='right';ctx.fillText(Math.round(mC-(mC/4)*i),p.l-4,gy+4);}
+  for(let i=0;i<=4;i++){const gy=p.t+(ch/4)*i;ctx.beginPath();ctx.moveTo(p.l,gy);ctx.lineTo(W-p.r,gy);ctx.stroke();ctx.fillStyle='#9898B0';ctx.font='16px sans-serif';ctx.textAlign='right';ctx.fillText(Math.round(mC-(mC/4)*i),p.l-4,gy+4);}
   ctx.textAlign='center';const ts=(xT-mT)/3;
   for(let i=0;i<=3;i++){const t=mT+ts*i,d=new Date(t);ctx.fillText(d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'),x(t),H-4);}
   const co3=g(S,'coupang_off_threshold',5);ctx.strokeStyle='#E74C3C44';ctx.lineWidth=2;ctx.setLineDash([6,3]);ctx.beginPath();ctx.moveTo(p.l,y(co3));ctx.lineTo(W-p.r,y(co3));ctx.stroke();ctx.setLineDash([]);
@@ -911,8 +913,8 @@ function updCkUI(){
   const pkgOrders=ckQ.filter(o=>!o.onKds&&o.doneAt).sort((a,b)=>a.doneAt-b.doneAt);
   const activeOrders=cookOrders.length;
   if(ckStEl){
-    if(!ckOn){ckStEl.textContent='';ckStEl.style.color='#707088';}
-    else if(activeOrders===0&&pkgOrders.length===0){ckStEl.textContent='대기';ckStEl.style.color='#9090A8';}
+    if(!ckOn){ckStEl.textContent='';ckStEl.style.color='#9898B0';}
+    else if(activeOrders===0&&pkgOrders.length===0){ckStEl.textContent='대기';ckStEl.style.color='#A0A0BC';}
     else{
       let st=[];
       if(activeOrders>0)st.push('조리'+activeOrders);
@@ -923,8 +925,8 @@ function updCkUI(){
   }
   if(!ckOn||ckQ.length===0){
     if(listArea)listArea.style.display=ckOn?'block':'none';
-    if(settingsEl)settingsEl.innerHTML='<span style="color:#707088">대기중</span>';
-    if(listEl&&ckOn)listEl.innerHTML='<div style="text-align:center;color:#707088;font-size:11px;padding:8px">주문 대기중</div>';
+    if(settingsEl)settingsEl.innerHTML='<span style="color:#9898B0">대기중</span>';
+    if(listEl&&ckOn)listEl.innerHTML='<div style="text-align:center;color:#9898B0;font-size:11px;padding:8px">주문 대기중</div>';
     return;
   }
   if(listArea)listArea.style.display='block';
@@ -961,7 +963,7 @@ function updCkUI(){
   // === 조리중 섹션 ===
   if(activeOrders>0||pkgOrders.length===0){
     h+='<div style="padding:4px 8px;font-size:11px;font-weight:bold;color:#E67E22;border-bottom:1px solid #2A2A45;background:#E67E2208">조리중 '+activeOrders+'건</div>';
-    h+='<div style="display:flex;align-items:center;padding:3px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="min-width:42px;text-align:center;color:#2ECC71">경과</span><span style="flex:1"></span><span style="min-width:52px;text-align:center;color:#E67E22;background:#E67E2218;border-radius:3px;padding:1px 0">조리</span><span style="min-width:52px;text-align:center;color:#E74C3C;background:#E74C3C18;border-radius:3px;padding:1px 0">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
+    h+='<div style="display:flex;align-items:center;padding:3px 8px;font-size:10px;color:#9898B0;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:42px">접수</span><span style="min-width:42px;text-align:center;color:#2ECC71">경과</span><span style="flex:1"></span><span style="min-width:52px;text-align:center;color:#E67E22;background:#E67E2218;border-radius:3px;padding:1px 0">조리</span><span style="min-width:52px;text-align:center;color:#E74C3C;background:#E74C3C18;border-radius:3px;padding:1px 0">포장</span><span style="min-width:42px;text-align:center;color:#E74C3C">배</span><span style="min-width:42px;text-align:center;color:#E74C3C">쿠</span></div>';
   }
   let maxBDelay=0,maxCDelay=0;
   const activeOldest=sortedCook.slice().sort((a,b)=>a.t-b.t);
@@ -991,7 +993,7 @@ function updCkUI(){
     const elSec=Math.floor(elMs/1000);const elMin=Math.floor(elSec/60);const elS=elSec%60;const elStr=elMin+':'+String(elS).padStart(2,'0');
     h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer;${rowBg}">
 <span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번</span>
-<span style="min-width:42px;font-size:11px;color:#9090A8">${oTime}</span>
+<span style="min-width:42px;font-size:11px;color:#A0A0BC">${oTime}</span>
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:#2ECC71">${elStr}</span>
 <span style="flex:1;font-size:11px;font-weight:bold;color:${bgCl}">${st}</span>
 <span style="min-width:52px;text-align:center;font-size:15px;font-weight:bold;color:${cookCl};background:#E67E2215;border-radius:3px;padding:2px 0">${mmss(cookRem)}</span>
@@ -1000,13 +1002,13 @@ function updCkUI(){
 <span style="min-width:42px;text-align:center;font-size:13px;font-weight:bold;color:${cDelay>0?'#E74C3C':'transparent'}">${cDelay>0?cDelay:''}</span>
 </div>`;
   });
-  if(activeOrders===0&&pkgOrders.length>0){h+='<div style="text-align:center;color:#707088;font-size:11px;padding:6px">조리 대기중</div>';}
+  if(activeOrders===0&&pkgOrders.length>0){h+='<div style="text-align:center;color:#9898B0;font-size:11px;padding:6px">조리 대기중</div>';}
   // === 포장중 섹션 ===
   if(pkgOrders.length>0){
     // 포장 긴급 분석: 전체목표 초과 여부
     const pkgUrgent=pkgOrders.filter(o=>(now-o.t)>=tgtMs);
     h+='<div style="padding:4px 8px;font-size:11px;font-weight:bold;color:#E74C3C;border-top:2px solid #E74C3C33;border-bottom:1px solid #2A2A45;margin-top:2px;background:#E74C3C08">포장중 '+pkgOrders.length+'건'+(pkgUrgent.length>0?' <span style="color:#E74C3C">초과'+pkgUrgent.length+'</span>':'')+'</div>';
-    h+='<div style="display:flex;align-items:center;padding:3px 8px;font-size:10px;color:#707088;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:48px">완료</span><span style="min-width:52px;text-align:center">포장경과</span><span style="flex:1"></span><span style="min-width:70px;text-align:center;color:#E74C3C">남은시간</span></div>';
+    h+='<div style="display:flex;align-items:center;padding:3px 8px;font-size:10px;color:#9898B0;border-bottom:1px solid #2A2A45"><span style="min-width:48px">주문</span><span style="min-width:48px">완료</span><span style="min-width:52px;text-align:center">포장경과</span><span style="flex:1"></span><span style="min-width:70px;text-align:center;color:#E74C3C">남은시간</span></div>';
     pkgOrders.forEach(o=>{
       const pkgElMs=now-o.doneAt;
       const overallRem=(o.t+tgtMs)-now;
@@ -1017,7 +1019,7 @@ function updCkUI(){
       h+=`<div class="ck-row${dying}" onclick="ckTapDel(${o.num})" style="display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid #2A2A45;font-family:monospace;cursor:pointer">
 <span style="min-width:48px;font-size:14px;font-weight:bold;color:#E0E0EC">${o.num}번</span>
 <span style="min-width:48px;font-size:11px;color:#2AC1BC">${doneTime}</span>
-<span style="min-width:52px;text-align:center;font-size:13px;font-weight:bold;color:#9090A8">${mmss(pkgElMs)}</span>
+<span style="min-width:52px;text-align:center;font-size:13px;font-weight:bold;color:#A0A0BC">${mmss(pkgElMs)}</span>
 <span style="flex:1"></span>
 <span style="min-width:70px;text-align:center;font-size:16px;font-weight:bold;color:${remCl};background:${remCl}15;border-radius:4px;padding:2px 0">${mmss(overallRem)}</span>
 </div>`;
@@ -1030,7 +1032,7 @@ function updCkUI(){
   if(urgOver.length)focusMsg=` <span style="color:#E74C3C;font-weight:bold">초과${urgOver.length}</span>`;
   else if(urgPkg.length)focusMsg=` <span style="color:#E74C3C;font-weight:bold">포장급함${urgPkg.length}</span>`;
   else if(cookFocus||busyCookFocus)focusMsg=` <span style="color:#E67E22;font-weight:bold">조리집중</span>`;
-  if(settingsEl)settingsEl.innerHTML=`<span style="color:#707088">${activeOrders}건</span>`+(pkgOrders.length>0?` <span style="color:#E74C3C">포장${pkgOrders.length}</span>`:'')+`${focusMsg}${avgStr}`+(delayMsg.length>0?' <span style="font-weight:bold">지연 '+delayMsg.join(' ')+'</span>':'');
+  if(settingsEl)settingsEl.innerHTML=`<span style="color:#9898B0">${activeOrders}건</span>`+(pkgOrders.length>0?` <span style="color:#E74C3C">포장${pkgOrders.length}</span>`:'')+`${focusMsg}${avgStr}`+(delayMsg.length>0?' <span style="font-weight:bold">지연 '+delayMsg.join(' ')+'</span>':'');
 }
 
 function ckDisp(k){const e=document.getElementById('ck_'+k);const d=document.getElementById('ck_'+k+'_disp');if(!e||!d)return;const v=parseInt(e.value)||0;const m=Math.floor(v/60),s=v%60;d.textContent=m+':'+String(s).padStart(2,'0');}
