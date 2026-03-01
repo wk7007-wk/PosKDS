@@ -287,6 +287,7 @@ const FB='https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app
 let S={},aS={},kS={},stS={},hD=[],oT={},cLt='kds';
 let aTS=0;let sseLoaded=false;
 let _kdsLastChange=Date.now(),_kdsLastCount=-1; // 30분 강제보정용
+let lastKdsTime=0; // KDS가 마지막으로 보낸 시각 (epoch ms)
 let avgInterval=3.0,avgCookDur=0; // avgCookDur: 실제 완료 기록 기반 평균 조리시간(ms)
 let cookLog=[]; // 완료 기록: {num, t, doneAt, cookDur}
 const isApp=typeof NativeBridge!=='undefined';
@@ -345,6 +346,8 @@ function hKds(m){
   // 30분 강제보정: orders 없이 건수 변동 없으면 30분 후 0
   if(kS.count!==_kdsLastCount){_kdsLastCount=kS.count;_kdsLastChange=Date.now();}
   else if(kS.count>0&&!Array.isArray(kS.orders)&&(Date.now()-_kdsLastChange)>=1800000){kS.count=0;_kdsLastCount=0;}
+  // KDS time 파싱 → lastKdsTime 저장 (접수시간 fallback용)
+  if(kS.time){const p=new Date(kS.time.replace(' ','T')+'+09:00');if(!isNaN(p))lastKdsTime=p.getTime();}
   // KDS 건수 즉시 반영 (교차보정/안정화 없음)
   updMonitor();
 }
@@ -843,7 +846,7 @@ function updCkQueue(){
     const existing=ckQ.find(o=>o.num===n);
     if(!existing){
       const fbTime=oT[String(n)];
-      ckQ.push({num:n,t:fbTime||Date.now(),onKds:true,ma:false,fa:false,da:false});
+      ckQ.push({num:n,t:fbTime||lastKdsTime||Date.now(),onKds:true,ma:false,fa:false,da:false});
       changed=true;
     } else {
       // oT 데이터가 나중에 도착하면 접수시간 업데이트
