@@ -342,8 +342,8 @@ function updC(ok){
 // === Data Handlers ===
 function hKds(m){
   if(!m.data||m.data==='null')return;
-  if(m.path==='/')Object.assign(kS,m.data);else kS[m.path.slice(1)]=m.data;
-  // Firebase RTDB는 빈 배열 []을 저장 안 함 → orders 필드 누락 시 빈 배열로 초기화
+  if(m.path==='/'){kS={...m.data};if(!Array.isArray(kS.orders))kS.orders=[];}
+  else kS[m.path.slice(1)]=m.data;
   if(!Array.isArray(kS.orders))kS.orders=[];
   // 30분 강제보정: orders 없이 건수 변동 없으면 30분 후 0
   if(kS.count!==_kdsLastCount){_kdsLastCount=kS.count;_kdsLastChange=Date.now();}
@@ -1090,7 +1090,7 @@ function pollAll(force){
     fetch(FB+'/posdelay/ad_state.json').then(r=>r.json()),
     fetch(FB+'/posdelay/status.json').then(r=>r.json()),
   ]).then(([k,a,st])=>{
-    if(k)Object.assign(kS,k);
+    if(k){kS={...k};if(!Array.isArray(kS.orders))kS.orders=[];}
     if(a){Object.assign(aS,a);}
     if(st)Object.assign(stS,st);
     updSyncStatus();updMonitor();
