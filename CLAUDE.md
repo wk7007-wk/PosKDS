@@ -6,6 +6,7 @@
 ## Firebase 구조
 - **DB**: `poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app`
 - **건수 업로드**: `/kds_status.json` — count, completed, time, orders 배열, source
+- **FCM Push**: 건수 변동 시 `FcmSender.kt`가 FCM v1 API로 PosDelay에 push (토픽 `kds_push`)
 - **로그**: `/kds_log.json`
 - **원격 업데이트**: `/app_update/poskds.json` — version, url
 
@@ -24,10 +25,25 @@ curl -s https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/k
 - 조리모드, 모니터링, 광고 제어 UI 포함
 
 ## 주방폰 제약
-- **물리적으로 원격** — 업데이트 거의 불가능 (매장에 있고 접근 어려움)
+- **물리적으로 원격** — 직접 접근 어려움 (매장)
 - 로그는 Firebase로만 접근 가능
-- **KDS 앱 수정/업데이트 전제 금지** — 데이터 보정은 항상 수신 측(PosDelay/웹)에서 처리
+- **KDS 앱 수정/업데이트 최소화** — 데이터 보정은 항상 수신 측(PosDelay/웹)에서 처리
 - 웹 대시보드 수정 시 앱 재설치 불필요 (GitHub Pages 자동 반영)
+
+## KDS 원격 업데이트 (APK 배포)
+KDS 앱이 Firebase `/app_update/poskds.json`을 감지하여 자동 다운로드 + 설치 화면 표시.
+```bash
+# 1. GitHub Release 업로드
+VER=$(date +%y%m%d.%H%M)
+gh release create "v${VER}" /sdcard/Download/PosKDS.apk --title "v${VER} 설명" --repo wk7007-wk/PosKDS
+
+# 2. Firebase에 업데이트 URL 등록 → 주방폰 자동 감지
+NOW=$(date +"%Y-%m-%d %H:%M:%S")
+URL="https://github.com/wk7007-wk/PosKDS/releases/download/v${VER}/PosKDS.apk"
+curl -s -X PUT "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/app_update/poskds.json" \
+  -d "{\"version\":\"${VER}\",\"url\":\"${URL}\",\"time\":\"${NOW}\"}"
+```
+**반드시 2단계 모두 수행** — Release만 올리면 주방폰이 감지 못함.
 
 ## KDS 데이터 신뢰도
 - **탭 건수(조리중 N) 신뢰**: KDS `count` 값은 탭 헤더에서 추출 — 가장 정확한 소스
