@@ -1,0 +1,110 @@
+# PosKDS 코드맵 (code-guard 필수 참조)
+# 수정 전 반드시 이 맵으로 영향 범위 확인
+
+## 파일 → 역할
+MainActivity.kt              WebView 앱 컨테이너 + JS 브리지(KdsBridge) + 서비스 시작
+KdsAccessibilityService.kt   핵심 엔진 — KDS UI 트리 파싱 → 건수/주문번호/완료 추출 → 업로드
+FirebaseUploader.kt          Firebase PUT 래퍼 — kds_status/kds_log/kds_dump/kds_history 업로드
+AppMonitor.kt                Firebase 크래시 리포트 + monitor/poskds/status 하트비트
+AppUpdater.kt                GitHub Releases SSE 감지 → APK 다운로드 → 설치 알림
+FcmSender.kt                 Firebase Admin SDK (JWT RS256) → FCM v1 API → topic "kds_push" 전송
+GistUploader.kt              GitHub Gist 보조 채널 (Firebase 불안정 대비, 설정은 Firebase에서 1회 로드)
+KeepAliveService.kt          포그라운드 서비스 — 프로세스 유지 + 알림바 건수 표시 (30초 갱신)
+
+## 데이터 흐름 (단방향)
+KDS앱 UI
+  → KdsAccessibilityService (접근성 이벤트 → UI 트리 파싱)
+    → FirebaseUploader.upload()
+      → Firebase /kds_status.json          (PosDelay SSE 수신)
+      → GistUploader.upload()              (보조 채널)
+      → FcmSender.send()                   (OS push → PosDelay)
+      → AppMonitor.sendHeartbeat()         → Firebase /monitor/poskds/status
+      → Firebase /kds_log.json            (로그 100줄)
+    → FirebaseUploader.uploadHistory()    → Firebase /kds_history.json
+    → FirebaseUploader.uploadDump()       → Firebase /kds_dump.json (5분 자동)
+
+## 의존성 (A → B)
+MainActivity           → AppMonitor (init), KeepAliveService (start), AppUpdater (checkAndUpdate)
+MainActivity           → KdsAccessibilityService (isAvailable, dumpRequested 플래그)
+KdsAccessibilityService → FirebaseUploader (upload, uploadDump, uploadHistory)
+KdsAccessibilityService → KeepAliveService (start — 서비스 연결 시)
+KdsAccessibilityService → GistUploader (init — 서비스 연결 시)
+KdsAccessibilityService → AppUpdater (startAutoUpdate — 서비스 연결 시)
+FirebaseUploader       → AppMonitor (lastCount/lastCompleted/lastOrders 갱신)
+FirebaseUploader       → GistUploader (upload)
+FirebaseUploader       → FcmSender (send)
+FirebaseUploader       → AppMonitor (sendHeartbeat)
+FirebaseUploader       → KdsAccessibilityService (logFile 경로 읽기)
+AppUpdater             → Firebase /app_update/poskds.json (SSE + HTTP)
+GistUploader           → Firebase /gist_config.json (init 1회 로드)
+KeepAliveService       → KdsAccessibilityService (isAvailable)
+KeepAliveService       → SharedPrefs "poskds_prefs" (last_count 직접 읽기)
+
+## 공유 상태 (동시접근 주의)
+SharedPrefs "poskds_prefs"
+  → MainActivity, KdsAccessibilityService, FirebaseUploader, KeepAliveService 4곳 직접 접근
+  → @Synchronized 없음! 동시 edit 충돌 가능 (write 빈도 낮아 실용적 허용 수준)
+  → 키 목록: kds_package, last_count, last_upload_time, log_text, kds_history
+
+AppMonitor.lastCount / lastCompleted / lastOrders
+  → @Volatile (FirebaseUploader에서 쓰기, AppMonitor.sendHeartbeat에서 읽기)
+
+FcmSender.cachedToken / tokenExpiry
+  → @Volatile (OAuth2 토큰 캐시, 50분 유효)
+
+FcmSender.lastSentCount / lastSentOrdersHash
+  → @Volatile (중복 FCM 전송 방지)
+
+KdsAccessibilityService.instance
+  → static var — @Synchronized 없음 (isAvailable 호출 빈번)
+  → MainActivity, KeepAliveService에서 읽기
+
+KdsAccessibilityService.dumpRequested
+  → @JvmField (volatile 아님!) — MainActivity JS 브리지에서 true 설정, 접근성 스레드에서 소비
+  → 위험: 경합 조건 존재 (실용적 허용 — 덤프 누락 시 재요청)
+
+KdsAccessibilityService.logFile
+  → static var — FirebaseUploader에서 직접 읽기 (경로만 참조, 파일 접근 경합 없음)
+
+GistUploader.gistId / githubToken / initialized
+  → 동기화 없음 — init()가 1회만 호출되므로 실용적 허용
+
+## 위험 수정 포인트
+
+### KdsAccessibilityService.extractCookingCount()
+  → count 추출 로직 5단계(노드 텍스트 → desc → 트리 탐색 → "없습니다" → 주문수)
+  → null 보정 정책: orders 있으면 size로, 둘 다 없으면 이전 값 유지 (0 강제 절대 금지)
+  → 변경 시: "조리중" 텍스트 패턴, "완료 N" 패턴, 빈 화면 시나리오 모두 검증 필수
+
+### KdsAccessibilityService.extractOrderNumbers()
+  → contentDescription "#0010" 정규식 의존 — KDS 앱 업데이트로 패턴 변경 가능
+  → 변경 시 lastOrders 비교 로직(==) 도 함께 확인 (List 내용 비교)
+
+### KdsAccessibilityService.heartbeatRunnable
+  → Handler(Looper.getMainLooper()) 사용 — Doze 모드에서 딜레이 발생 가능
+  → 현재 30초 주기 HEARTBEAT_MS — KeepAliveService와 동일 주기 (중복 업로드 주의)
+  → onDestroy에서 removeCallbacks 처리되어 있음
+
+### FirebaseUploader.upload()
+  → 건수 변경 시마다 4개 외부 채널(Firebase, Gist, FCM, Monitor) 동시 호출
+  → 하나 실패해도 나머지는 계속 진행 (catch 묶음 없음 — 의도적)
+  → AppMonitor 공유변수 쓰기가 upload() 호출 스레드에서 발생 (UI 스레드 아님, 안전)
+
+### AppUpdater.scheduleReconnect()
+  → Thread.sleep(10_000) 사용 — SSE 스레드 내에서 재귀 호출 (스택 누적 없음, 새 스레드)
+  → sseRunning=false 후 connectSSE() 진입 방어 있음
+
+### FcmSender.PRIVATE_KEY
+  → RS256 비공개키 하드코딩 — 소스 코드 공개 시 보안 위험
+  → 키 변경 시 JWT createJwt() 함수의 CLIENT_EMAIL도 함께 변경 필수
+  → 토큰 캐시(50분) 중 키 변경 → 401 → 자동 클리어 후 재시도 로직 있음
+
+### KeepAliveService.updateNotification()
+  → SharedPrefs "last_count"를 직접 읽음 (KdsAccessibilityService 우회)
+  → KdsAccessibilityService가 prefs에 쓰는 타이밍과 알림 갱신 타이밍 차이 최대 30초
+
+### 건수 저장 경로 (일관성 유지 필수)
+  → KdsAccessibilityService: lastCount(메모리) + prefs KEY_LAST_COUNT 동시 갱신
+  → AppMonitor.lastCount: FirebaseUploader.upload() 호출 시 갱신
+  → KeepAliveService: prefs "last_count" 직접 읽기
+  → 세 값은 최대 30초 차이 가능 — 알림바와 Firebase가 일시적 불일치 허용 설계
