@@ -13,6 +13,10 @@ object AppMonitor {
     private const val APP = "poskds"
     private var version = ""
 
+    @Volatile var lastCount = 0
+    @Volatile var lastCompleted = 0
+    @Volatile var lastOrders: List<Int> = emptyList()
+
     fun init(context: Context) {
         version = try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "?"
@@ -60,6 +64,11 @@ object AppMonitor {
                     put("lastActive", sdf.format(Date()))
                     put("device", "${Build.MANUFACTURER} ${Build.MODEL}")
                     put("sdk", Build.VERSION.SDK_INT)
+                    put("count", lastCount)
+                    put("completed", lastCompleted)
+                    val arr = org.json.JSONArray()
+                    lastOrders.forEach { arr.put(it) }
+                    put("orders", arr)
                 }
                 val conn = URL("$FIREBASE_URL/monitor/$APP/status.json").openConnection() as HttpURLConnection
                 conn.requestMethod = "PUT"

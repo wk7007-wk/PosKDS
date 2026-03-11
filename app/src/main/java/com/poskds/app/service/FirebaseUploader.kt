@@ -21,6 +21,11 @@ object FirebaseUploader {
     private val logTimeFormat = SimpleDateFormat("HH:mm:ss", Locale.KOREA)
 
     fun upload(prefs: SharedPreferences, count: Int, orders: List<Int> = emptyList(), completed: Int = -1) {
+        // AppMonitor에 최신 KDS 데이터 반영
+        AppMonitor.lastCount = count
+        if (completed >= 0) AppMonitor.lastCompleted = completed
+        AppMonitor.lastOrders = orders.toList()
+
         kotlin.concurrent.thread {
             try {
                 val now = dateFormat.format(Date())
@@ -42,6 +47,9 @@ object FirebaseUploader {
 
                 // 1-c. FCM push 전송 (PosDelay에 OS 레벨 push)
                 FcmSender.send(count, if (completed >= 0) completed else 0, now, orders)
+
+                // 1-d. monitor heartbeat 갱신
+                AppMonitor.sendHeartbeat()
 
                 // 2. 로그 업로드 (최근 100줄)
                 val logContent = try {
