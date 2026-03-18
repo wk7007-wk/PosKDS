@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
         // 서비스 시작
         KeepAliveService.start(this)
+        com.poskds.app.service.FcmSender.loadServiceAccountKey()
         requestBatteryOptimizationExemption()
     }
 

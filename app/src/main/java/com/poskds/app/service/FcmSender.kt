@@ -24,34 +24,11 @@ object FcmSender {
     private const val SCOPE = "https://www.googleapis.com/auth/firebase.messaging"
 
     private const val CLIENT_EMAIL = "firebase-adminsdk-fbsvc@poskds-4ba60.iam.gserviceaccount.com"
-    private const val PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n" +
-        "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQD4f4N8RKAawho8\n" +
-        "OvCp/ihUUK4jJTb+I5kkRMSMsd9lxOpK/v7cfOmxH9v2K99zy1KBlDu5Wbr/gyFH\n" +
-        "Sue4qmXDp27fmo285agSJPNu7XABlOlkg+OBZSLoe5/N41K0A8J65CzVgYTN4LYP\n" +
-        "qkJ9KbYQ0C9COHYbS77ZdxTJFX3qApi8c9bcs3A5qTQhJmvlBJUR4ayE40WrV+Qq\n" +
-        "SU7EJWSiDIfjJP+HAhJd/P7zZoOt64Ine1v8/Fc0ZhR0hYv841XdNOaen3umUgix\n" +
-        "fbCz/zDhc+w498xyGXiJRFY2q/4Wq5z6g1Zcv8cQPEVnDRGK0S0WUTetWBKFfuqZ\n" +
-        "lrClgk13AgMBAAECggEAFfPBzFENqb967NYyG3pR2rzz3TP06zd+2Fbg3CL8frOK\n" +
-        "FQz4u8anKFgNqO4QQ9zy0XKkYgfcvqS5ZGBoHwaijcm1QDiZi9Xn5o5wGN0N133t\n" +
-        "rkz+ZJhoIIyHPft2e2OXox6UHVpfPoa63qBmVkNAi7SwcBOnz1p+Jhzgb7Ef2fOr\n" +
-        "NUq/KX3g1omBBjI8ujgz7Eyq3gB6REmlrVXu3P6m3FUyravAWoSFh85dOeDw8AB3\n" +
-        "OkGZq5EkDTy0sWe/O0+j9c0U57J9kMJzzbANnFt0VwDYAdJ8ipd2o/4+Tg0KOwUf\n" +
-        "RWr5dWHpQpCsH86PyRAgu2GPogXEpnoLIPH9d5gnVQKBgQD9Y23aY/cJgvsSsOhX\n" +
-        "AImDsTUpwHowf0XmrtsLptuEy6MRyap7gUmxkJVAkI40aql96gT4IP2KETT7c783\n" +
-        "q371mRblu9jN0+HevMrb2DPBga1TjEhqGfkqYYrRGxaJLnK5toLb3EpEChf70aMs\n" +
-        "yVKEDGbayZz4uepyhXFktMGQPQKBgQD7Dy5s852tYK7m1zyaixM3NL1DFfo3YphI\n" +
-        "H3PTKF1Qhxq7EDIm4ytdZ7sMh9kXcKbjxjbUeaQJ5fuTLCITW/GYpYcOZ3qXIIxk\n" +
-        "77r5+8iTBAPtH6FI3wj4VHp5Wtgw9qp4izQ9uwJn9rDIHUPiVyeEByOO5XtaV7hk\n" +
-        "Oa529fcbwwKBgA3JkTqm4dREqkC0G5BQWSsvQ0NIU927ryQEM6sIoz0wj2jyXjJm\n" +
-        "MIpW4agntXUosJxHVYni0ajnkshz3d27mSbn85UAiaV5d/rUrv0TYI2Q7stzAKW1\n" +
-        "UBd8Qz9ph+pi+p8cTTaFYA0ft3peR9CyC6lfu2EAQ2hNRXKBzE+8fiPJAoGALAf/\n" +
-        "lnAriUrZofbB1EDr/9SqFOf32FrcZlnN0IzVwNfRIlm20gcphdo5ffsdYfUJ8AzF\n" +
-        "dQJYeLvzIV6uI0MO3jy5sRcI8xRsSw+YdVtpVA9yONZBTSyAwDzgtgPuwregMkAH\n" +
-        "y4PO6jjjzFUFoN60OX2fCOLKfY/A8SMErCx7SE0CgYEA+8ASwXuB8pBkpatr6s0b\n" +
-        "EZNmf2wmkAQZUDayp6FQDiX0/rjH4WkRK/6X24j3nkLY3uV5uqCzq0jcrKC2J/Xz\n" +
-        "wxeynU+qi5c4auV5vtIaf3MUN920rfq/68ENe7NUsvD5m82MlsGKJGi89LSrIVcF\n" +
-        "vAaP+aXRj1Ig1R40YtctPpk=\n" +
-        "-----END PRIVATE KEY-----\n"
+    private const val SA_KEY_URL = "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedatabase.app/monitor/poskds/sa_key.json"
+
+    // 런타임 로드 — 하드코딩 제거
+    @Volatile private var privateKeyPem: String? = null
+    @Volatile private var keyLoaded = false
 
     @Volatile private var cachedToken: String? = null
     @Volatile private var tokenExpiry = 0L
@@ -61,12 +38,55 @@ object FcmSender {
     @Volatile private var lastSentOrdersHash = 0
 
     /**
+     * Firebase RTDB에서 서비스 계정 키 로드 → 메모리 캐시.
+     * 앱 시작 시 1회 호출. 이후 캐시된 키 사용.
+     */
+    fun loadServiceAccountKey() {
+        if (keyLoaded && privateKeyPem != null) return
+        Thread {
+            try {
+                val conn = URL(SA_KEY_URL).openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
+                if (conn.responseCode == 200) {
+                    val resp = conn.inputStream.bufferedReader().readText()
+                    // Firebase JSON 문자열 → 따옴표 제거 + 이스케이프 복원
+                    val key = resp.trim().removeSurrounding("\"").replace("\\n", "\n")
+                    if (key.contains("BEGIN PRIVATE KEY")) {
+                        privateKeyPem = key
+                        keyLoaded = true
+                        Log.d(TAG, "SA 키 로드 성공 (Firebase RTDB)")
+                    } else {
+                        Log.w(TAG, "SA 키 형식 오류")
+                    }
+                } else {
+                    Log.w(TAG, "SA 키 로드 실패: HTTP ${conn.responseCode}")
+                }
+                conn.disconnect()
+            } catch (e: Exception) {
+                Log.w(TAG, "SA 키 로드 에러: ${e.message}")
+            }
+        }.start()
+    }
+
+    /**
      * FCM data message 전송 (건수 변경 시 호출).
      * count 또는 orders 변경 시 전송. 백그라운드 스레드에서 호출해야 함.
      */
     fun send(count: Int, completed: Int, time: String, orders: List<Int> = emptyList()) {
         val ordersHash = orders.hashCode()
         if (count == lastSentCount && ordersHash == lastSentOrdersHash) return // 동일 데이터 스킵
+
+        if (privateKeyPem == null) {
+            // 키 아직 미로드 — 동기 로드 시도 (send는 이미 백그라운드 스레드)
+            loadServiceAccountKeySync()
+            if (privateKeyPem == null) {
+                Log.w(TAG, "SA 키 미로드 — FCM 전송 스킵")
+                return
+            }
+        }
+
         lastSentCount = count
         lastSentOrdersHash = ordersHash
 
@@ -162,6 +182,29 @@ object FcmSender {
         }
     }
 
+    /** 동기 키 로드 — send()가 백그라운드 스레드에서 호출하므로 안전 */
+    private fun loadServiceAccountKeySync() {
+        if (keyLoaded && privateKeyPem != null) return
+        try {
+            val conn = URL(SA_KEY_URL).openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
+            if (conn.responseCode == 200) {
+                val resp = conn.inputStream.bufferedReader().readText()
+                val key = resp.trim().removeSurrounding("\"").replace("\\n", "\n")
+                if (key.contains("BEGIN PRIVATE KEY")) {
+                    privateKeyPem = key
+                    keyLoaded = true
+                    Log.d(TAG, "SA 키 동기 로드 성공")
+                }
+            }
+            conn.disconnect()
+        } catch (e: Exception) {
+            Log.w(TAG, "SA 키 동기 로드 에러: ${e.message}")
+        }
+    }
+
     private fun createJwt(nowMs: Long): String {
         val nowSec = nowMs / 1000
         val expSec = nowSec + 3600
@@ -177,8 +220,9 @@ object FcmSender {
 
         val signInput = "$header.$claim"
 
-        // Parse PKCS8 private key
-        val keyPem = PRIVATE_KEY
+        // Parse PKCS8 private key — Firebase RTDB에서 런타임 로드
+        val pem = privateKeyPem ?: throw IllegalStateException("SA 키 미로드")
+        val keyPem = pem
             .replace("-----BEGIN PRIVATE KEY-----", "")
             .replace("-----END PRIVATE KEY-----", "")
             .replace("\n", "")
