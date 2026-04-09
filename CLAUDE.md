@@ -55,6 +55,10 @@ curl -s -X PUT "https://poskds-4ba60-default-rtdb.asia-southeast1.firebasedataba
 - **KDS 건수 즉시 반영**: 안정화 지연 삭제됨 — PosDelay/웹 모두 즉시 적용
 - **completed 필드**: 완료탭 건수 추출 (트리탐색 fallback), 조리완료 버튼 누를 때 증가
 
+## PackHelper 연동 경계 (0409)
+- 공유 인터페이스: `/kds_status.json` (KDS→쓰기, PackHelper→읽기)
+- 상세: `rules/packhelper_interface.txt` (수정범위, 금지영역, 동기화 규칙)
+
 ## KDS rootInActiveWindow 문제 (핵심 버그 패턴)
 - **증상**: KDS가 조리중 건수를 감지했다가 수초 내 0으로 되돌림
 - **원인**: `rootInActiveWindow`가 KDS 앱이 아닌 systemui/잠금화면 반환 → 추출 실패

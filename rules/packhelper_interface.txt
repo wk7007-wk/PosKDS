@@ -1,0 +1,19 @@
+# PackHelper 연동 경계 (0409)
+
+## 공유 인터페이스
+- PackHelper(매장PC)가 `/kds_status.json`을 폴링하여 조리 상태 추적
+- PackHelper는 읽기만 — `/kds_status.json` 쓰기는 PosKDS 전용
+
+## PosKDS에서 수정 가능한 것 (폰 작업 범위)
+- KdsAccessibilityService — count/orders/completed 추출 로직
+- FirebaseUploader — 업로드 채널/구조
+- `/kds_status.json` 필드 구조 (변경 시 PackHelper에 영향 → 양쪽 동기화 필수)
+
+## 절대 수정 금지 (PackHelper 영역)
+- `/packhelper/capture/`, `/packhelper/log/`, `/packhelper/status` — PackHelper 전용
+- `/packhelper/ai_learning/`, `/packhelper/memo/` — PackHelper AI 학습 전용
+- PackHelper 소스코드 (`/root/PackHelper/`) — 매장 PC에서만 작업
+
+## 연동 변경 시 규칙
+- `/kds_status.json` 필드 추가/변경 → PackHelper rules/kds_interface.txt도 갱신
+- 새 Firebase 경로 추가 → 양쪽 rules에 소유자 명시

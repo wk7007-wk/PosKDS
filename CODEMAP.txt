@@ -94,9 +94,10 @@ GistUploader.gistId / githubToken / initialized
   → Thread.sleep(10_000) 사용 — SSE 스레드 내에서 재귀 호출 (스택 누적 없음, 새 스레드)
   → sseRunning=false 후 connectSSE() 진입 방어 있음
 
-### FcmSender.PRIVATE_KEY
-  → RS256 비공개키 하드코딩 — 소스 코드 공개 시 보안 위험
-  → 키 변경 시 JWT createJwt() 함수의 CLIENT_EMAIL도 함께 변경 필수
+### FcmSender SA 키 (Firebase RTDB 런타임 로드)
+  → RS256 비공개키는 Firebase RTDB /monitor/poskds/sa_key.json에서 런타임 로드 (하드코딩 제거 완료)
+  → CLIENT_EMAIL은 공개 식별자 — 하드코딩 허용
+  → 키 변경 시: Firebase RTDB의 sa_key 값만 교체하면 앱 재빌드 불필요
   → 토큰 캐시(50분) 중 키 변경 → 401 → 자동 클리어 후 재시도 로직 있음
 
 ### KeepAliveService.updateNotification()
