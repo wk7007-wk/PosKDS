@@ -48,11 +48,15 @@ object FirebaseUploader {
                     put("orders", ordersArr)
                     if (completed >= 0) put("completed", completed)
                     if (completedAtStr.isNotEmpty()) put("completed_at", completedAtStr)
+                    val detailJson = try {
+                        buildOrderDetailsJson(orderDetails, recentCompletions, now)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "order_details 빌드 실패: ${e.message}")
+                        JSONObject()
+                    }
+                    put("order_details", detailJson)
                 }.toString()
                 firebasePut("$FIREBASE_BASE/kds_status.json", statusJson)
-
-                // 1-a. 주문 상세 업로드 (kds_orders.json)
-                uploadOrderDetails(orderDetails, recentCompletions, now)
 
                 // 1-b. Gist 보조 채널 동시 기록
                 GistUploader.upload(count, orders)
@@ -87,43 +91,37 @@ object FirebaseUploader {
         }
     }
 
-    /** kds_orders.json 업로드 — 주문 상세 + 완료 이력 */
-    private fun uploadOrderDetails(
+    /** 주문 상세 JSON 생성 (kds_status에 포함) */
+    private fun buildOrderDetailsJson(
         orderDetails: List<OrderDetail>,
         recentCompletions: Map<Int, Long>,
         timeStr: String
-    ) {
-        try {
-            val isoFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.KOREA).apply {
-                timeZone = java.util.TimeZone.getTimeZone("Asia/Seoul")
-            }
+    ): JSONObject {
+        val isoFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.KOREA).apply {
+            timeZone = java.util.TimeZone.getTimeZone("Asia/Seoul")
+        }
 
-            val ordersObj = JSONObject()
-            for (detail in orderDetails) {
-                ordersObj.put(detail.orderNo.toString(), JSONObject().apply {
-                    put("menus", detail.menus)
-                    put("order_type", detail.orderType)
-                    put("status", "cooking")
-                })
-            }
+        val ordersObj = JSONObject()
+        for (detail in orderDetails) {
+            ordersObj.put(detail.orderNo.toString(), JSONObject().apply {
+                put("menus", detail.menus)
+                put("order_type", detail.orderType)
+                put("status", "cooking")
+            })
+        }
 
-            val completionsObj = JSONObject()
-            for ((orderNo, ms) in recentCompletions) {
-                completionsObj.put(orderNo.toString(), JSONObject().apply {
-                    put("completed_at", isoFormat.format(Date(ms)))
-                    put("completed_at_ms", ms)
-                })
-            }
+        val completionsObj = JSONObject()
+        for ((orderNo, ms) in recentCompletions) {
+            completionsObj.put(orderNo.toString(), JSONObject().apply {
+                put("completed_at", isoFormat.format(Date(ms)))
+                put("completed_at_ms", ms)
+            })
+        }
 
-            val json = JSONObject().apply {
-                put("orders", ordersObj)
-                put("completions", completionsObj)
-                put("time", timeStr)
-            }.toString()
-
-            firebasePut("$FIREBASE_BASE/kds_orders.json", json)
-        } catch (e: Exception) {
-            Log.w(TAG, "주문상세 업로드 에러: ${e.message}")
+        return JSONObject().apply {
+            put("orders", ordersObj)
+            put("completions", completionsObj)
+            put("time", timeStr)
         }
     }
 
