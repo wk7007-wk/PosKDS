@@ -14,6 +14,9 @@ import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
+
+data class OrderDetail(val orderNo: Int, val menus: String, val orderType: String)
 
 class KdsAccessibilityService : AccessibilityService() {
 
@@ -50,6 +53,13 @@ class KdsAccessibilityService : AccessibilityService() {
     private var eventCount = 0
     private var lastEventLogTime = 0L
     private var lastDumpTime = 0L
+    private var lastOrderDetails = listOf<OrderDetail>()
+    private val recentCompletions = LinkedHashMap<Int, Long>() // 주문번호→완료시각ms
+    private var completedAtMs = 0L
+    private var completedAtStr = ""
+    private val iso8601Format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.KOREA).apply {
+        timeZone = TimeZone.getTimeZone("Asia/Seoul")
+    }
 
     private val heartbeatRunnable = object : Runnable {
         override fun run() {
@@ -73,6 +83,12 @@ class KdsAccessibilityService : AccessibilityService() {
                     // count still null → 조리중/완료 둘 다 못 찾음 → 건수 유지
                     // 탭 건수(조리중 N) 신뢰 — 주문번호 비어도 0으로 강제하지 않음
 
+                    // 주문 상세 추출
+                    val details = extractOrderDetails(root)
+                    if (details != lastOrderDetails) {
+                        lastOrderDetails = details
+                    }
+
                     if (count != null && count != lastCount) {
                         log("하트비트 건수 보정: $lastCount → $count")
                         lastCount = count
@@ -80,10 +96,18 @@ class KdsAccessibilityService : AccessibilityService() {
                         addHistory(count)
                     }
                     if (orders != lastOrders) {
+                        // 완료 추적: 사라진 주문번호 기록
+                        trackCompletions(lastOrders, orders)
                         log("하트비트 주문번호 보정: $lastOrders → $orders")
                         lastOrders = orders
                     }
                     if (completed != null && completed != lastCompleted) {
+                        // completed 증가 감지 → 시각 기록
+                        if (lastCompleted >= 0 && completed > lastCompleted) {
+                            completedAtMs = System.currentTimeMillis()
+                            completedAtStr = iso8601Format.format(Date(completedAtMs))
+                            log("하트비트 조리완료 시각: $completedAtStr")
+                        }
                         log("하트비트 완료건수: $lastCompleted → $completed")
                         lastCompleted = completed
                     }
@@ -96,7 +120,7 @@ class KdsAccessibilityService : AccessibilityService() {
             val now = System.currentTimeMillis()
             if (now - lastUploadTime >= HEARTBEAT_MS && lastCount >= 0) {
                 log("하트비트 업로드 (건수=$lastCount, 주문=$lastOrders, 완료=$lastCompleted)")
-                FirebaseUploader.upload(prefs, lastCount, lastOrders, lastCompleted)
+                FirebaseUploader.upload(prefs, lastCount, lastOrders, lastCompleted, lastOrderDetails, recentCompletions, completedAtStr)
                 lastUploadTime = now
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, now).apply()
             }
@@ -163,10 +187,11 @@ class KdsAccessibilityService : AccessibilityService() {
         }
 
         try {
-            // 건수 + 주문번호 추출
+            // 건수 + 주문번호 + 상세 추출
             var count = extractCookingCount(root)
             val orders = extractOrderNumbers(root)
             val completed = extractCompletedCount(root)
+            val details = extractOrderDetails(root)
 
             // 추출 실패 시: orders 있으면 orders 수로 보정, 둘 다 없으면 이전 값 유지
             // (UI 전환 중 일시적 추출 실패 → 0으로 강제하면 안 됨)
@@ -179,8 +204,9 @@ class KdsAccessibilityService : AccessibilityService() {
             val countChanged = count != null && count != lastCount
             val ordersChanged = orders != lastOrders
             val completedChanged = completed != null && completed != lastCompleted
+            val detailsChanged = details != lastOrderDetails
 
-            if (countChanged || ordersChanged || completedChanged) {
+            if (countChanged || ordersChanged || completedChanged || detailsChanged) {
                 if (countChanged) {
                     val prevCount = lastCount
                     log("조리중 건수 변경: $prevCount → $count")
@@ -189,15 +215,27 @@ class KdsAccessibilityService : AccessibilityService() {
                     addHistory(count)
                 }
                 if (ordersChanged) {
+                    // 완료 추적: 사라진 주문번호 기록
+                    trackCompletions(lastOrders, orders)
                     log("주문번호 변경: $lastOrders → $orders")
                     lastOrders = orders
                 }
                 if (completedChanged) {
+                    // completed 증가 감지 → 시각 기록
+                    if (lastCompleted >= 0 && completed!! > lastCompleted) {
+                        completedAtMs = System.currentTimeMillis()
+                        completedAtStr = iso8601Format.format(Date(completedAtMs))
+                        log("조리완료 시각: $completedAtStr")
+                    }
                     log("완료건수 변경: $lastCompleted → $completed (조리완료 버튼 감지)")
                     lastCompleted = completed!!
                 }
+                if (detailsChanged) {
+                    log("주문상세 변경: ${details.size}건")
+                    lastOrderDetails = details
+                }
 
-                FirebaseUploader.upload(prefs, lastCount, lastOrders, lastCompleted)
+                FirebaseUploader.upload(prefs, lastCount, lastOrders, lastCompleted, lastOrderDetails, recentCompletions, completedAtStr)
                 lastUploadTime = System.currentTimeMillis()
                 prefs.edit().putLong(KEY_LAST_UPLOAD_TIME, lastUploadTime).apply()
             }
@@ -209,7 +247,7 @@ class KdsAccessibilityService : AccessibilityService() {
                 dumpNode(root, sb, 0)
                 val result = sb.toString()
                 log("=== KDS UI 트리 덤프 (${result.lines().size}줄) ===\n$result\n=== 덤프 끝 ===")
-                FirebaseUploader.upload(prefs, lastCount)
+                FirebaseUploader.upload(prefs, lastCount, lastOrders, lastCompleted, lastOrderDetails, recentCompletions, completedAtStr)
             }
 
             // 5분마다 자동 덤프
@@ -278,16 +316,15 @@ class KdsAccessibilityService : AccessibilityService() {
         val text = node.text?.toString() ?: ""
         val desc = node.contentDescription?.toString() ?: ""
         val combined = "$text $desc"
-        // "완료 35", "완료\n1" — "조리완료" 제외
         val match = Regex("(?<!조리)완료[\\s\\n]*(\\d+)").find(combined)
         if (match != null) return match.groupValues[1].toIntOrNull()
+        var found: Int? = null
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            val result = findCompletedCountInTree(child, depth + 1)
+            if (found == null) found = findCompletedCountInTree(child, depth + 1)
             child.recycle()
-            if (result != null) return result
         }
-        return null
+        return found
     }
 
     private fun extractCookingCount(root: AccessibilityNodeInfo): Int? {
@@ -328,13 +365,13 @@ class KdsAccessibilityService : AccessibilityService() {
         val combined = "$text $desc"
         val match = Regex("주문수[\\s\\n]*(\\d+)").find(combined)
         if (match != null) return match.groupValues[1].toIntOrNull()
+        var found: Int? = null
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            val result = findOrderCountInTree(child, depth + 1)
+            if (found == null) found = findOrderCountInTree(child, depth + 1)
             child.recycle()
-            if (result != null) return result
         }
-        return null
+        return found
     }
 
     private fun findNumberInSiblings(parent: AccessibilityNodeInfo): Int? {
@@ -361,13 +398,13 @@ class KdsAccessibilityService : AccessibilityService() {
             ?: Regex("조리중\\s*(\\d+)").find(desc)
         if (match != null) return match.groupValues[1].toIntOrNull()
 
+        var found: Int? = null
         for (i in 0 until node.childCount) {
             val child = node.getChild(i) ?: continue
-            val result = findCookingCountInTree(child, depth + 1)
+            if (found == null) found = findCookingCountInTree(child, depth + 1)
             child.recycle()
-            if (result != null) return result
         }
-        return null
+        return found
     }
 
     /** KDS UI 트리에서 주문번호 추출 (#0010 → 10) */
@@ -393,10 +430,105 @@ class KdsAccessibilityService : AccessibilityService() {
         }
     }
 
+    /** 주문 상세 추출 — 각 주문 카드에서 주문번호/메뉴/주문타입 추출 */
+    private fun extractOrderDetails(root: AccessibilityNodeInfo): List<OrderDetail> {
+        val details = mutableListOf<OrderDetail>()
+        collectOrderDetails(root, details, 0)
+        return details.distinctBy { it.orderNo }.sortedBy { it.orderNo }
+    }
+
+    /**
+     * UI 트리 순회하며 주문 카드 파싱.
+     * 전략: #NNNN 패턴 노드를 찾으면, 그 부모/형제에서 메뉴명과 주문타입 수집.
+     */
+    private fun collectOrderDetails(node: AccessibilityNodeInfo, result: MutableList<OrderDetail>, depth: Int) {
+        if (depth > 15) return
+        val desc = node.contentDescription?.toString()?.trim() ?: ""
+        val orderMatch = Regex("^#(\\d+)$").find(desc)
+        if (orderMatch != null) {
+            val orderNo = orderMatch.groupValues[1].toIntOrNull()
+            if (orderNo != null && orderNo > 0) {
+                // 부모 노드에서 형제 텍스트 수집 → 메뉴명/주문타입 추출
+                val parent = node.parent
+                if (parent != null) {
+                    val texts = mutableListOf<String>()
+                    collectTextsFromNode(parent, texts, 0, maxDepth = 5)
+                    parent.recycle()
+
+                    val orderType = extractOrderType(texts)
+                    val menus = extractMenus(texts, orderNo)
+                    result.add(OrderDetail(orderNo, menus, orderType))
+                } else {
+                    result.add(OrderDetail(orderNo, "", ""))
+                }
+            }
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            collectOrderDetails(child, result, depth + 1)
+            child.recycle()
+        }
+    }
+
+    /** 노드 하위의 모든 텍스트를 수집 */
+    private fun collectTextsFromNode(node: AccessibilityNodeInfo, texts: MutableList<String>, depth: Int, maxDepth: Int) {
+        if (depth > maxDepth) return
+        val text = node.text?.toString()?.trim() ?: ""
+        val desc = node.contentDescription?.toString()?.trim() ?: ""
+        if (text.isNotEmpty()) texts.add(text)
+        if (desc.isNotEmpty() && desc != text) texts.add(desc)
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            collectTextsFromNode(child, texts, depth + 1, maxDepth)
+            child.recycle()
+        }
+    }
+
+    /** 텍스트 목록에서 주문 타입 추출 (배달/포장/내점) */
+    private fun extractOrderType(texts: List<String>): String {
+        for (t in texts) {
+            if (t.contains("배달")) return "배달"
+            if (t.contains("포장")) return "포장"
+            if (t.contains("내점") || t.contains("홀")) return "내점"
+        }
+        return ""
+    }
+
+    /** 텍스트 목록에서 메뉴명 추출 (주문번호/타입/시간 등 제외) */
+    private fun extractMenus(texts: List<String>, orderNo: Int): String {
+        val exclude = setOf("배달", "포장", "내점", "홀", "조리중", "완료", "조리완료", "접수")
+        val orderStr = "#${orderNo.toString().padStart(4, '0')}"
+        val menus = texts.filter { t ->
+            t != orderStr &&
+            !t.matches(Regex("^#\\d+$")) &&
+            !t.matches(Regex("^\\d{1,2}:\\d{2}$")) && // 시간 패턴
+            !t.matches(Regex("^\\d{1,2}분$")) && // N분 패턴
+            !exclude.any { ex -> t == ex } &&
+            t.length > 1
+        }
+        return menus.joinToString(", ")
+    }
+
+    /** 사라진 주문번호를 완료로 추적 */
+    private fun trackCompletions(oldOrders: List<Int>, newOrders: List<Int>) {
+        val disappeared = oldOrders.toSet() - newOrders.toSet()
+        if (disappeared.isNotEmpty()) {
+            val now = System.currentTimeMillis()
+            for (orderNo in disappeared) {
+                recentCompletions[orderNo] = now
+                log("주문 #$orderNo 사라짐 → 완료 추정 ($now)")
+            }
+            // 최근 50건만 유지
+            while (recentCompletions.size > 50) {
+                val oldest = recentCompletions.keys.first()
+                recentCompletions.remove(oldest)
+            }
+        }
+    }
+
     /** KDS 앱의 UI 트리를 텍스트로 덤프 (디버깅용) */
     fun dumpTree(): String {
-        val root = try { rootInActiveWindow } catch (_: Exception) { null }
-            ?: return "root 없음"
+        val root = findKdsRoot() ?: return "root 없음"
         val sb = StringBuilder()
         dumpNode(root, sb, 0)
         root.recycle()
@@ -405,7 +537,7 @@ class KdsAccessibilityService : AccessibilityService() {
         log("=== UI 트리 덤프 (${result.lines().size}줄) ===\n$result\n=== 덤프 끝 ===")
         // 즉시 Gist 업로드 (원격에서 확인 가능)
         if (::prefs.isInitialized) {
-            FirebaseUploader.upload(prefs, lastCount)
+            FirebaseUploader.upload(prefs, lastCount, lastOrders, lastCompleted, lastOrderDetails, recentCompletions, completedAtStr)
         }
         return result
     }

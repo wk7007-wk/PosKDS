@@ -20,7 +20,15 @@ object FirebaseUploader {
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA)
     private val logTimeFormat = SimpleDateFormat("HH:mm:ss", Locale.KOREA)
 
-    fun upload(prefs: SharedPreferences, count: Int, orders: List<Int> = emptyList(), completed: Int = -1) {
+    fun upload(
+        prefs: SharedPreferences,
+        count: Int,
+        orders: List<Int> = emptyList(),
+        completed: Int = -1,
+        orderDetails: List<OrderDetail> = emptyList(),
+        recentCompletions: Map<Int, Long> = emptyMap(),
+        completedAtStr: String = ""
+    ) {
         // AppMonitor에 최신 KDS 데이터 반영
         AppMonitor.lastCount = count
         if (completed >= 0) AppMonitor.lastCompleted = completed
@@ -39,14 +47,18 @@ object FirebaseUploader {
                     put("source", "kds")
                     put("orders", ordersArr)
                     if (completed >= 0) put("completed", completed)
+                    if (completedAtStr.isNotEmpty()) put("completed_at", completedAtStr)
                 }.toString()
                 firebasePut("$FIREBASE_BASE/kds_status.json", statusJson)
+
+                // 1-a. 주문 상세 업로드 (kds_orders.json)
+                uploadOrderDetails(orderDetails, recentCompletions, now)
 
                 // 1-b. Gist 보조 채널 동시 기록
                 GistUploader.upload(count, orders)
 
                 // 1-c. FCM push 전송 (PosDelay에 OS 레벨 push)
-                FcmSender.send(count, if (completed >= 0) completed else 0, now, orders)
+                FcmSender.send(count, if (completed >= 0) completed else 0, now, orders, completedAtStr)
 
                 // 1-d. monitor heartbeat 갱신
                 AppMonitor.sendHeartbeat()
@@ -72,6 +84,46 @@ object FirebaseUploader {
                 Log.w(TAG, "업로드 에러: ${e.message}")
                 log(prefs, "업로드 에러: ${e.message}")
             }
+        }
+    }
+
+    /** kds_orders.json 업로드 — 주문 상세 + 완료 이력 */
+    private fun uploadOrderDetails(
+        orderDetails: List<OrderDetail>,
+        recentCompletions: Map<Int, Long>,
+        timeStr: String
+    ) {
+        try {
+            val isoFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.KOREA).apply {
+                timeZone = java.util.TimeZone.getTimeZone("Asia/Seoul")
+            }
+
+            val ordersObj = JSONObject()
+            for (detail in orderDetails) {
+                ordersObj.put(detail.orderNo.toString(), JSONObject().apply {
+                    put("menus", detail.menus)
+                    put("order_type", detail.orderType)
+                    put("status", "cooking")
+                })
+            }
+
+            val completionsObj = JSONObject()
+            for ((orderNo, ms) in recentCompletions) {
+                completionsObj.put(orderNo.toString(), JSONObject().apply {
+                    put("completed_at", isoFormat.format(Date(ms)))
+                    put("completed_at_ms", ms)
+                })
+            }
+
+            val json = JSONObject().apply {
+                put("orders", ordersObj)
+                put("completions", completionsObj)
+                put("time", timeStr)
+            }.toString()
+
+            firebasePut("$FIREBASE_BASE/kds_orders.json", json)
+        } catch (e: Exception) {
+            Log.w(TAG, "주문상세 업로드 에러: ${e.message}")
         }
     }
 

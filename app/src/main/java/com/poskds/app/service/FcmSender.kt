@@ -74,7 +74,7 @@ object FcmSender {
      * FCM data message 전송 (건수 변경 시 호출).
      * count 또는 orders 변경 시 전송. 백그라운드 스레드에서 호출해야 함.
      */
-    fun send(count: Int, completed: Int, time: String, orders: List<Int> = emptyList()) {
+    fun send(count: Int, completed: Int, time: String, orders: List<Int> = emptyList(), completedAt: String = "") {
         val ordersHash = orders.hashCode()
         if (count == lastSentCount && ordersHash == lastSentOrdersHash) return // 동일 데이터 스킵
 
@@ -105,6 +105,7 @@ object FcmSender {
                         put("time", time)
                         put("orders", orders.joinToString(","))
                         put("source", "fcm")
+                        if (completedAt.isNotEmpty()) put("completed_at", completedAt)
                     })
                     // Android: high priority for Doze delivery
                     put("android", JSONObject().apply {
