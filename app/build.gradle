@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-def buildTime = new Date().format("MMdd.HHmm")
+def buildTime = new Date().format("MMdd.HHmm", TimeZone.getTimeZone("Asia/Seoul"))
 
 android {
     namespace 'com.poskds.app'
