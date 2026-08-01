@@ -75,12 +75,8 @@ class KdsAccessibilityService : AccessibilityService() {
                     if (count == null && orders.isNotEmpty()) {
                         count = orders.size
                         log("하트비트 건수 추출 실패 → 주문 ${orders.size}건 보정")
-                    } else if (count == null && completed != null) {
-                        // 완료 탭 보이지만 조리중 숫자 없음 → 0건
-                        count = 0
-                        log("하트비트 조리중 없음, 완료=$completed → 0건")
                     }
-                    // count still null → 조리중/완료 둘 다 못 찾음 → 건수 유지
+                    // count still null → bare 조리중/완료 탭 등 모호한 화면 → 이전 건수 유지
                     // 탭 건수(조리중 N) 신뢰 — 주문번호 비어도 0으로 강제하지 않음
 
                     // 주문 상세 추출
@@ -334,16 +330,8 @@ class KdsAccessibilityService : AccessibilityService() {
             for (node in nodes) {
                 val text = node.text?.toString() ?: ""
                 val desc = node.contentDescription?.toString() ?: ""
-                // "조리중 3", "조리중\n3", "조리중3" 패턴 (개행 포함)
-                val match = Regex("조리중[\\s\\n]*(\\d+)").find(text)
-                    ?: Regex("조리중[\\s\\n]*(\\d+)").find(desc)
-                if (match != null) {
-                    return match.groupValues[1].toIntOrNull()
-                }
+                CookingCountParser.explicitCount(text, desc)?.let { return it }
             }
-
-            // "조리중" 텍스트는 있지만 숫자 없음 → 0건
-            return 0
         }
 
         // 방법3: 전체 트리 탐색
@@ -352,7 +340,9 @@ class KdsAccessibilityService : AccessibilityService() {
 
         // 방법4: "조리할 주문이 없습니다" → 0건
         val noOrderNodes = root.findAccessibilityNodeInfosByText("조리할 주문이 없습니다")
-        if (noOrderNodes != null && noOrderNodes.isNotEmpty()) return 0
+        if (noOrderNodes != null && noOrderNodes.any {
+                CookingCountParser.isExplicitEmptyState(it.text, it.contentDescription)
+            }) return 0
 
         // 방법5: "주문수" 뒤 숫자 추출 (메뉴별 수량 화면)
         return findOrderCountInTree(root)
@@ -394,9 +384,7 @@ class KdsAccessibilityService : AccessibilityService() {
         val text = node.text?.toString() ?: ""
         val desc = node.contentDescription?.toString() ?: ""
 
-        val match = Regex("조리중\\s*(\\d+)").find(text)
-            ?: Regex("조리중\\s*(\\d+)").find(desc)
-        if (match != null) return match.groupValues[1].toIntOrNull()
+        CookingCountParser.explicitCount(text, desc)?.let { return it }
 
         var found: Int? = null
         for (i in 0 until node.childCount) {
