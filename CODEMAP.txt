@@ -15,8 +15,8 @@ KeepAliveService.kt          포그라운드 서비스 — 프로세스 유지 +
 KDS앱 UI
   → KdsAccessibilityService (접근성 이벤트 → UI 트리 파싱)
     → FirebaseUploader.upload()
-      → Firebase /kds_status.json          (PosDelay SSE 수신)
-      → GistUploader.upload()              (보조 채널)
+      → GitHub endpoints.json 주소판 → sets.factory kds_status.json PUT (1차)
+      → GistUploader.upload()              (2차 데이터)
       → FcmSender.send()                   (OS push → PosDelay)
       → AppMonitor.sendHeartbeat()         → Firebase /monitor/poskds/status
       → Firebase /kds_log.json            (로그 100줄)

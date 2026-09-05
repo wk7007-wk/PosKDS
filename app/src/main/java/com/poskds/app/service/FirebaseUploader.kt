@@ -56,9 +56,10 @@ object FirebaseUploader {
                     }
                     put("order_details", detailJson)
                 }.toString()
-                firebasePut("$FIREBASE_BASE/kds_status.json", statusJson)
-
-                // 1-b. Gist 보조 채널 동시 기록
+                // 깃허브 주소판 → sets.factory 1차 PUT. Gist kds_status는 2차.
+                if (!FactoryAddressBook.putKdsStatus(statusJson)) {
+                    Log.w(TAG, "factory kds PUT 실패 — gist 2차만")
+                }
                 GistUploader.upload(count, orders)
 
                 // 1-c. FCM push 전송 (PosDelay에 OS 레벨 push)
